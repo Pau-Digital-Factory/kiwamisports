@@ -9,7 +9,7 @@ from odoo.exceptions import AccessError
 
 
 class ShopifyProductProductEptt(models.Model):
-    _inherit = "shopify.product.product.ept"
+     _inherit = "shopify.product.product.ept"
     
      hs_code = fields.Char()
      def search_odoo_product_and_set_sku_barcode(self, template_attribute_value_ids, variation, product_template):
