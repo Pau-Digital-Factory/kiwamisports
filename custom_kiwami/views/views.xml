@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <data>
+ <!--    <record id="add_fields_template202122" model="ir.ui.view">
+        <field name="name">product_templat2</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view" />
+        <field name="type">form</field>
+        <field name="arch" type="xml">
+          <xpath expr="/form/*" position="before">
+    <header>
+        <field name="state" widget="statusbar"/>
+    </header>
+</xpath>
+        </field>
+    </record> -->
+
+
+
+
+
+</data>
+
+
+
+
+
+
+
+
+
+
+
+
+</odoo>
