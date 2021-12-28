@@ -41,7 +41,7 @@ class ShopifyProductProductEptt(models.Model):
         if odoo_product and sku:
             odoo_product.write({"default_code": sku})
         if odoo_product and sh_code:
-            odoo_product.write({"sh_code": sh_code})
+            odoo_product.write({"hs_code": sh_code})
         if barcode and odoo_product:
             odoo_product.write({"barcode": barcode})
 
