@@ -8,7 +8,44 @@ from odoo.exceptions import AccessError
 
 
 
+class ShopifyProductProductEptt(models.Model):
+    _inherit = "shopify.product.product.ept"
+    
+     hs_code = fields.Char()
+     def search_odoo_product_and_set_sku_barcode(self, template_attribute_value_ids, variation, product_template):
+        """ This method is used to search odoo product base on a prepared domain and set SKU and barcode on that
+            product.
+            :param template_attribute_value_ids: Record of product template attribute value ids.
+            :param variation: Response of product variant which received from shopify store.
+            :param product_template: Record of Odoo product template.
+            @return: odoo_product
+            @author: Haresh Mori @Emipro Technologies Pvt. Ltd on date 21 October 2020 .
+            Task_id: 167537
+        """
+        odoo_product_obj = self.env["product.product"]
+        sku = variation.get("sku")
+        sh_code = variation.get("harmonizedSystemCode")
+        barcode = variation.get("barcode") or False
+        if barcode and barcode.__eq__("false"):
+            barcode = False
+        odoo_product = False
 
+        domain = []
+        for template_attribute_value in template_attribute_value_ids:
+            tpl = ("product_template_attribute_value_ids", "=", template_attribute_value)
+            domain.append(tpl)
+
+        domain and domain.append(("product_tmpl_id", "=", product_template.id))
+        if domain:
+            odoo_product = odoo_product_obj.search(domain)
+        if odoo_product and sku:
+            odoo_product.write({"default_code": sku})
+        if odoo_product and sh_code:
+            odoo_product.write({"sh_code": sh_code})
+        if barcode and odoo_product:
+            odoo_product.write({"barcode": barcode})
+
+        return odoo_product
 
 class ShopifyProductTemplateEptt(models.Model):
     _inherit = "shopify.product.template.ept"
