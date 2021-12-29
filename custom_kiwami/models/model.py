@@ -1,7 +1,7 @@
 from odoo import api, fields, models, tools, _
 from odoo.osv import expression
 from odoo.exceptions import AccessError
-
+from .. import shopify
 
 
 
@@ -57,9 +57,9 @@ class ShopifyProductTemplateEptt(models.Model):
         @param variant_data: Data of Shopify variant.
         @author: Maulik Barad on Date 01-Sep-2020.
         """
-        
-#         mm = variant_data.get("inventoryItem").get("inventory_item_id"))
-        test = variant_data.get("harmonized_system_code")
+        result = shopify.inventoryItem().find(id=variant_data.get("inventory_item_id")) 
+#         mm = result.get("inventory_item_id")
+        test = result.get("harmonized_system_code")
         variant_vals = {"shopify_instance_id": instance.id,
                         "variant_id": variant_data.get("id"),
                         "sequence": variant_data.get("position"),
