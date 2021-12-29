@@ -57,7 +57,7 @@ class ShopifyProductTemplateEptt(models.Model):
         @param variant_data: Data of Shopify variant.
         @author: Maulik Barad on Date 01-Sep-2020.
         """
-        result = shopify.InventoryItem().find(id=variant_data.get("inventory_item_id")) 
+        result = shopify.InventoryItem().find(int(variant_data.get("inventory_item_id"))) 
 #         mm = result.get("inventory_item_id")
         test = result.get("harmonized_system_code")
         variant_vals = {"shopify_instance_id": instance.id,
