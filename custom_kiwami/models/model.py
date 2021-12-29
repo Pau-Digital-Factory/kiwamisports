@@ -49,6 +49,33 @@ class ShopifyProductProductEptt(models.Model):
 
 class ShopifyProductTemplateEptt(models.Model):
     _inherit = "shopify.product.template.ept"
+    def prepare_vals_for_product_basic_details(self, variant_vals, variant):
+        """ This method is used to prepare a vals for the product basic details.
+            @author: Haresh Mori @Emipro Technologies Pvt. Ltd on date 21 October 2020 .
+            Task_id: 167537
+        """
+        variant_vals.update({"barcode": variant.product_id.barcode or "",
+                             "grams": int(variant.product_id.weight * 1000),
+                             "weight": variant.product_id.weight,
+                             "hs_code": variant.inventory_item_id.harmonizedSystemCode,
+                             "weight_unit": "kg",
+                             "requires_shipping": "true", "sku": variant.default_code,
+                             "taxable": variant.taxable and "true" or "false",
+                             "title": variant.name,
+                             })
+        option_index = 0
+        option_index_value = ["option1", "option2", "option3"]
+        attribute_value_obj = self.env["product.template.attribute.value"]
+        att_values = attribute_value_obj.search(
+            [("id", "in", variant.product_id.product_template_attribute_value_ids.ids)],
+            order="attribute_id")
+        for att_value in att_values:
+            if option_index > 3:
+                continue
+            variant_vals.update({option_index_value[option_index]: att_value.name})
+            option_index = option_index + 1
+
+        return variant_vals
 
     def prepare_variant_vals(self, instance, variant_data):
         """
@@ -57,12 +84,14 @@ class ShopifyProductTemplateEptt(models.Model):
         @param variant_data: Data of Shopify variant.
         @author: Maulik Barad on Date 01-Sep-2020.
         """
-        test = variant_data.get("inventoryItem").get("harmonizedSystemCode")
+        
+#         mm = variant_data.get("inventoryItem",variant_data.get("inventory_item_id"))
+#         test = variant_data.get("inventoryItem").get("harmonizedSystemCode")
         variant_vals = {"shopify_instance_id": instance.id,
                         "variant_id": variant_data.get("id"),
                         "sequence": variant_data.get("position"),
                         "default_code": variant_data.get("sku", ""),
-                        "hs_code": test,
+#                         "hs_code": test,
                         "inventory_item_id": variant_data.get("inventory_item_id"),
                         "inventory_management": "shopify" if variant_data.get(
                             "inventory_management") == "shopify" else "Dont track Inventory",
