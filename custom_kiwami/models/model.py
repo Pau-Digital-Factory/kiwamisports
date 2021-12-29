@@ -60,7 +60,7 @@ class ShopifyProductTemplateEptt(models.Model):
         instance.connect_in_shopify()
         result = shopify.InventoryItem().find(variant_data.get("inventory_item_id")) 
 #         mm = result.get("inventory_item_id")
-        test = result.get("sku")
+        test = result.harmonized_system_code
         variant_vals = {"shopify_instance_id": instance.id,
                         "variant_id": variant_data.get("id"),
                         "sequence": variant_data.get("position"),
