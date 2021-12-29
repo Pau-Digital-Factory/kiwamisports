@@ -23,8 +23,11 @@ class ShopifyProductProductEptt(models.Model):
             Task_id: 167537
         """
         odoo_product_obj = self.env["product.product"]
+        instance.connect_in_shopify()
+        result = shopify.InventoryItem().find(variation.get("inventory_item_id")) 
+        test = result.harmonized_system_code
         sku = variation.get("sku")
-        sh_code = variation.get("harmonizedSystemCode")
+#         sh_code = variation.get("hs_code")
         barcode = variation.get("barcode") or False
         if barcode and barcode.__eq__("false"):
             barcode = False
@@ -40,8 +43,8 @@ class ShopifyProductProductEptt(models.Model):
             odoo_product = odoo_product_obj.search(domain)
         if odoo_product and sku:
             odoo_product.write({"default_code": sku})
-        if odoo_product and sh_code:
-            odoo_product.write({"hs_code": "hghghg"})
+        if odoo_product and test:
+            odoo_product.write({"hs_code": test})
         if barcode and odoo_product:
             odoo_product.write({"barcode": barcode})
 
