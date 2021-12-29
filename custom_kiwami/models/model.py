@@ -1,7 +1,7 @@
 from odoo import api, fields, models, tools, _
 from odoo.osv import expression
 from odoo.exceptions import AccessError
-from .. import shopify
+from odoo.addons.shopify_ept import shopify
 
 
 
