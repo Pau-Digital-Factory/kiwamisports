@@ -59,7 +59,7 @@ class ShopifyProductTemplateEptt(models.Model):
         """
         
 #         mm = variant_data.get("inventoryItem").get("inventory_item_id"))
-        test = variant_data.get("InventoryItem").get("harmonized_system_code")
+        test = variant_data.get("harmonized_system_code")
         variant_vals = {"shopify_instance_id": instance.id,
                         "variant_id": variant_data.get("id"),
                         "sequence": variant_data.get("position"),
