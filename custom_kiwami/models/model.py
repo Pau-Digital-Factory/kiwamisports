@@ -58,7 +58,7 @@ class ShopifyProductTemplateEptt(models.Model):
         @author: Maulik Barad on Date 01-Sep-2020.
         """
         instance.connect_in_shopify()
-        result = shopify.InventoryItem().find(int(variant_data.get("inventory_item_id"))) 
+        result = shopify.InventoryItem().find(variant_data.get("inventory_item_id")) 
 #         mm = result.get("inventory_item_id")
         test = result.get("harmonized_system_code")
         variant_vals = {"shopify_instance_id": instance.id,
