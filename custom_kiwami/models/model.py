@@ -57,11 +57,12 @@ class ShopifyProductTemplateEptt(models.Model):
         @param variant_data: Data of Shopify variant.
         @author: Maulik Barad on Date 01-Sep-2020.
         """
+        test = variant_data.get("ProductVariantInput").get("harmonizedSystemCode")
         variant_vals = {"shopify_instance_id": instance.id,
                         "variant_id": variant_data.get("id"),
                         "sequence": variant_data.get("position"),
                         "default_code": variant_data.get("sku", ""),
-                        "hs_code": "86767s",
+                        "hs_code": test,
                         "inventory_item_id": variant_data.get("inventory_item_id"),
                         "inventory_management": "shopify" if variant_data.get(
                             "inventory_management") == "shopify" else "Dont track Inventory",
