@@ -10,7 +10,7 @@ class ShopifyProductProductliee(models.Model):
      hs_code = fields.Char("Nomenclature douanière",help="Code normalisé pour l'expédition internationale et la déclaration de marchandises. Pour le moment, utilisé uniquement pour le fournisseur d’expédition FedEx.",compute="_get_code_sh")
      
      def _get_code_sh(self):
-          self.hs_code= Flase
+          self.hs_code= False
           code = self.env["shopify.product.product.ept"].search([("default_code","=", self.default_code)]) 
           if code :
                self.hs_code= code.hs_code
