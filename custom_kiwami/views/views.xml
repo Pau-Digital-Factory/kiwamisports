@@ -16,12 +16,12 @@
            
         </xpath>
             
-            
-            
-             <xpath expr="//div[@id='qrcode']" position="before">
+             <xpath expr="//td[@name='account_invoice_line_name']" position="after">
           <td name="hs_code"><span t-field="line.product_id.hs_code"/></td>
            
         </xpath>
+            
+         
        </template>
   
   
