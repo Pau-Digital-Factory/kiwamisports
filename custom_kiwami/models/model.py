@@ -16,6 +16,45 @@ class ShopifyProductProductliee(models.Model):
                self.hs_code= code.hs_code
                
 
+class Shopifysaleorderline(models.Model):
+     _inherit = "sale.order.line"               
+               
+     def _get_computed_name(self):
+        self.ensure_one()
+
+        if not self.product_id:
+            return ''
+
+        if self.partner_id.lang:
+            product = self.product_id.with_context(lang=self.partner_id.lang)
+        else:
+            product = self.product_id
+        for m in self.product_id.product_template_variant_value_ids:
+            phrase = m.attribute_id.name
+            if "col" in phrase.lower():
+                color = m.name
+            else:
+                taille = m.name
+
+        values = []
+        lieu = "/n"self.product_id.name", Type : '"+self.product_id.type_product+"', Color : '"+ color +"', made in France by Kiwami 9 rue ampere 64121 Montardon"
+#         if product.partner_ref:
+#             values.append(product.partner_ref)
+            
+        if self.journal_id.type == 'sale':
+            if product.description_sale:
+                values.append(lieu)
+                values.append(product.description_sale)
+                
+        elif self.journal_id.type == 'purchase':
+            if product.description_purchase:
+                values.append(product.description_purchase)
+        return '\n'.join(values)          
+               
+               
+               
+               
+               
 
 class ShopifyProductProductEptt(models.Model):
      _inherit = "shopify.product.product.ept"
