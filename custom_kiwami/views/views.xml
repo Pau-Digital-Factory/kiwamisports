@@ -1,35 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-  <data>
- <!--    <record id="add_fields_template202122" model="ir.ui.view">
-        <field name="name">product_templat2</field>
-        <field name="model">product.template</field>
-        <field name="inherit_id" ref="product.product_template_form_view" />
-        <field name="type">form</field>
-        <field name="arch" type="xml">
-          <xpath expr="/form/*" position="before">
-    <header>
-        <field name="state" widget="statusbar"/>
-    </header>
-</xpath>
-        </field>
-    </record> -->
-
-
-
-
-
-</data>
-
-
-
-
-
-
-
-
-
-
-
+  
+  <template id="add_ref_kiwami_custom" inherit_id="account.report_invoice_document">
+        <xpath expr="//th[@name='th_description']" position="before">
+          <th name="th_default_code" class="text-left"><span>Style</span></th>
+           
+        </xpath>
+     <xpath expr="//th[@name='th_description']" position="after">
+          <th name="th_sh_codee" class="text-left"><span>SH Code</span></th>
+           
+        </xpath>
+    
+      <xpath expr="//td[@name='account_invoice_line_name']" position="before">
+          <td name="default_code"><span t-field="line.product_id.default_code" "/></td>
+           
+        </xpath>
+            
+            
+            
+             <xpath expr="//div[@id='qrcode']" position="before">
+          <td name="sh_code"><span t-field="line.product_id.sh_code" "/></td>
+           
+        </xpath>
+       </template>
+  
+  
+   <template id="add_ref_kiwami_custom_footer" inherit_id="web.external_layout_standard">
+     <xpath expr="//ul[@class='list-inline mb4']" position="after">
+           <p style="font-size:9pt"  t-if="o.partner_shipping_id.country_id.code not in ['FR']"> TEST TEST TEST </p>
+  </template>
 
 </odoo>
