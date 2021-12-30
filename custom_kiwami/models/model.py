@@ -40,7 +40,7 @@ class Shopifysaleorderline(models.Model):
         taille = ""
         for m in self.product_id.product_template_variant_value_ids:
             phrase = m.attribute_id.name
-            if attribute_id.id in [2,3,4]:
+            if m.attribute_id.id in [2,3,4]:
                 color = m.name
             else:
                 taille = m.name
@@ -79,7 +79,7 @@ class Shopifysaleorderline(models.Model):
         taille = ""
         for m in self.product_id.product_template_variant_value_ids:
             phrase = m.attribute_id.name
-            if attribute_id.id in [2,3,4]:
+            if m.attribute_id.id in [2,3,4]:
                 color = m.name
             else:
                 taille = m.name
