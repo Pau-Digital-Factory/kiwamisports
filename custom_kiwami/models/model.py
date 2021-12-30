@@ -85,7 +85,7 @@ class Shopifysaleorderline(models.Model):
                 taille = m.name
 
         values = []
-        if taille != "" or color != "":
+        if self.product_id.product_template_variant_value_ids:
            lieu = self.product_id.name +" \n \n Taille :"+taille+" QTY: "+str(self.quantity)+" \n \n"+str(self.product_id.type_product) +", Type : "+self.product_id.name+", Color : "+ color +", made in France by Kiwami 9 rue ampere 64121 Montardon"
         else: 
           lieu = " "
