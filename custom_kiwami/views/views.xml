@@ -7,7 +7,7 @@
            
         </xpath>
      <xpath expr="//th[@name='th_description']" position="after">
-          <th name="th_sh_codee" class="text-left"><span>SH Code</span></th>
+          <th name="th_sh_codee" class="text-left"><span>HS Code</span></th>
            
         </xpath>
     
@@ -19,7 +19,7 @@
             
             
              <xpath expr="//div[@id='qrcode']" position="before">
-          <td name="sh_code"><span t-field="line.product_id.sh_code"/></td>
+          <td name="hs_code"><span t-field="line.product_id.hs_code"/></td>
            
         </xpath>
        </template>
