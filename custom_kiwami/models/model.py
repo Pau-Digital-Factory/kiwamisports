@@ -50,7 +50,7 @@ class Shopifysale_order_line(models.Model):
 
      @api.onchange('product_uom_qty')
      def _onchange_quantity_desc(self):
-          if not self.product_id:
+        if not self.product_id:
             return ''
 
         color = ""
