@@ -28,6 +28,8 @@
    <template id="add_ref_kiwami_custom_footer" inherit_id="web.external_layout_standard">
      <xpath expr="//ul[@class='list-inline mb4']" position="after">
            <p style="font-size:9pt"  t-if="o.partner_shipping_id.country_id.code not in ['FR']"> TEST TEST TEST </p>
+       
+        </xpath>
   </template>
 
 </odoo>
