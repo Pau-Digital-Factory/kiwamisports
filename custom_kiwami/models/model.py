@@ -8,7 +8,7 @@ from odoo.addons.shopify_ept import shopify
 class ShopifyProductProductliee(models.Model):
      _inherit = "product.product"
      hs_code = fields.Char("Nomenclature douanière",help="Code normalisé pour l'expédition internationale et la déclaration de marchandises. Pour le moment, utilisé uniquement pour le fournisseur d’expédition FedEx.",compute="_get_code_sh")
-     
+     type_product = fields.Char()
      def _get_code_sh(self):
           self.hs_code= False
           code = self.env["shopify.product.product.ept"].search([("default_code","=", self.default_code)]) 
