@@ -38,16 +38,21 @@ class Shopifysaleorderline(models.Model):
             product = self.product_id
         color = ""
         taille = ""
-        for m in self.product_id.product_template_variant_value_ids:
+        if self.product_id.product_template_variant_value_ids:
+          for m in self.product_id.product_template_variant_value_ids:
             phrase = m.attribute_id.name
             if m.attribute_id.id in [2,3,4]:
-                color = m.name
+                color = "Color: "+ m.name
             else:
                 taille = m.name
 
         values = []
-        if taille != "" or color != "":
-           lieu = self.product_id.name +" \n \n Taille :"+taille+" QTY: "+str(self.quantity)+" \n \n"+str(self.product_id.type_product) +", Type : "+self.product_id.name+", Color : "+ color +", made in France by Kiwami 9 rue ampere 64121 Montardon"
+        if self.product_id.type_product:
+            type_perso = str(self.product_id.type_product)
+        else:
+            type_perso = " "
+        if self.product_id.product_template_variant_value_ids:
+           lieu = self.product_id.name +" \n \n Taille :"+taille+" QTY: "+str(self.quantity)+" \n \n"+type_perso +", Type : "+self.product_id.name + color +", made in France by Kiwami 9 rue ampere 64121 Montardon"
         else: 
           lieu = " "
           if product.partner_ref:
