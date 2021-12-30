@@ -40,7 +40,7 @@ class Shopifysaleorderline(models.Model):
         taille = False
         for m in self.product_id.product_template_variant_value_ids:
             phrase = m.attribute_id.name
-            if "col" in phrase.lower():
+            if "co" in phrase.lower():
                 color = m.name
             else:
                 taille = m.name
