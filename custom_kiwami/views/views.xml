@@ -32,4 +32,16 @@
         </xpath>
   </template>
 
+  <record id="view_template_property_form_add_type" model="ir.ui.view">
+            <field name="name">product.template.stock.property.form.inherit.type_add</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="product.product_template_form_view"/>
+            <field name="arch" type="xml">
+                <xpath expr="//group[@name='group_general']" position="inside">
+<field name="type_product" string="Type Personnalisé"/>
+                </xpath>
+ 
+            </field>
+        </record>
+  
 </odoo>
