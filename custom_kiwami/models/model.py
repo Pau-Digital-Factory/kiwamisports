@@ -48,36 +48,36 @@ class Shopifysale_order_line(models.Model):
                 values.append(product.description_sale)
         return '\n'.join(values)
 
-     @api.onchange('product_uom_qty')
-     def _onchange_quantity_desc(self):
-        if not self.product_id:
-            return ''
-        product = self.product_id
-        color = ""
-        taille = ""
-        if self.product_id.product_template_variant_value_ids:
-          for m in self.product_id.product_template_variant_value_ids:
-            phrase = m.attribute_id.name
-            if m.attribute_id.id in [2,3,4]:
-                color = "Color: "+ m.name
-            else:
-                taille = m.name
+#      @api.onchange('product_uom_qty')
+#      def _onchange_quantity_desc(self):
+#         if not self.product_id:
+#             return ''
+#         product = self.product_id
+#         color = ""
+#         taille = ""
+#         if self.product_id.product_template_variant_value_ids:
+#           for m in self.product_id.product_template_variant_value_ids:
+#             phrase = m.attribute_id.name
+#             if m.attribute_id.id in [2,3,4]:
+#                 color = "Color: "+ m.name
+#             else:
+#                 taille = m.name
 
-        values = []
-        if self.product_id.type_product:
-            type_perso = str(self.product_id.type_product)
-        else:
-            type_perso = " "
-        if self.product_id.product_template_variant_value_ids:
-           lieu = self.product_id.name +" \n \n Taille :"+taille+" QTY: "+str(self.product_uom_qty)+" \n \n"+type_perso +", Type : "+self.product_id.name + color +", made in France by Kiwami 9 rue ampere 64121 Montardon"
-        else: 
-          lieu = " "
-          if self.product_id.partner_ref:
-             values.append(self.product_id.partner_ref)
-        values.append(lieu)    
-        if self.product_id.description_sale: 
-                values.append(self.product_id.description_sale)
-        return '\n'.join(values)
+#         values = []
+#         if self.product_id.type_product:
+#             type_perso = str(self.product_id.type_product)
+#         else:
+#             type_perso = " "
+#         if self.product_id.product_template_variant_value_ids:
+#            lieu = self.product_id.name +" \n \n Taille :"+taille+" QTY: "+str(self.product_uom_qty)+" \n \n"+type_perso +", Type : "+self.product_id.name + color +", made in France by Kiwami 9 rue ampere 64121 Montardon"
+#         else: 
+#           lieu = " "
+#           if self.product_id.partner_ref:
+#              values.append(self.product_id.partner_ref)
+#         values.append(lieu)    
+#         if self.product_id.description_sale: 
+#                 values.append(self.product_id.description_sale)
+#         return '\n'.join(values)
 
 
 class ShopifyProductProducttemplate(models.Model):
