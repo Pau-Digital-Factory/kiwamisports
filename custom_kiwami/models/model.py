@@ -35,7 +35,6 @@ class Shopifysaleorderline(models.Model):
                 color = m.name
             else:
                 taille = m.name
-        if 
 
         values = []
         lieu = " "+taille+"/n"+self.product_id.name +", Type : "+str(self.product_id.type_product)+", Color : "+ color +", made in France by Kiwami 9 rue ampere 64121 Montardon"
