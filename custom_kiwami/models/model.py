@@ -52,10 +52,10 @@ class Shopifysaleorderline(models.Model):
           lieu = " "
           if product.partner_ref:
              values.append(product.partner_ref)
-            
+        values.append(lieu)    
         if self.journal_id.type == 'sale':
             if product.description_sale:
-                values.append(lieu)
+                
                 values.append(product.description_sale)
                 
         elif self.journal_id.type == 'purchase':
@@ -77,7 +77,8 @@ class Shopifysaleorderline(models.Model):
             product = self.product_id
         color = ""
         taille = ""
-        for m in self.product_id.product_template_variant_value_ids:
+        if self.product_id.product_template_variant_value_ids:
+         for m in self.product_id.product_template_variant_value_ids:
             phrase = m.attribute_id.name
             if m.attribute_id.id in [2,3,4]:
                 color = m.name
@@ -91,10 +92,10 @@ class Shopifysaleorderline(models.Model):
           lieu = " "
           if product.partner_ref:
              values.append(product.partner_ref)
-            
+        values.append(lieu)    
         if self.journal_id.type == 'sale':
             if product.description_sale:
-                values.append(lieu)
+                
                 values.append(product.description_sale)
                 
         elif self.journal_id.type == 'purchase':
