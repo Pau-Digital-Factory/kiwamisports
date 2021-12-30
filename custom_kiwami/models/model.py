@@ -17,7 +17,7 @@ class ShopifyProductProductliee(models.Model):
                
 
 class Shopifysaleorderline(models.Model):
-     _inherit = "sale.order.line"               
+     _inherit = "account.move.line"               
                
      def _get_computed_name(self):
         self.ensure_one()
