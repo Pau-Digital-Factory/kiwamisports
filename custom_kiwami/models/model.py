@@ -46,8 +46,8 @@ class Shopifysaleorderline(models.Model):
            lieu = self.product_id.name +" \n Taille :"+taille+" QTY: "+str(self.quantity)+" \n"+self.product_id.name +", Type : "+str(self.product_id.type_product)+", Color : "+ color +", made in France by Kiwami 9 rue ampere 64121 Montardon"
         else: 
           lieu = " "
-#         if product.partner_ref:
-#             values.append(product.partner_ref)
+          if product.partner_ref:
+             values.append(product.partner_ref)
             
         if self.journal_id.type == 'sale':
             if product.description_sale:
@@ -87,7 +87,8 @@ class Shopifysaleorderline(models.Model):
            lieu = self.product_id.name +" \n Taille :"+taille+" QTY: "+str(self.quantity)+" \n"+self.product_id.name +", Type : "+str(self.product_id.type_product)+", Color : "+ color +", made in France by Kiwami 9 rue ampere 64121 Montardon"
         else: 
           lieu = " "
-            
+          if product.partner_ref:
+             values.append(product.partner_ref)  
         if self.journal_id.type == 'sale':
             if product.description_sale:
                 values.append(lieu)
