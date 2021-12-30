@@ -8,7 +8,7 @@
     'website': 'https://dkgroup.fr',
     'license': 'AGPL-3',
     'category': 'Generic Modules',
-    'depends': ['base','shopify_ept'],
+    'depends': ['base','shopify_ept','account'],
     'data': [
         # 'security/ir.model.access.csv',
         #'views/views.xml',
