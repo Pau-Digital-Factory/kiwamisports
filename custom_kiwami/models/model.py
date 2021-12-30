@@ -52,7 +52,7 @@ class Shopifysale_order_line(models.Model):
      def _onchange_quantity_desc(self):
         if not self.product_id:
             return ''
-
+        product = self.product_id
         color = ""
         taille = ""
         if self.product_id.product_template_variant_value_ids:
