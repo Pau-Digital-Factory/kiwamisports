@@ -36,17 +36,17 @@ class Shopifysaleorderline(models.Model):
             product = self.product_id.with_context(lang=self.partner_id.lang)
         else:
             product = self.product_id
-        color = False
-        taille = False
+        color = ""
+        taille = ""
         for m in self.product_id.product_template_variant_value_ids:
             phrase = m.attribute_id.name
-            if "co" in phrase.lower():
+            if attribute_id.id in [2,3,4]:
                 color = m.name
             else:
                 taille = m.name
 
         values = []
-        if taille and color:
+        if taille != "" or color != "":
            lieu = self.product_id.name +" \n \n Taille :"+taille+" QTY: "+str(self.quantity)+" \n \n"+str(self.product_id.type_product) +", Type : "+self.product_id.name+", Color : "+ color +", made in France by Kiwami 9 rue ampere 64121 Montardon"
         else: 
           lieu = " "
@@ -75,24 +75,23 @@ class Shopifysaleorderline(models.Model):
             product = self.product_id.with_context(lang=self.partner_id.lang)
         else:
             product = self.product_id
-        color = False
-        taille = False
+        color = ""
+        taille = ""
         for m in self.product_id.product_template_variant_value_ids:
             phrase = m.attribute_id.name
-            
-            if "col" in phrase.lower():
+            if attribute_id.id in [2,3,4]:
                 color = m.name
             else:
                 taille = m.name
 
         values = []
-        
-        if taille and color:
-          lieu = self.product_id.name +" \n \n Taille :"+taille+" QTY: "+str(self.quantity)+" \n \n"+str(self.product_id.type_product) +", Type : "+self.product_id.name+", Color : "+ color +", made in France by Kiwami 9 rue ampere 64121 Montardon"
+        if taille != "" or color != "":
+           lieu = self.product_id.name +" \n \n Taille :"+taille+" QTY: "+str(self.quantity)+" \n \n"+str(self.product_id.type_product) +", Type : "+self.product_id.name+", Color : "+ color +", made in France by Kiwami 9 rue ampere 64121 Montardon"
         else: 
           lieu = " "
           if product.partner_ref:
-             values.append(product.partner_ref)  
+             values.append(product.partner_ref)
+            
         if self.journal_id.type == 'sale':
             if product.description_sale:
                 values.append(lieu)
