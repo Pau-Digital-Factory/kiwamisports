@@ -21,6 +21,7 @@ class ShopifyProductProductEptt(models.Model):
      _inherit = "shopify.product.product.ept"
     
      hs_code = fields.Char()
+     type_product = fields.Char()
      def search_odoo_product_and_set_sku_barcode(self, template_attribute_value_ids, variation, product_template):
         """ This method is used to search odoo product base on a prepared domain and set SKU and barcode on that
             product.
