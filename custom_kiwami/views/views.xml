@@ -12,14 +12,14 @@
         </xpath>
     
       <xpath expr="//td[@name='account_invoice_line_name']" position="before">
-          <td name="default_code"><span t-field="line.product_id.default_code" "/></td>
+          <td name="default_code"><span t-field="line.product_id.default_code"/></td>
            
         </xpath>
             
             
             
              <xpath expr="//div[@id='qrcode']" position="before">
-          <td name="sh_code"><span t-field="line.product_id.sh_code" "/></td>
+          <td name="sh_code"><span t-field="line.product_id.sh_code"/></td>
            
         </xpath>
        </template>
