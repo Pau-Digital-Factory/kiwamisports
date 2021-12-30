@@ -5,7 +5,7 @@ from odoo.addons.shopify_ept import shopify
 
 
 
-class Shopifysale.order.line(models.Model):
+class Shopifysale_order_line(models.Model):
      _inherit = "sale.order.line"
      def get_sale_order_line_multiline_description_sale(self, product):
         """ Compute a default multiline description for this sales order line.
