@@ -32,6 +32,8 @@ class Shopifysaleorderline(models.Model):
             product = self.product_id.with_context(lang=self.partner_id.lang)
         else:
             product = self.product_id
+        color = False
+        taille = False
         for m in self.product_id.product_template_variant_value_ids:
             phrase = m.attribute_id.name
             if "col" in phrase.lower():
@@ -40,7 +42,10 @@ class Shopifysaleorderline(models.Model):
                 taille = m.name
 
         values = []
-        lieu = self.product_id.name +" \n Taille :"+taille+" QTY: "+str(self.quantity)+" \n"+self.product_id.name +", Type : "+str(self.product_id.type_product)+", Color : "+ color +", made in France by Kiwami 9 rue ampere 64121 Montardon"
+        if taille and color:
+           lieu = self.product_id.name +" \n Taille :"+taille+" QTY: "+str(self.quantity)+" \n"+self.product_id.name +", Type : "+str(self.product_id.type_product)+", Color : "+ color +", made in France by Kiwami 9 rue ampere 64121 Montardon"
+        else: 
+          lieu = " "
 #         if product.partner_ref:
 #             values.append(product.partner_ref)
             
@@ -66,17 +71,22 @@ class Shopifysaleorderline(models.Model):
             product = self.product_id.with_context(lang=self.partner_id.lang)
         else:
             product = self.product_id
+        color = False
+        taille = False
         for m in self.product_id.product_template_variant_value_ids:
             phrase = m.attribute_id.name
+            
             if "col" in phrase.lower():
                 color = m.name
             else:
                 taille = m.name
 
         values = []
-        lieu = self.product_id.name +" \n Taille :"+taille+" QTY: "+str(self.quantity)+" \n"+self.product_id.name +", Type : "+str(self.product_id.type_product)+", Color : "+ color +", made in France by Kiwami 9 rue ampere 64121 Montardon"
-#         if product.partner_ref:
-#             values.append(product.partner_ref)
+        
+        if taille and color:
+           lieu = self.product_id.name +" \n Taille :"+taille+" QTY: "+str(self.quantity)+" \n"+self.product_id.name +", Type : "+str(self.product_id.type_product)+", Color : "+ color +", made in France by Kiwami 9 rue ampere 64121 Montardon"
+        else: 
+          lieu = " "
             
         if self.journal_id.type == 'sale':
             if product.description_sale:
