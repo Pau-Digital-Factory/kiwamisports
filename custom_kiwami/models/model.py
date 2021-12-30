@@ -4,7 +4,7 @@ from odoo.exceptions import AccessError
 from odoo.addons.shopify_ept import shopify
 
 
-class ShopifyProductProductliee(models.Model):
+class ShopifyProductProducttemplate(models.Model):
      _inherit = "product.template"
      
 class ShopifyProductProductliee(models.Model):
