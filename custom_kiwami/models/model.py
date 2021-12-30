@@ -37,7 +37,7 @@ class Shopifysaleorderline(models.Model):
                 taille = m.name
 
         values = []
-        lieu = "/n"+self.product_id.name", Type : '"+self.product_id.type_product+"', Color : '"+ color +"', made in France by Kiwami 9 rue ampere 64121 Montardon"
+        lieu = "/n"+self.product_id.name ", Type : "+self.product_id.type_product+", Color : "+ color +", made in France by Kiwami 9 rue ampere 64121 Montardon"
 #         if product.partner_ref:
 #             values.append(product.partner_ref)
             
