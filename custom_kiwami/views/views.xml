@@ -25,14 +25,14 @@
        </template>
   
   
-   <template id="add_ref_kiwami_custom_footer" inherit_id="web.external_layout_standard">
+<!--    <template id="add_ref_kiwami_custom_footer" inherit_id="web.external_layout_standard">
      <xpath expr="//ul[@class='list-inline mb4']" position="after">
            <p style="font-size:9pt"  t-if="o.partner_shipping_id.country_id.code not in ['FR']"> The exporter of the products covered by this document (customs authorization No ...(1)) declares that,
 except where otherwise clearly indicated, these products are of ... (2) preferential origin. 
  </p>
        
         </xpath>
-  </template>
+  </template> -->
 
   <record id="view_template_property_form_add_type" model="ir.ui.view">
             <field name="name">product.template.stock.property.form.inherit.type_add</field>
