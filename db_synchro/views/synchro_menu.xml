@@ -1,0 +1,7 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+  <menuitem id="synch_config" name="Synchronization" parent="base.menu_administration" sequence="30"/>
+
+  <menuitem id="synchro_configuration" name="Configuration" parent="db_synchro.synch_config" sequence="10"/>
+  <menuitem id="synchro_history" name="History" parent="db_synchro.synch_config" sequence="30"/>
+</odoo>

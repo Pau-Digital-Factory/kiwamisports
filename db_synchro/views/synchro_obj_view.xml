@@ -1,0 +1,211 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+ 
+  <record id="view_transfer_line_form" model="ir.ui.view">
+    <field name="name">synchro.obj.line.form</field>
+    <field name="model">synchro.obj.line</field>
+    <field name="arch" type="xml">
+      <form string="Transfered IDs Details">
+        <sheet>
+          <group col="4">
+            <field name="name"/>
+            <field name="server_id"/>
+            <field name="obj_id"/>
+            <field name="description"/>
+            <field name="remote_id"/>
+            <field name="local_id"/>
+          </group>
+        </sheet>
+      </form>
+    </field>
+  </record>
+  <record id="view_transfer_line_tree" model="ir.ui.view">
+    <field name="name">synchro.obj.line.tree</field>
+    <field name="model">synchro.obj.line</field>
+    <field name="arch" type="xml">
+      <tree string="Transfered IDs Details" decoration-danger="local_id == 0">
+        <field name="name"/>
+        <field name="server_id"/>
+        <field name="obj_id"/>
+        <field name="description"/>
+        <field name="remote_id"/>
+        <field name="local_id"/>
+      </tree>
+    </field>
+  </record>
+  <record id="ir_filters_transfer_line_form" model="ir.ui.view">
+    <field name="name">synchro.obj.line.search</field>
+    <field name="model">synchro.obj.line</field>
+    <field name="arch" type="xml">
+      <search string="Transfered Ids Details">
+        <field name="name"/>
+        <field name="obj_id"/>
+        <group string="Group By">
+          <filter string="Object" name="grp_obj" context="{'group_by':'obj_id'}"/>
+          <filter string="Date" name="grp_date" context="{'group_by':'name'}"/>
+        </group>
+      </search>
+    </field>
+  </record>
+  <record id="actions_transfer_line_form" model="ir.actions.act_window">
+    <field name="name">Filters</field>
+    <field name="type">ir.actions.act_window</field>
+    <field name="res_model">synchro.obj.line</field>
+    <field name="binding_view_types">form</field>
+    <field name="view_id" ref="view_transfer_line_tree"/>
+    <field name="search_view_id" ref="ir_filters_transfer_line_form"/>
+  </record>
+  <record id="action_base_synchro_obj_line_tree" model="ir.actions.act_window">
+    <field name="name">Synchronized record</field>
+    <field name="type">ir.actions.act_window</field>
+    <field name="res_model">synchro.obj.line</field>
+    <field name="binding_view_types">form</field>
+  </record>
+
+  <record id="base_synchro_obj_form" model="ir.ui.view">
+    <field name="name">synchro.obj.form</field>
+    <field name="model">synchro.obj</field>
+    <field name="arch" type="xml">
+      <form string="Transfer Details">
+        <header>
+          <field name="state" widget="statusbar" options="{'clickable': '1'}"/>
+        </header>
+        <sheet>
+          <group>
+          <group string="Model">
+            <field name="name"/>
+            <field name="active"/>
+            <field name="server_id"/>
+            <field name="model_id"/>
+          </group>
+
+          <group string="Right access">
+            <field name="auto_search"/>
+            <field name="auto_create"/>
+            <field name="auto_update"/>
+          </group>
+
+          <group>
+            <field name="sequence"/>
+            <field name="domain" colspan="4"/>
+            <field name="synchronize_date"/>
+          </group>
+          </group>
+          <notebook>
+            <page string="Field">
+              <group col="4">
+                <field name="model_name"/>
+                <field name="search_field"/>
+              </group>
+              <field name="field_ids">
+                <tree string="Fields" editable="top">
+                  <field name="field_id" domain="[('model_id', '=', parent.model_id)]"/>
+                  <field name="name"/>
+                  <field name="remote_type"/>
+                  <button name="button_unsynchronize" string="Do not synchronize" type="object" icon="fa-chain-broken text-danger"/>
+                </tree>
+              </field>
+            </page>
+            <page string="avoid">
+              <button name="update_field" string="initialyse" type="object" class="oe_highlight"/>
+              <button name="update_remote_field" string="Update remote" type="object" class="oe_highlight"/>
+              <separator string="All Fields"/>
+              <field name="avoid_ids">
+                <tree string="Fields" editable="top">
+                  <field name="field_id" domain="[('model_id', '=', parent.model_id)]"/>
+                  <field name="name"/>
+                  <field name="check_remote"/>
+                  <field name="remote_type"/>
+                  <field name="synchronize"/>
+                  <button name="button_synchronize" string="Synchronize" type="object" icon="fa-chain text-success"/>
+                </tree>
+              </field>
+            </page>
+
+            <page string="Notes">
+          <group>
+      <button name="get_default_value" string="Default values" type="object"/>
+            <field name="default_value"/>
+         </group>
+            <field name="note"/>
+
+            </page>
+            <page string="depends">
+          <button name="check_childs" string="check childs" type="object"/>
+          <separator string="Childs object"/>
+                <field name="child_ids"/>
+            </page>
+            <page string="mapping">
+
+              <button name="load_remote_record" string="Load 1 record" type="object" class="oe_highlight" context="{'limit': 1}"/> 
+              <button name="load_remote_record" string="10 records" type="object" class="oe_highlight" context="{'limit': 10}"/> 
+              <button name="load_remote_record" string="100 records" type="object" class="oe_highlight" context="{'limit': 100}"/> 
+              <button name="load_remote_record" string="all records" type="object" class="oe_highlight" context="{'limit': -1}"/>
+              <field name="sync_limit"/>
+
+              <separator string="Mapping id"/>
+              <field name="line_id">
+                <tree string="Fields" editable="top" decoration-danger="local_id == 0">
+                  <field name="description"/>
+                  <field name="remote_id"/>
+                  <field name="local_id"/>
+                  <field name="resource_ref" widget="reference"/>
+                </tree>
+              </field>
+              <button name="unlink_mapping" string="Reset mapping" type="object"/>
+            </page>
+          </notebook>
+        </sheet>
+      </form>
+    </field>
+  </record>
+  <record id="base_synchro_obj_tree" model="ir.ui.view">
+    <field name="name">synchro.obj.tree</field>
+    <field name="model">synchro.obj</field>
+    <field name="arch" type="xml">
+      <tree string="Synchronized Objects" decoration-danger="state == 'draft'" decoration-muted="state == 'cancel'">
+        <field name="sequence" widget="handle"/>
+        <field name="name"/>
+        <field name="model_id"/>
+        <field name="server_id"/>
+        <field name="auto_search"/>
+        <field name="auto_create"/>
+        <field name="auto_update"/>
+
+        <field name="synchronize_date"/>
+        <field name="state"/>
+      </tree>
+    </field>
+  </record>
+  <record id="ir_filters_regclass_tree" model="ir.ui.view">
+    <field name="name">synchro.obj.line.form</field>
+    <field name="model">synchro.obj</field>
+    <field name="arch" type="xml">
+      <search string="Synchronized objects">
+        <field name="model_id"/>
+        <field name="synchronize_date"/>
+        <group string="Group By">
+          <filter string="Object to synchronize" name="grp_model" context="{'group_by':'model_id'}"/>
+          <filter string="Latest synchronization" name="grp_sync_date" context="{'group_by':'synchronize_date'}"/>
+        </group>
+      </search>
+    </field>
+  </record>
+  <record id="actions_regclass_tree" model="ir.actions.act_window">
+    <field name="name">Filters</field>
+    <field name="type">ir.actions.act_window</field>
+    <field name="res_model">synchro.obj</field>
+    <field name="view_id" ref="base_synchro_obj_tree"/>
+    <field name="search_view_id" ref="ir_filters_regclass_tree"/>
+  </record>
+  <record id="action_base_synchro_obj_tree" model="ir.actions.act_window">
+    <field name="name">Objects to be synchronized</field>
+    <field name="type">ir.actions.act_window</field>
+    <field name="res_model">synchro.obj</field>
+    <field name="binding_view_types">form</field>
+  </record>
+
+  <menuitem action="action_base_synchro_obj_line_tree" id="menu_action_base_synchro_obj_line_tree" parent="db_synchro.synchro_history"/>
+  <menuitem action="action_base_synchro_obj_tree" id="menu_action_base_synchro_obj_tree" parent="db_synchro.synchro_configuration"/>
+
+</odoo>

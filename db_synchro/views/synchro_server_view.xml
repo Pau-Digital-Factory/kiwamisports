@@ -1,0 +1,66 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+  <record id="view_synchro_server_tree" model="ir.ui.view">
+    <field name="name">synchro.server.tree</field>
+    <field name="model">synchro.server</field>
+    <field name="arch" type="xml">
+      <tree string="Synchronized Server">
+        <field name="name"/>
+        <field name="server_url"/>
+        <field name="server_protocol"/>
+        <field name="server_port"/>
+        <field name="server_db"/>
+        <field name="server_version"/>
+      </tree>
+    </field>
+  </record>
+  <record id="view_synchro_server_form" model="ir.ui.view">
+    <field name="name">synchro.server.form</field>
+    <field name="model">synchro.server</field>
+    <field name="arch" type="xml">
+      <form string="Synchronized server">
+        <header>
+
+        </header>
+        <sheet>
+          <h1>
+            <field name="name"/>
+          </h1>
+          <notebook>
+              <page string="Connection">
+          <group>
+            <field name="server_url"/>
+            <field name="server_protocol"/>
+            <field name="server_port"/>
+          </group>
+          <group>
+            <field name="login"/>
+            <field name="password" password="True"/>
+            <field name="server_db"/>
+            <field name="server_version"/>
+          </group>
+              </page>
+              <page string="migration">
+
+          <group string="Initialisation" name="initialisation">
+          <button name="migrate_base" string="Migrate Base" type="object"/>
+
+          </group>
+
+
+          </page>
+
+          </notebook>
+
+        </sheet>
+      </form>
+    </field>
+  </record>
+  <record id="action_synchro_server_tree" model="ir.actions.act_window">
+    <field name="name">Servers to be synchronized</field>
+    <field name="type">ir.actions.act_window</field>
+    <field name="res_model">synchro.server</field>
+    <field name="binding_view_types">form</field>
+  </record>
+  <menuitem id="menu_synchro_server_tree"  action="action_synchro_server_tree" parent="db_synchro.synchro_configuration" sequence="10"/>
+</odoo>
