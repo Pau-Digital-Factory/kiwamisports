@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  
+  <template id="add_ref_kiwami_custom" inherit_id="account.report_invoice_document">
+        <xpath expr="//th[@name='th_description']" position="before">
+          <th name="th_default_code" class="text-left"><span>Style</span></th>
+           
+        </xpath>
+     <xpath expr="//th[@name='th_description']" position="after">
+          <th name="th_sh_codee" class="text-left"><span>HS Code</span></th>
+           
+        </xpath>
+    
+      <xpath expr="//td[@name='account_invoice_line_name']" position="before">
+          <td name="default_code"><span t-field="line.product_id.default_code"/></td>
+           
+        </xpath>
+            
+             <xpath expr="//td[@name='account_invoice_line_name']" position="after">
+          <td name="hs_code"><span t-field="line.product_id.hs_code"/></td>
+           
+        </xpath>
+            
+         
+       </template>
+  
+  
+<!--    <template id="add_ref_kiwami_custom_footer" inherit_id="web.external_layout_standard">
+     <xpath expr="//ul[@class='list-inline mb4']" position="after">
+           <p style="font-size:9pt"  t-if="o.partner_shipping_id.country_id.code not in ['FR']"> The exporter of the products covered by this document (customs authorization No ...(1)) declares that,
+except where otherwise clearly indicated, these products are of ... (2) preferential origin. 
+ </p>
+       
+        </xpath>
+  </template> -->
+
+  <record id="view_template_property_form_add_type" model="ir.ui.view">
+            <field name="name">product.template.stock.property.form.inherit.type_add</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="product.product_template_form_view"/>
+            <field name="arch" type="xml">
+                <xpath expr="//group[@name='group_general']" position="inside">
+<field name="type_product" string="Type Personnalisé"/>
+                </xpath>
+ 
+            </field>
+        </record>
+  
+</odoo>
