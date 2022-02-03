@@ -178,6 +178,19 @@ class Shopifysaleorderline(models.Model):
             product = self.product_id.with_context(lang=self.partner_id.lang)
         else:
             product = self.product_id
+               
+        if self.partner_id.country_id.code == "FR":
+          
+          values2 = []
+          if product.partner_ref:
+            values2.append(product.partner_ref)
+          if self.journal_id.type == 'sale':
+            if product.description_sale:
+                values2.append(product.description_sale)
+          elif self.journal_id.type == 'purchase':
+            if product.description_purchase:
+                values2.append(product.description_purchase)
+          return '\n'.join(values2)
         color = ""
         taille = ""
         if self.product_id.product_template_variant_value_ids:
