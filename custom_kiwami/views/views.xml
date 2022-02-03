@@ -7,7 +7,7 @@
            
         </xpath>
      <xpath expr="//th[@name='th_description']" position="after">
-          <th name="th_sh_codee" class="text-left"><span>HS Code</span></th>
+          <th t-if="o.partner_id.country_id.code != 'FR'" name="th_sh_codee" class="text-left"><span>HS Code</span></th>
            
         </xpath>
     
@@ -17,10 +17,9 @@
         </xpath>
             
              <xpath expr="//td[@name='account_invoice_line_name']" position="after">
-          <td name="hs_code"><span t-field="line.product_id.hs_code"/></td>
+          <td t-if="o.partner_id.country_id.code != 'FR'" name="hs_code"><span t-field="line.product_id.hs_code"/></td>
            
         </xpath>
-            
          
        </template>
   
