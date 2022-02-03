@@ -77,11 +77,11 @@ class Shopifysale_order_line(models.Model):
            lieu = self.product_id.name +" \n \n Taille :"+taille+" QTY: "+str(self.product_uom_qty)+" \n \n"+type_perso +", Type : "+self.product_id.name + color +", made in France by Kiwami 9 rue ampere 64121 Montardon"
         else: 
           lieu = " "
-          if product.partner_ref:
-             values.append(product.partner_ref)
+          if self.product_id.partner_ref:
+             values.append(self.product_id.partner_ref)
         values.append(lieu)    
-        if product.description_sale: 
-                values.append(product.description_sale)
+        if self.product_id.description_sale: 
+                values.append(self.product_id.description_sale)
         self.name =  '\n'.join(values)
 
 
