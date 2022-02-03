@@ -55,7 +55,7 @@ class Shopifysale_order_line(models.Model):
        if not self.product_id:
              self.name = ''
        if self.order_id.partner_id.country_id.code == "FR":
-               self.name =  self.product_id.get_product_multiline_description_sale() + self._get_sale_order_line_multiline_description_variants()
+               self.name =  str(self.product_id.get_product_multiline_description_sale()) + str(self._get_sale_order_line_multiline_description_variants())
        else:
 
         color = ""
