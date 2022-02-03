@@ -167,7 +167,7 @@ class Shopifysaleorderline(models.Model):
         return '\n'.join(values)
 
      @api.onchange('partner_id')
-     def _onchange_quantity_desc(self):
+     def _onchange_partner_fr(self):
         self.ensure_one()
 
         if not self.product_id:
