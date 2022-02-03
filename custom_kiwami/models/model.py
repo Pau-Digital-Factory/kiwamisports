@@ -21,6 +21,8 @@ class Shopifysale_order_line(models.Model):
         
         if not self.product_id:
             return ''
+        if self.order_id.partner_id.country_id.code == "FR":
+               return product.get_product_multiline_description_sale() + self._get_sale_order_line_multiline_description_variants()
 
         color = ""
         taille = ""
