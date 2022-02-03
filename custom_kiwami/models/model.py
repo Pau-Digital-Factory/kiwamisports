@@ -89,17 +89,22 @@ class Shopifysale_order_line(models.Model):
 class ShopifyProductProducttemplate(models.Model):
      _inherit = "product.template"
      type_product = fields.Char()
-# class ShopifyProductProductliee(models.Model):
-#      _inherit = "product.product"
-     
-#      hs_code = fields.Char("Nomenclature douanière",help="Code normalisé pour l'expédition internationale et la déclaration de marchandises. Pour le moment, utilisé uniquement pour le fournisseur d’expédition FedEx.",compute="_get_code_sh")
-#      type_product = fields.Char()
-#      def _get_code_sh(self):
-#         for r in self: 
-#           r.hs_code= False
-#           code = self.env["shopify.product.product.ept"].search([("default_code","=", r.default_code)]) 
-#           if code :
-#                r.hs_code= code.hs_code
+
+class salelineremovereference2(models.Model):
+    _inherit = "product.product"
+    
+    def get_product_multiline_description_sale(self):
+        """ Compute a multiline description of this product, in the context of sales
+                (do not use for purchases or other display reasons that don't intend to use "description_sale").
+            It will often be used as the default description of a sale order line referencing this product.
+        """
+        name = ""
+        if self.description_sale:
+            name += self.description_sale
+        if not self.description_sale:
+            name += self.name
+
+        return name
                
 
 class Shopifysaleorderline(models.Model):
