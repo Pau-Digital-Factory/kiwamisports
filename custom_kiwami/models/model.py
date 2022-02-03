@@ -92,7 +92,16 @@ class ShopifyProductProducttemplate(models.Model):
 
 class salelineremovereference2(models.Model):
     _inherit = "product.product"
-    
+    @api.depends_context('partner_id')
+    def _compute_partner_ref(self):
+        for product in self:
+            for supplier_info in product.seller_ids:
+                if supplier_info.name.id == product._context.get('partner_id'):
+                    product_name = supplier_info.product_name or product.name
+                    product.partner_ref = '%s%s' % (product.code and '[%s] ' % product.code or '', product_name)
+                    break
+            else:
+                product.partner_ref = product.display_name
     def get_product_multiline_description_sale(self):
         """ Compute a multiline description of this product, in the context of sales
                 (do not use for purchases or other display reasons that don't intend to use "description_sale").
