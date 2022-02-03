@@ -40,7 +40,7 @@ class Shopifysale_order_line(models.Model):
         else:
             type_perso = " "
         if self.product_id.product_template_variant_value_ids:
-           lieu = self.product_id.name +" \n \n Taille :"+taille+" QTY: "+str(self.product_uom_qty)+" \n \n"+type_perso +", Type : "+self.product_id.name + color +", made in France by Kiwami 9 rue ampere 64121 Montardon"
+           lieu = self.product_id.name +" \n \n Taille :"+taille+" QTY: "+str(self.product_uom_qty)+" \n \n Type : "+type_perso + color +", made in France by Kiwami 9 rue ampere 64121 Montardon"
         else: 
           lieu = " "
           if product.partner_ref:
@@ -74,7 +74,7 @@ class Shopifysale_order_line(models.Model):
         else:
             type_perso = " "
         if self.product_id.product_template_variant_value_ids:
-           lieu = self.product_id.name +" \n \n Taille :"+taille+" QTY: "+str(self.product_uom_qty)+" \n \n"+type_perso +", Type : "+self.product_id.name + color +", made in France by Kiwami 9 rue ampere 64121 Montardon"
+           lieu = self.product_id.name +" \n \n Taille :"+taille+" QTY: "+str(self.product_uom_qty)+" \n \n Type : "+type_perso + color +", made in France by Kiwami 9 rue ampere 64121 Montardon"
         else: 
           lieu = " "
           if self.product_id.partner_ref:
@@ -156,7 +156,7 @@ class Shopifysaleorderline(models.Model):
         else:
             type_perso = " "
         if self.product_id.product_template_variant_value_ids:
-           lieu = self.product_id.name +" \n \n Taille :"+taille+" QTY: "+str(self.quantity)+" \n \n"+type_perso +", Type : "+self.product_id.name + color +", made in France by Kiwami 9 rue ampere 64121 Montardon"
+           lieu = self.product_id.name +" \n \n Taille :"+taille+" QTY: "+str(self.quantity)+" \n \n Type : "+type_perso + color +", made in France by Kiwami 9 rue ampere 64121 Montardon"
         else: 
           lieu = " "
           if product.partner_ref:
@@ -208,7 +208,7 @@ class Shopifysaleorderline(models.Model):
 
         values = []
         if self.product_id.product_template_variant_value_ids:
-           lieu = self.product_id.name +" \n \n Taille :"+taille+" QTY: "+str(self.quantity)+" \n \n"+str(self.product_id.type_product) +", Type : "+self.product_id.name+", Color : "+ color +", made in France by Kiwami 9 rue ampere 64121 Montardon"
+           lieu = self.product_id.name +" \n \n Taille :"+taille+" QTY: "+str(self.quantity)+" \n \n  Type : "+str(self.product_id.type_product)+", Color : "+ color +", made in France by Kiwami 9 rue ampere 64121 Montardon"
         else: 
           lieu = " "
           if product.partner_ref:
@@ -259,7 +259,7 @@ class Shopifysaleorderline(models.Model):
 
         values = []
         if self.product_id.product_template_variant_value_ids:
-           lieu = self.product_id.name +" \n \n Taille :"+taille+" QTY: "+str(self.quantity)+" \n \n"+str(self.product_id.type_product) +", Type : "+self.product_id.name+", Color : "+ color +", made in France by Kiwami 9 rue ampere 64121 Montardon"
+           lieu = self.product_id.name +" \n \n Taille :"+taille+" QTY: "+str(self.quantity)+" \n \n Type : "+str(self.product_id.type_product)+", Color : "+ color +", made in France by Kiwami 9 rue ampere 64121 Montardon"
         else: 
           lieu = " "
           if product.partner_ref:
