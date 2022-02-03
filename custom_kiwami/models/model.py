@@ -90,8 +90,9 @@ class ShopifyProductProducttemplate(models.Model):
      _inherit = "product.template"
      type_product = fields.Char()
 
-class salelineremovereference2(models.Model):
+class Salelineremovereferencefrom_invoice(models.Model):
     _inherit = "product.product"
+
     @api.depends_context('partner_id')
     def _compute_partner_ref(self):
         for product in self:
