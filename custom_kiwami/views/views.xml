@@ -3,7 +3,8 @@
   
   <template id="add_ref_kiwami_custom" inherit_id="account.report_invoice_document">
         <xpath expr="//th[@name='th_description']" position="before">
-          <th name="th_default_code" class="text-left"><span>Style</span></th>
+          <th  t-if="o.partner_id.country_id.code != 'FR'" name="th_default_code" class="text-left"><span>Style</span></th>
+           <th  t-if="o.partner_id.country_id.code == 'FR'" name="th_default_code" class="text-left"><span>Référence</span></th>
            
         </xpath>
      <xpath expr="//th[@name='th_description']" position="after">
