@@ -166,7 +166,57 @@ class Shopifysaleorderline(models.Model):
                 values.append(product.description_purchase)
         return '\n'.join(values)
 
+     @api.onchange('partner_id')
+     def _onchange_quantity_desc(self):
+        self.ensure_one()
 
+        if not self.product_id:
+            return ''
+
+        if self.partner_id.lang:
+            product = self.product_id.with_context(lang=self.partner_id.lang)
+        else:
+            product = self.product_id
+               
+        if self.partner_id.country_id.code == "FR":
+          
+          values2 = []
+          if product.partner_ref:
+            values2.append(product.partner_ref)
+          if self.journal_id.type == 'sale':
+            if product.description_sale:
+                values2.append(product.description_sale)
+          elif self.journal_id.type == 'purchase':
+            if product.description_purchase:
+                values2.append(product.description_purchase)
+          return '\n'.join(values2)
+        color = ""
+        taille = ""
+        if self.product_id.product_template_variant_value_ids:
+         for m in self.product_id.product_template_variant_value_ids:
+            phrase = m.attribute_id.name
+            if m.attribute_id.id in [2,3,4]:
+                color = m.name
+            else:
+                taille = m.name
+
+        values = []
+        if self.product_id.product_template_variant_value_ids:
+           lieu = self.product_id.name +" \n \n Taille :"+taille+" QTY: "+str(self.quantity)+" \n \n"+str(self.product_id.type_product) +", Type : "+self.product_id.name+", Color : "+ color +", made in France by Kiwami 9 rue ampere 64121 Montardon"
+        else: 
+          lieu = " "
+          if product.partner_ref:
+             values.append(product.partner_ref)
+        values.append(lieu)    
+        if self.journal_id.type == 'sale':
+            if product.description_sale:
+                
+                values.append(product.description_sale)
+                
+        elif self.journal_id.type == 'purchase':
+            if product.description_purchase:
+                values.append(product.description_purchase)
+        self.name =  '\n'.join(values)
      @api.onchange('quantity')
      def _onchange_quantity_desc(self):
         self.ensure_one()
