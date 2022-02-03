@@ -131,8 +131,8 @@ class Shopifysaleorderline(models.Model):
         if self.partner_id.country_id.code == "FR":
           
           values2 = []
-          if product.partner_ref:
-            values2.append(product.partner_ref)
+          if product.name:
+            values2.append(product.name)
           if self.journal_id.type == 'sale':
             if product.description_sale:
                 values2.append(product.description_sale)
