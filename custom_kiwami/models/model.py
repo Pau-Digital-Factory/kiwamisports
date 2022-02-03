@@ -50,8 +50,8 @@ class Shopifysale_order_line(models.Model):
                 values.append(product.description_sale)
         return '\n'.join(values)
 
-      @api.onchange('product_uom_qty')
-      def _onchange_quantity_desc_for_export(self):
+     @api.onchange('product_uom_qty')
+     def _onchange_quantity_desc_for_export(self):
        if not self.product_id:
              self.name = ''
        if self.order_id.partner_id.country_id.code == "FR":
