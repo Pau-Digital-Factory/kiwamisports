@@ -174,14 +174,18 @@ class Salelineremovereferencefrom_invoice(models.Model):
         """ Compute a multiline description of this product, in the context of sales
                 (do not use for purchases or other display reasons that don't intend to use "description_sale").
             It will often be used as the default description of a sale order line referencing this product.
-        """
-        name = ""
+        """  
+        name = self.display_name
         if self.description_sale:
-            name += self.description_sale
-        if not self.description_sale:
-            name += str(self.name)
-
+            name += '\n' + self.description_sale
         return name
+#         name = ""
+#         if self.description_sale:
+#             name += self.description_sale
+#         if not self.description_sale:
+#             name += str(self.name)
+
+#         return name
                
 
 class Shopifysaleorderline(models.Model):
