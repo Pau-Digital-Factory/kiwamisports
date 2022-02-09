@@ -179,7 +179,7 @@ class Salelineremovereferencefrom_invoice(models.Model):
         if self.description_sale:
             name += self.description_sale
         if not self.description_sale:
-            name += self.name
+            name += str(self.name)
 
         return name
                
