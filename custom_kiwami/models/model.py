@@ -314,7 +314,7 @@ class Shopifysaleorderline(models.Model):
         self.ensure_one()
 
         if not self.product_id:
-            return ''
+            self.name =  ""
 
         if self.partner_id.lang:
             product = self.product_id.with_context(lang=self.partner_id.lang)
@@ -332,7 +332,8 @@ class Shopifysaleorderline(models.Model):
           elif self.journal_id.type == 'purchase':
             if product.description_purchase:
                 values2.append(product.description_purchase)
-          return '\n'.join(values2)
+          
+          self.name =  '\n'.join(values2)
         color = ""
         taille = ""
         if self.product_id.product_template_variant_value_ids:
