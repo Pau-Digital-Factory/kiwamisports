@@ -311,17 +311,17 @@ class Shopifysaleorderline(models.Model):
         self.name =  '\n'.join(values)
      @api.onchange('quantity')
      def _onchange_quantity_desc(self):
-        self.ensure_one()
+       self.ensure_one()
 
-        if not self.product_id:
+       if not self.product_id:
             self.name =  ""
 
-        if self.partner_id.lang:
+       if self.partner_id.lang:
             product = self.product_id.with_context(lang=self.partner_id.lang)
-        else:
+       else:
             product = self.product_id
                
-        if self.partner_id.country_id.code == "FR":
+       if self.partner_id.country_id.code == "FR":
           
           values2 = []
           if product.partner_ref:
@@ -334,6 +334,7 @@ class Shopifysaleorderline(models.Model):
                 values2.append(product.description_purchase)
           
           self.name =  '\n'.join(values2)
+       else: 
         color = ""
         taille = ""
         if self.product_id.product_template_variant_value_ids:
