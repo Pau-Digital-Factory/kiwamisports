@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <data>
-        <xpath expr="//tree[1]/field[@name='invoice_partner_display_name'][2]" position="after">
-            <field name="fiscal_position_id" optional="show"/>
-        </xpath>
-    </data>
+    <record id="invoice_fiscal_position" model="ir.ui.view">
+        <field name="name">Position Fiscale</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_invoice_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//tree[1]/field[@name='invoice_partner_display_name'][2]" position="after">
+                <field name="fiscal_position_id" string="Position fiscale"  readonly='1'/>
+            </xpath>
+        </field>
+    </record>
 </odoo>
