@@ -11,5 +11,6 @@
     ],
     "data": [
         "views/account_move_views_custom.xml",
+        "views/account_invoice_filter_custom.xml",
     ],
 }
