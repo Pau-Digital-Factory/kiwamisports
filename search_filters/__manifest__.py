@@ -5,7 +5,7 @@
     "version": "1.0",
     "category": "Accounting",
     "summary": "Custom invoices search filters",
-    "author": "PauDigitalFactory",
+    "author": "LonguetMax",
     "depends": [
         "account",
     ],
