@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <xpath expr="//tree[1]/field[@name='invoice_partner_display_name'][2]" position="after">
+            <field name="fiscal_position_id" optional="show"/>
+        </xpath>
+    </data>
+</odoo>
