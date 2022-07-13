@@ -24,17 +24,7 @@ class account_move(models.Model):
         for record in self:
             record.partner_country_code = record.partner_id.country_id.code
 
-    
+    # Get the category of the partner (the tags)
     def _compute_category_id(self):
         for record in self:
             record.category_id = record.partner_id.category_id
-
-
-
-#     def _compute_partner_tags(self):
-#         for record in self:
-#             partner_tags = context['partner_categories'].ids
-
-
-
-# from contextlib import contextmanager
