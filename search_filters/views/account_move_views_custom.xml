@@ -10,23 +10,7 @@
                 <field name="partner_country_name" string="Pays (entier)" readonly='1' optional="show"/>
                 <field name="partner_country_code" string="Pays" readonly='1' optional="hide"/>
                 <field name="category_id" string="Etiquette" optional="show" widget="many2many_tags" options="{'color_field': 'color'}"/>
-                
-            </xpath>
-
-
-
-        </field>
-    </record>
-<!--
-    <record id="invoice_partner_tags" model="ir.ui.view">
-        <field name="field_name">Partner Tags</field>
-        <field name="model">account.move</field>
-        <field name="inherit_id" ref="account.view_invoice_tree"/>
-        <field name="arch" type="xml">
-            <xpath expr="//tree[1]/field[@name='invoice_date'][2]" position="after">
-                <field name="res_partner.category_id" optional="show" widget="many2many_tags" options="{'color_field': 'color'}"/>
             </xpath>
         </field>
     </record>
--->
 </odoo>
