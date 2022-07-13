@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="invoice_fiscal_position" model="ir.ui.view">
+        <field name="name">Position Fiscale</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_invoice_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//tree[1]/field[@name='invoice_partner_display_name'][2]" position="after">
+                <field name="fiscal_position_id" string="Position fiscale" readonly='1' optional="show"/>
+                <field name="partner_country_name" string="Pays (entier)" readonly='1' optional="show"/>
+                <field name="partner_country_code" string="Pays" readonly='1' optional="hide"/>
+                <field name="category_id" string="Etiquette" optional="show" widget="many2many_tags" options="{'color_field': 'color'}"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
