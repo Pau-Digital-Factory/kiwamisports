@@ -43,8 +43,6 @@ class AccountInvoiceReportv(models.Model):
     tagg = fields.Char('Tags', readonly=True)
     
 
-    def _query(self, with_clause='', fields={}, groupby='', from_clause=''):
-              fields['tagg'] = ", s.tagg as tagg" 
-              groupby += ', s.tagg '
-              return super(AccountInvoiceReportv, self)._query(with_clause, fields, groupby, from_clause)
+    def _select(self):
+        return super(AccountInvoiceReportv, self)._select() + ", move.tagg as tagg"
 
