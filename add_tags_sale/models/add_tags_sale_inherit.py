@@ -9,7 +9,7 @@ class Saleorder(models.Model):
     @api.depends('partner_id')
     def _compute_tagg(self):
         for record in self:
-            if reocrd.partner_id.category_id[0]:
+            if record.partner_id.category_id[0]:
                 record.tagg = reocrd.partner_id.category_id[0].name
             else:
                 record.tagg = False
