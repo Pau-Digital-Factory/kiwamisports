@@ -9,7 +9,8 @@ class SaleReport(models.Model):
                                     column2='category_id', string='Tags', readonly=True)
 
     def _query(self, with_clause='', fields={}, groupby='', from_clause=''):
-              fields['category_id'] = ", s.category_id as category_id" groupby += ', s.category_id '
+              fields['category_id'] = ", s.category_id as category_id" 
+              groupby += ', s.category_id '
               return super(ClassName, self)._query(with_clause, fields, groupby, from_clause)
 
 
