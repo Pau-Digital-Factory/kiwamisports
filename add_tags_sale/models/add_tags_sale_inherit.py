@@ -10,7 +10,7 @@ class Saleorder(models.Model):
     def _compute_tagg(self):
         for record in self:
             if record.partner_id.category_id[0]:
-                record.tagg = reocrd.partner_id.category_id[0].name
+                record.tagg = record.partner_id.category_id[0].name
             else:
                 record.tagg = False
     
