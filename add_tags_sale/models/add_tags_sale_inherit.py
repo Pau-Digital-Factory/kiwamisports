@@ -14,7 +14,7 @@ class Saleorder(models.Model):
             else:
                 record.tagg = False
     
-class SaleReport(models.Model):
+class SaleReportv(models.Model):
     _inherit = "sale.report"
     tagg = fields.Char('Tags', readonly=True)
     
@@ -22,6 +22,6 @@ class SaleReport(models.Model):
     def _query(self, with_clause='', fields={}, groupby='', from_clause=''):
               fields['tagg'] = ", s.tagg as tagg" 
               groupby += ', s.tagg '
-              return super(ClassName, self)._query(with_clause, fields, groupby, from_clause)
+              return super(SaleReportv, self)._query(with_clause, fields, groupby, from_clause)
 
 
