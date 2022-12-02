@@ -6,7 +6,7 @@ class Saleorder(models.Model):
     _inherit = "sale.order"
     tagg = fields.Char('Tags', compute='_compute_tagg', store=True)
     
-    @api.depends('partner_id')
+    @api.depends('partner_id.category_id')
     def _compute_tagg(self):
         for record in self:
             if record.partner_id.category_id:
