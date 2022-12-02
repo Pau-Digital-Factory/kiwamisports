@@ -3,7 +3,7 @@ from odoo import api, fields, models
 
 
 class Saleorder(models.Model):
-    _name = "sale.order"
+    _inherit = "sale.order"
     tagg = fields.Char('Tags', compute='_compute_tagg')
     
     @api.depends('partner_id')
@@ -15,7 +15,7 @@ class Saleorder(models.Model):
                 record.tagg = False
     
 class SaleReport(models.Model):
-    _name = "sale.report"
+    _inherit = "sale.report"
     tagg = fields.Char('Tags', readonly=True)
     
 
