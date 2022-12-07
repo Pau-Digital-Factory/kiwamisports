@@ -4,7 +4,7 @@ from odoo import api, fields, models
 
 class Saleorder(models.Model):
     _inherit = "sale.order"
-    tagg = fields.Char('Tags', compute='_compute_tagg', store=True)
+    tagg = fields.Char('étiquette Client', compute='_compute_tagg', store=True)
     
     @api.depends('partner_id.category_id')
     def _compute_tagg(self):
