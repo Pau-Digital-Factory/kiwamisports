@@ -4,7 +4,7 @@ from odoo import api, fields, models
 
 class Saleorder(models.Model):
     _inherit = "sale.order"
-    tagg = fields.Char('champ', compute='_compute_tagg', store=True)
+    tagg = fields.Char('Etiquette', compute='_compute_tagg', store=True)
     category_id = fields.Many2many('res.partner.category', string='Etiquette', compute='_compute_category_id')
     
     def _compute_category_id(self):
@@ -32,7 +32,7 @@ class SaleReportv(models.Model):
 
 class AccountMove(models.Model):
     _inherit = "account.move"
-    tagg = fields.Char('champ', compute='_compute_tagg', store=True)
+    tagg = fields.Char('Etiquette', compute='_compute_tagg', store=True)
     
     @api.depends('partner_id.category_id')
     def _compute_tagg(self):
