@@ -4,7 +4,12 @@ from odoo import api, fields, models
 
 class Saleorder(models.Model):
     _inherit = "sale.order"
-    tagg = fields.Char('étiquette Client', compute='_compute_tagg', store=True)
+    tagg = fields.Char('champ', compute='_compute_tagg', store=True)
+    category_id = fields.Many2many('res.partner.category', string='Etiquette', compute='_compute_category_id')
+    
+    def _compute_category_id(self):
+        for record in self:
+            record.category_id = record.partner_id.category_id
     
     @api.depends('partner_id.category_id')
     def _compute_tagg(self):
@@ -16,7 +21,7 @@ class Saleorder(models.Model):
     
 class SaleReportv(models.Model):
     _inherit = "sale.report"
-    tagg = fields.Char('Tags', readonly=True)
+    tagg = fields.Char('Etiquette', readonly=True)
     
 
     def _query(self, with_clause='', fields={}, groupby='', from_clause=''):
@@ -27,7 +32,7 @@ class SaleReportv(models.Model):
 
 class AccountMove(models.Model):
     _inherit = "account.move"
-    tagg = fields.Char('Tags', compute='_compute_tagg', store=True)
+    tagg = fields.Char('champ', compute='_compute_tagg', store=True)
     
     @api.depends('partner_id.category_id')
     def _compute_tagg(self):
@@ -40,7 +45,7 @@ class AccountMove(models.Model):
 
 class AccountInvoiceReportv(models.Model):
     _inherit = "account.invoice.report"
-    tagg = fields.Char('Tags', readonly=True)
+    tagg = fields.Char('Etiquette', readonly=True)
     
 
     def _select(self):
