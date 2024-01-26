@@ -15,7 +15,8 @@ class ShopifyWebhookEpt(models.Model):
 
     state = fields.Selection([('active', 'Active'), ('inactive', 'Inactive')], default='inactive')
     webhook_name = fields.Char(string='Name')
-    webhook_action = fields.Selection([('products/update', 'When Product is Created/Updated'),
+    webhook_action = fields.Selection([('products/create', 'When Product is Created'),
+                                       ('products/update', 'When Product is Updated'),
                                        ('products/delete', 'When Product is Delete'),
                                        ('orders/updated', 'When Order is Created/Updated'),
                                        ('customers/create', 'When Customer is Created'),
@@ -103,6 +104,8 @@ class ShopifyWebhookEpt(models.Model):
         webhook_action = self.webhook_action
         if webhook_action == 'products/update':
             route = "/shopify_odoo_webhook_for_product_update"
+        elif webhook_action == 'products/create':
+            route = "/shopify_odoo_webhook_for_product_create"
         elif webhook_action == 'products/delete':
             route = "/shopify_odoo_webhook_for_product_delete"
         elif webhook_action == 'orders/updated':

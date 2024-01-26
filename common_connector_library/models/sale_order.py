@@ -106,9 +106,10 @@ class SaleOrder(models.Model):
             origin_country_id = origin_country_id or (warehouse.company_id.partner_id.country_id
                                                       and warehouse.company_id.partner_id.country_id.id or False)
             is_amz_customer = getattr(self.partner_id, 'is_amz_customer', False)
-
+            is_bol_customer = getattr(self.partner_id, 'is_bol_customer', False)
             fiscal_position = self.env['account.fiscal.position'].with_context(
-                {'origin_country_ept': origin_country_id, 'is_amazon_fpos': is_amz_customer}).with_company(
+                origin_country_ept=origin_country_id, is_amazon_fpos=is_amz_customer,
+                is_bol_fpos=is_bol_customer).with_company(
                 warehouse.company_id.id).get_fiscal_position(self.partner_id.id, self.partner_shipping_id.id)
 
         return fiscal_position
@@ -137,7 +138,8 @@ class SaleOrder(models.Model):
         """
         invoice_vals = super(SaleOrder, self)._prepare_invoice()
         if self.auto_workflow_process_id:
-            invoice_vals.update({'journal_id': self.auto_workflow_process_id.sale_journal_id.id})
+            if self.auto_workflow_process_id.sale_journal_id:
+                invoice_vals.update({'journal_id': self.auto_workflow_process_id.sale_journal_id.id})
             if self.auto_workflow_process_id.invoice_date_is_order_date:
                 invoice_vals.update({"date": self.date_order.date(), "invoice_date": fields.Date.context_today(self)})
         return invoice_vals
@@ -174,7 +176,7 @@ class SaleOrder(models.Model):
 
             order_lines = order.mapped('order_line').filtered(lambda l: l.product_id.invoice_policy == 'order')
             if not order_lines.filtered(lambda l: l.product_id.type == 'product') and len(
-                order.order_line) != len(order_lines.filtered(lambda l: l.product_id.type in ['service', 'consu'])):
+                    order.order_line) != len(order_lines.filtered(lambda l: l.product_id.type in ['service', 'consu'])):
                 continue
 
             order.validate_and_paid_invoices_ept(work_flow_process_record)
@@ -206,6 +208,9 @@ class SaleOrder(models.Model):
                         })
                         _logger.info(message)
                     return True
+            ctx = self._context.copy()
+            if work_flow_process_record.sale_journal_id:
+                ctx.update({'journal_ept': work_flow_process_record.sale_journal_id})
             invoices = self._create_invoices()
             self.validate_invoice_ept(invoices)
             if work_flow_process_record.register_payment:
@@ -334,17 +339,35 @@ class SaleOrder(models.Model):
             @author: Haresh Mori @Emipro Technologies Pvt. Ltd on date 21 September 2021 .
             Task_id: 178058
         """
+        location_id = vendor_location.id if vendor_location else self.warehouse_id.lot_stock_id.id
+        if order_line.warehouse_id_ept:
+            location_id = order_line.warehouse_id_ept.lot_stock_id.id
         vals = {
             'name': _('Auto processed move : %s') % product.display_name,
             'company_id': self.company_id.id,
             'product_id': product.id if product else False,
             'product_uom_qty': product_qty,
             'product_uom': product_uom.id if product_uom else False,
-            'location_id': vendor_location.id if vendor_location else self.warehouse_id.lot_stock_id.id,
+            'location_id': location_id,
             'location_dest_id': customers_location.id,
             'state': 'confirmed',
             'sale_line_id': order_line.id
         }
         if bom_line:
             vals.update({'bom_line_id': bom_line[0].id})
+        return vals
+
+    def prepare_order_note_with_customer_note(self, vals):
+        """
+        This method use for concate customer note and odoo default set note.
+        :param vals:
+        :return: vals
+        @author: Nilam Kubavat on Date 03-July-2023 for Task_id:233459
+        """
+        note_value = vals.get('note', '') if vals.get('note', False) else ''  # Get the current note value, default to an empty string if it's None
+        invoice_terms = self.env.company.invoice_terms or ''  # Get invoice terms, default to an empty string if it's None
+        if note_value and invoice_terms:  # Only add a space if both values are non-empty
+            vals['note'] = f'{note_value} {invoice_terms}'.strip()
+        else:
+            vals['note'] = (note_value + invoice_terms).strip()  # Handle either note_value or invoice_terms being empty
         return vals

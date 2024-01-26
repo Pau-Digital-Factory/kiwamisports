@@ -51,6 +51,18 @@
                         <field name="notify_by_email"/>
                     </group>
                 </group>
+                <group>
+                    <field name="payment_ids" nolabel="1" widget="one2many"
+                           invisible="context.get('display_refund_from', True)">
+                        <tree string="Refund multi payment" editable="top" create="0" delete="0">
+                            <field name="payment_gateway_id" readonly="1"/>
+                            <field name="amount" readonly="1"/>
+                            <field name="remaining_refund_amount" readonly="1"/>
+                            <field name="refund_amount"/>
+                            <field name="is_want_to_refund"/>
+                        </tree>
+                    </field>
+                </group>
                 <footer>
                     <button name="refund_in_shopify" string="Refund In Shopify"
                             type="object" class="oe_highlight"/>

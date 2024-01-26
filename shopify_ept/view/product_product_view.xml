@@ -94,8 +94,15 @@
                                            attrs="{'invisible': [('inventory_management', '=','Dont track Inventory')]}"/>
                                 </group>
                                 <group>
-                                    <field name="fix_stock_type"/>
-                                    <field name="fix_stock_value"/>
+                                    <field name="fix_stock_type"
+                                           attrs="{'invisible': [('fixed_stock_export', '=',True)]}"/>
+                                    <field name="fix_stock_value"
+                                           attrs="{'invisible': [('fixed_stock_export', '=',True)]}"/>
+                                </group>
+                                <group>
+                                    <field name="fixed_stock_export"/>
+                                    <field name="fixed_stock_export_value"
+                                           attrs="{'invisible': [('fixed_stock_export', '=',False)]}"/>
                                 </group>
                             </group>
                         </page>
@@ -137,8 +144,8 @@
     </record>
 
 
-    <menuitem id="menu_item_shopify_variants_ept" name="Variants"
+    <menuitem id="menu_item_shopify_variants_ept" name="Product Variants"
               parent="shopify_ept.menu_item_parent_shopify_products_ept"
-              sequence="3" action="action_shopify_product_product_ept"/>
+              sequence="2" action="action_shopify_product_product_ept"/>
 
 </odoo>

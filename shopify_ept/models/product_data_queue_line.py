@@ -48,15 +48,13 @@ class ShopifyProductDataQueueLineEpt(models.Model):
                 ORDER BY queue_line.create_date ASC"""
         self._cr.execute(query)
         product_data_queue_list = self._cr.fetchall()
-        if not product_data_queue_list:
-            return
+        if product_data_queue_list:
+            for result in product_data_queue_list:
+                if result[0] not in product_data_queue_ids:
+                    product_data_queue_ids.append(result[0])
 
-        for result in product_data_queue_list:
-            if result[0] not in product_data_queue_ids:
-                product_data_queue_ids.append(result[0])
-
-        queues = product_data_queue_obj.browse(product_data_queue_ids)
-        self.process_product_queue_and_post_message(queues)
+            queues = product_data_queue_obj.browse(product_data_queue_ids)
+            self.process_product_queue_and_post_message(queues)
         return
 
     def process_product_queue_and_post_message(self, queues):
@@ -107,32 +105,26 @@ class ShopifyProductDataQueueLineEpt(models.Model):
 
         if queue_id:
             shopify_instance = queue_id.shopify_instance_id
-            if not shopify_instance.active:
-                _logger.info("Instance %s is not active.", shopify_instance.name)
-                return True
-            if queue_id.common_log_book_id:
-                log_book_id = queue_id.common_log_book_id
-            else:
-                log_book_id = common_log_book_obj.shopify_create_common_log_book("import", shopify_instance, model_id)
+            if shopify_instance.active:
+                if queue_id.common_log_book_id:
+                    log_book_id = queue_id.common_log_book_id
+                else:
+                    log_book_id = common_log_book_obj.shopify_create_common_log_book("import", shopify_instance,
+                                                                                     model_id)
 
-            self.env.cr.execute(
-                """update shopify_product_data_queue_ept set is_process_queue = False where is_process_queue = True""")
-            self._cr.commit()
-            commit_count = 0
-            for product_queue_line in self:
-                commit_count += 1
-                if commit_count == 10:
+                self.env.cr.execute(
+                    """update shopify_product_data_queue_ept set is_process_queue = False where is_process_queue = True""")
+                self._cr.commit()
+                for product_queue_line in self:
+                    shopify_product_template_obj.shopify_sync_products(product_queue_line,
+                                                                       False,
+                                                                       shopify_instance,
+                                                                       log_book_id)
                     queue_id.is_process_queue = True
                     self._cr.commit()
-                    commit_count = 0
-                shopify_product_template_obj.shopify_sync_products(product_queue_line,
-                                                                   False,
-                                                                   shopify_instance,
-                                                                   log_book_id)
-                queue_id.is_process_queue = False
-            queue_id.common_log_book_id = log_book_id
-            if queue_id.common_log_book_id and not queue_id.common_log_book_id.log_lines:
-                queue_id.common_log_book_id.unlink()
+                queue_id.common_log_book_id = log_book_id
+                if queue_id.common_log_book_id and not queue_id.common_log_book_id.log_lines:
+                    queue_id.common_log_book_id.unlink()
         return True
 
     def replace_product_response(self):
@@ -142,18 +134,15 @@ class ShopifyProductDataQueueLineEpt(models.Model):
         @author: Haresh Mori @Emipro Technologies Pvt.Ltd on date 21/1/2020.
         """
         instance = self.shopify_instance_id
-        if not instance.active:
-            _logger.info("Instance %s is not active.", instance.name)
-            return True
-        instance.connect_in_shopify()
-        if not self.product_data_id:
-            return True
-        result = shopify.Product().find(self.product_data_id)
-        result = result.to_dict()
-        data = json.dumps(result)
-        self.write({"synced_product_data": data, "state": "draft"})
-        self._cr.commit()
-        self.process_product_queue_line_data()
+        if instance.active:
+            instance.connect_in_shopify()
+            if self.product_data_id:
+                result = shopify.Product().find(self.product_data_id)
+                result = result.to_dict()
+                data = json.dumps(result)
+                self.write({"synced_product_data": data, "state": "draft"})
+                self._cr.commit()
+                self.process_product_queue_line_data()
         return True
 
     def shopify_image_import(self):
@@ -177,8 +166,8 @@ class ShopifyProductDataQueueLineEpt(models.Model):
             if not shopify_template:
                 continue
             shopify_template.shopify_sync_product_images(template_data)
-            product_queue.write({'shopify_image_import_state': 'done'})
-
+            product_queue.write({'shopify_image_import_state': 'done', "synced_product_data": False})
+            self._cr.commit()
             if time.time() - start_time > image_import_cron_time - 60:
                 return True
 

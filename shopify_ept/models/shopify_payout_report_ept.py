@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 # See LICENSE file for full copyright and licensing details.
 import logging
+import time
 
 from datetime import datetime
 from odoo import models, fields, _
 from odoo.exceptions import UserError
 from .. import shopify
+from ..shopify.pyactiveresource.connection import ClientError
 
 _logger = logging.getLogger('Shopify Payout')
 
@@ -120,9 +122,10 @@ class ShopifyPaymentReportEpt(models.Model):
         """
         shopify_payout_report_line_obj = self.env['shopify.payout.report.line.ept']
 
-        transactions = shopify.Transactions().find(payout_id=self.payout_reference_id, limit=250)
-
-        for transaction in transactions:
+        transaction_all = shopify.Transactions().find(payout_id=self.payout_reference_id, limit=250)
+        if len(transaction_all) == 250:
+            transaction_all = self.shopify_list_all_transactions(transaction_all)
+        for transaction in transaction_all:
             transaction_data = transaction.to_dict()
             transaction_vals = self.prepare_transaction_vals(transaction_data, self.instance_id)
             shopify_payout_report_line_obj.create(transaction_vals)
@@ -140,6 +143,38 @@ class ShopifyPaymentReportEpt(models.Model):
         })
         _logger.info("Transaction lines are added for %s.", self.payout_reference_id)
         return True
+
+    def shopify_list_all_transactions(self, result):
+        """
+           This method used to call the page wise data import for payout report transactions from Shopify to Odoo.
+           @param : self, result
+           @author: Meera Sidapara @Emipro Technologies Pvt. Ltd on date 15/02/2022.
+       """
+        transactions_list = []
+        catch = ""
+        while result:
+            link = shopify.ShopifyResource.connection.response.headers.get(
+                "Link") if shopify.ShopifyResource.connection.response.headers.get(
+                "Link") else shopify.ShopifyResource.connection.response.headers.get("link")
+            if not link or not isinstance(link, str):
+                return transactions_list
+            page_info = ""
+            transactions_list += result
+            for page_link in link.split(","):
+                if page_link.find("next") > 0:
+                    page_info = page_link.split(";")[0].strip("<>").split("page_info=")[1]
+                    try:
+                        result = shopify.Transactions().find(page_info=page_info, limit=250)
+                    except ClientError as error:
+                        if hasattr(error, "response"):
+                            if error.response.code == 429 and error.response.msg == "Too Many Requests":
+                                time.sleep(int(float(error.response.headers.get('Retry-After', 5))))
+                                result = shopify.Transactions().find(page_info=page_info, limit=250)
+                    except Exception as error:
+                        raise UserError(error)
+            if catch == page_info:
+                break
+        return transactions_list
 
     def prepare_transaction_vals(self, data, instance):
         """
@@ -315,7 +350,7 @@ class ShopifyPaymentReportEpt(models.Model):
                     # We can not use shopify order reference here because it may create duplicate name,
                     # and name of journal entry should be unique per company. So here I have used transaction Id
                     bank_line_vals = {
-                        'name': transaction.transaction_id,
+                        # 'name': transaction.transaction_id,
                         'payment_ref': transaction.transaction_id,
                         'date': self.payout_date,
                         'amount': transaction.amount,
@@ -330,9 +365,6 @@ class ShopifyPaymentReportEpt(models.Model):
 
             partner = partner_obj._find_accounting_partner(order_id.partner_id)
             domain, invoice, log_line = self.check_for_invoice_refund(transaction)
-            # if not domain:
-            #     log_lines += log_line
-            #     continue
 
             if domain:
                 payment_reference = account_payment_obj.search(domain, limit=1)
@@ -362,9 +394,9 @@ class ShopifyPaymentReportEpt(models.Model):
                         reference += self.payout_reference_id
                 else:
                     if order_id.name:
-                        name = transaction.transaction_type + "_" + order_id.name + "/" + transaction.transaction_id
+                        name = transaction.transaction_type + "_" + transaction.transaction_id
                 bank_line_vals = {
-                    'name': name or reference,
+                    # 'name': name or reference,
                     'payment_ref': reference,
                     'date': self.payout_date,
                     'partner_id': partner and partner.id,
@@ -409,11 +441,10 @@ class ShopifyPaymentReportEpt(models.Model):
                                                         x.state == 'posted' and x.move_type == 'out_invoice' and
                                                         x.amount_total == transaction.amount)
             if not invoice_ids:
-                message = "Invoice is not created for order %s in odoo" % \
+                message = "Invoice amount is not matched for order %s in odoo" % \
                           (order_id.name or transaction.source_order_id)
                 log_line = common_log_line_obj.create({'message': message,
                                                        'shopify_payout_report_line_id': transaction.id})
-                # transaction.is_remaining_statement = True
                 return domain, invoice_ids, log_line
             domain += [('amount', '=', transaction.amount), ('payment_type', '=', 'inbound')]
         elif transaction.transaction_type in ['refund', 'payment_refund']:
@@ -421,11 +452,23 @@ class ShopifyPaymentReportEpt(models.Model):
                                                         x.state == 'posted' and x.move_type == 'out_refund' and
                                                         x.amount_total == -transaction.amount)
             if not invoice_ids:
-                message = "In Shopify Payout, there is a Refund, but Refund is not created for order %s in" \
+                shopify_instance = order_id.shopify_instance_id
+                shopify_instance.connect_in_shopify()
+                shopify_order = shopify.Order().find(order_id.shopify_order_id)
+                orders_data = shopify_order.to_dict()
+                shopify_order_status = orders_data.get("financial_status")
+                if shopify_order_status in ["refunded", "partially_refunded"] and orders_data.get("refunds"):
+                    created_by = ""
+                    order_id.create_shipped_order_refund(shopify_order_status, orders_data, order_id, created_by)
+                invoice_ids = order_id.invoice_ids.filtered(lambda x:
+                                                            x.state == 'posted' and x.move_type == 'out_refund' and
+                                                            x.amount_total == -transaction.amount)
+
+            if not invoice_ids:
+                message = "In Shopify Payout, there is a Refund, but Refund amount is not matched for order %s in" \
                           "odoo" % (order_id.name or transaction.source_order_id)
                 log_line = common_log_line_obj.create({'message': message,
                                                        'shopify_payout_report_line_id': transaction.id})
-                # transaction.is_remaining_statement = True
                 return domain, invoice_ids, log_line
             domain += [('amount', '=', -transaction.amount), ('payment_type', '=', 'outbound')]
 
@@ -515,7 +558,29 @@ class ShopifyPaymentReportEpt(models.Model):
         @param statement_line: Record of bank statement line.
         @author: Maulik Barad on Date 07-Dec-2020.
         """
+        shopify_payout_report_line_obj = self.env['shopify.payout.report.line.ept']
+        sale_order_obj = self.env['sale.order']
+        shopify_payout_report_line_id = shopify_payout_report_line_obj.search(
+            [('transaction_id', '=', statement_line.payment_ref)])
+        sale_order_id = sale_order_obj.search(
+            ['|', ('shopify_order_id', '=', shopify_payout_report_line_id.source_order_id),
+             ('name', '=', statement_line.payment_ref), ('shopify_instance_id', '=', self.instance_id.id)], limit=1)
+        if sale_order_id:
+            shopify_payout_report_line_id.write({'order_id': sale_order_id.id})
+            statement_line.write({'sale_order_id': sale_order_id.id})
+            domain, invoice, log_line = self.check_for_invoice_refund(shopify_payout_report_line_id)
+            if invoice and invoice.move_type == "out_refund":
+                statement_line.update({"refund_invoice_id": invoice.id})
         order = statement_line.sale_order_id
+        if order and not shopify_payout_report_line_id:
+            shopify_payout_report_line_id = shopify_payout_report_line_obj.search(
+                [('transaction_id', '=', statement_line.shopify_transaction_id)])
+        if shopify_payout_report_line_id and shopify_payout_report_line_id.transaction_type == 'refund' \
+                and not statement_line.refund_invoice_id:
+            invoices = self.env['account.move'].search(
+                [('shopify_instance_id', '=', self.instance_id.id), ('invoice_origin', '=', order.name),
+                 ('move_type', '=', 'out_refund'), ('amount_total', '=', abs(statement_line.amount))])
+            return invoices
         if statement_line.refund_invoice_id:
             invoices = statement_line.refund_invoice_id
         else:
@@ -647,12 +712,14 @@ class ShopifyPaymentReportEpt(models.Model):
         This method is used to process the bank statement.
         @author: Maulik Barad on Date 07-Dec-2020.
         """
-        log_lines = common_log_line_obj = self.env['common.log.lines.ept']
+        log_lines = self.env['common.log.lines.ept']
         bank_statement = self.statement_id
 
         _logger.info("Processing Bank Statement: %s.", bank_statement.name)
         if bank_statement.state == "open":
             bank_statement.button_post()
+        if bank_statement.state == 'confirm':
+            self.state = 'validated'
 
         for statement_line in bank_statement.line_ids.filtered(lambda x: not x.is_reconciled):
             move_line_data = []
@@ -747,14 +814,13 @@ class ShopifyPaymentReportEpt(models.Model):
         :return: True
         """
         shopify_instance_obj = self.env['shopify.instance.ept']
-        if not isinstance(ctx, dict):
-            return True
-        shopify_instance_id = ctx.get('shopify_instance_id', False)
-        if shopify_instance_id:
-            instance = shopify_instance_obj.search([('id', '=', shopify_instance_id)])
-            if instance.payout_last_import_date:
-                _logger.info("===== Auto Import Payout Report =====")
-                self.get_payout_report(instance.payout_last_import_date, datetime.now(), instance)
+        if isinstance(ctx, dict):
+            shopify_instance_id = ctx.get('shopify_instance_id', False)
+            if shopify_instance_id:
+                instance = shopify_instance_obj.search([('id', '=', shopify_instance_id)])
+                if instance.payout_last_import_date:
+                    _logger.info("===== Auto Import Payout Report =====")
+                    self.get_payout_report(instance.payout_last_import_date, datetime.now(), instance)
         return True
 
     def auto_process_bank_statement(self, ctx=False):
@@ -766,22 +832,22 @@ class ShopifyPaymentReportEpt(models.Model):
         :param ctx: use for the instance
         :return: True
         """
-        if not isinstance(ctx, dict):
-            return True
-        shopify_instance_id = ctx.get("shopify_instance_id", False)
-        if shopify_instance_id:
-            partially_generated_reports = self.search([("state", "=", "partially_generated"),
-                                                       ("instance_id", "=", shopify_instance_id),
-                                                       ("is_skip_from_cron", "=", False)], order="payout_date asc")
-            for report in partially_generated_reports:
-                report.generate_remaining_bank_statement()
-            generated_reports = self.search([("state", "in", ["generated", "partially_processed"]),
-                                             ("instance_id", "=", shopify_instance_id), ("statement_id", "!=", False),
-                                             ("is_skip_from_cron", "=", False)], order="payout_date asc")
-            for generated_report in generated_reports:
-                _logger.info("===== Auto Process Bank Statement:%s =====", generated_report.name)
-                generated_report.with_context(cron_process=True).process_bank_statement()
-                self._cr.commit()
+        if isinstance(ctx, dict):
+            shopify_instance_id = ctx.get("shopify_instance_id", False)
+            if shopify_instance_id:
+                partially_generated_reports = self.search([("state", "=", "partially_generated"),
+                                                           ("instance_id", "=", shopify_instance_id),
+                                                           ("is_skip_from_cron", "=", False)], order="payout_date asc")
+                for report in partially_generated_reports:
+                    report.generate_remaining_bank_statement()
+                generated_reports = self.search([("state", "in", ["generated", "partially_processed"]),
+                                                 ("instance_id", "=", shopify_instance_id),
+                                                 ("statement_id", "!=", False),
+                                                 ("is_skip_from_cron", "=", False)], order="payout_date asc")
+                for generated_report in generated_reports:
+                    _logger.info("===== Auto Process Bank Statement:%s =====", generated_report.name)
+                    generated_report.with_context(cron_process=True).process_bank_statement()
+                    self._cr.commit()
         return True
 
     def open_log_book(self):

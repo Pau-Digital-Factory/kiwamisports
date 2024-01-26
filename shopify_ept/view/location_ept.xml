@@ -113,6 +113,6 @@
     </record>
 
     <menuitem id="shopify_location_menu" name="Shopify Locations"
-              parent="shopify_ept.menu_configuration_ept" sequence="5"
+              parent="shopify_ept.menu_configuration_ept" sequence="6"
               action="action_shopify_location_data"/>
 </odoo>

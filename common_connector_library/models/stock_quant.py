@@ -25,10 +25,14 @@ class StockQuant(models.Model):
         if product_qty_data and location_id:
             for product_id, product_qty in product_qty_data.items():
                 val = self.prepare_vals_for_inventory_adjustment(location_id, product_id, product_qty)
+                product = self.env['product.product'].browse(product_id)
+                if product.detailed_type in ['consu','service']:
+                    continue
                 logger.info("Product ID: %s and its Qty: %s" % (product_id, product_qty))
                 quant_list += self.with_context(inventory_mode=True).create(val)
             if auto_apply and quant_list:
-                quant_list.filtered(lambda x: x.product_id.tracking not in ['lot', 'serial']).with_context(
+                quant_list.filtered(lambda x: x.product_id.tracking not in ['lot', 'serial'] and
+                                              x.product_id.detailed_type not in ['consu','service']).with_context(
                     inventory_name=name).action_apply_inventory()
         return quant_list
 

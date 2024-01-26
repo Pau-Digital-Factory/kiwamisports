@@ -5,7 +5,8 @@
         <field name="name">Shopify Synced Customer Data</field>
         <field name="model">shopify.customer.data.queue.ept</field>
         <field name="arch" type="xml">
-            <tree create="0" default_order="name desc" decoration-primary="is_process_queue==True" sample="1">
+            <tree create="0" default_order="name desc" decoration-primary="is_process_queue==True" sample="1"
+                  js_class="queue_line_ept_dashboard">
                 <header>
                     <button name="%(shopify_ept.action_wizard_shopify_import_customer)d"
                             string="Process Queue"
@@ -19,7 +20,7 @@
                        widget="badge"/>
                 <field name="is_action_require" invisible="1"/>
                 <button string="Need manual interaction" icon="fa-exclamation-triangle text-danger"
-                        attrs="{'invisible': ['|',('is_action_require','=',False),('state','=','done')]}"
+                        attrs="{'invisible': ['|',('is_action_require','=',False),('state','=','completed')]}"
                         special="cancel"/>
                 <field name="is_process_queue" invisible="1"/>
                 <field name="running_status"
@@ -48,7 +49,7 @@
                     <field name="is_process_queue" invisible="1"/>
                 </header>
                 <div class="alert alert-danger" role="alert" style="margin-bottom:0px;"
-                     attrs="{'invisible': ['|',('is_action_require','=',False),('state','=','done')]}">
+                     attrs="{'invisible': ['|',('is_action_require','=',False),('state','=','completed')]}">
                     <strong>
                         - Need to process this queue manually.
                         There are 3 attempts been made by automated action to process this queue,
@@ -245,7 +246,7 @@
         </field>
     </record>
 
-    <menuitem name="Customers" id="shopify_customer_data_menu"
-              parent="shopify_ept.shopify_data_queue_menu" sequence="9"
+    <menuitem name="Customers Queue" id="shopify_customer_data_menu"
+              parent="shopify_ept.shopify_data_log_menu" sequence="4"
               action="action_shopify_synced_customer_data"/>
 </odoo>

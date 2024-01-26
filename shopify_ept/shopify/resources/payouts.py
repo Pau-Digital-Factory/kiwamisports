@@ -1,5 +1,5 @@
 from ..base import ShopifyResource
-from ...shopify import mixins
+from .. import mixins
 
 
 class Payouts(ShopifyResource, mixins.Metafields):

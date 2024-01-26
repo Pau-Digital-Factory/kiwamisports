@@ -16,6 +16,10 @@
                     <field name="moves_count" widget="statinfo" string="Stock Move"/>
                 </button>
             </xpath>
+            <xpath expr="//page[@name='order_lines']/field[@name='order_line']/tree/field[@name='price_subtotal']"
+                   position="after">
+                <field name="warehouse_id_ept" string="Warehouse" invisible="1"/>
+            </xpath>
         </field>
     </record>
 </odoo>

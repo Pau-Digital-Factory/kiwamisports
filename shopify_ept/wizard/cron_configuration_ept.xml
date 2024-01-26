@@ -61,6 +61,43 @@
                             </div>
                         </div>
                     </div>
+                    <div class="o_setting_left_pane">
+                        <div class="row mt16 o_settings_container o_onboard_padding">
+                            <div class="col-12 o_setting_box o_onboard_setting_box">
+                                <div class="o_setting_left_pane">
+                                    <field name="shopify_shipped_order_auto_import" widget="boolean_toggle"
+                                           class="o_onboard_boolean_toggle"/>
+                                </div>
+                                <div class="o_setting_right_pane">
+                                    <span>
+                                        <h6>Import Shipped Orders</h6>
+                                    </span>
+                                    <div class="text-muted">
+                                        If checked, It will create a cron job to automatically Import Shipped Orders in
+                                        Odoo at
+                                        certain intervals.
+                                    </div>
+                                    <br/>
+
+                                    <div class="o_onboard_cron_settings"
+                                         attrs="{'invisible': [('shopify_shipped_order_auto_import', '=', False)]}">
+                                        <field name="shopify_import_shipped_order_interval_number"
+                                               attrs="{'required': [('shopify_shipped_order_auto_import', '=', True)]}"
+                                               class="o_onboard_cron_box"/>
+                                        <field name="shopify_import_shipped_order_interval_type"
+                                               attrs="{'required': [('shopify_shipped_order_auto_import', '=', True)]}"
+                                               class="o_onboard_cron_type"/>
+                                        <field name="shopify_import_shipped_order_next_execution"
+                                               attrs="{'required': [('shopify_shipped_order_auto_import', '=', True)]}"
+                                               class="o_onboard_cron_execution"/>
+                                        <field name="shopify_import_shipped_order_user_id"
+                                               attrs="{'required': [('shopify_shipped_order_auto_import', '=', True)]}"
+                                               class="o_onboard_cron_user"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <div class="o_setting_right_pane">
                         <div class="row mt16 o_settings_container o_onboard_padding">
                             <div class="col-12 o_setting_box o_onboard_setting_box">
@@ -91,6 +128,82 @@
                                                class="o_onboard_cron_execution"/>
                                         <field name="shopify_order_status_user_id"
                                                attrs="{'required': [('shopify_order_status_auto_update', '=', True)]}"
+                                               class="o_onboard_cron_user"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="o_setting_left_pane">
+                        <div class="row mt16 o_settings_container o_onboard_padding">
+                            <div class="col-12 o_setting_box o_onboard_setting_box">
+                                <div class="o_setting_left_pane">
+                                    <field name="shopify_cancel_order_auto_import" widget="boolean_toggle"
+                                           class="o_onboard_boolean_toggle"/>
+                                </div>
+                                <div class="o_setting_right_pane">
+                                    <span>
+                                        <h6>Import Cancel Orders</h6>
+                                    </span>
+                                    <div class="text-muted">
+                                        If checked, It will create a cron job to automatically Import Cancel Orders in
+                                        Odoo at certain intervals.
+                                        <li>It will fetched Cancel Order data from Shopify store
+                                            and will cancel imported orders if imported orders are canceled on
+                                            Shopify store.
+                                        </li>
+                                    </div>
+                                    <br/>
+
+                                    <div class="o_onboard_cron_settings"
+                                         attrs="{'invisible': [('shopify_cancel_order_auto_import', '=', False)]}">
+                                        <field name="shopify_import_cancel_order_interval_number"
+                                               attrs="{'required': [('shopify_cancel_order_auto_import', '=', True)]}"
+                                               class="o_onboard_cron_box"/>
+                                        <field name="shopify_import_cancel_order_interval_type"
+                                               attrs="{'required': [('shopify_cancel_order_auto_import', '=', True)]}"
+                                               class="o_onboard_cron_type"/>
+                                        <field name="shopify_import_cancel_order_next_execution"
+                                               attrs="{'required': [('shopify_cancel_order_auto_import', '=', True)]}"
+                                               class="o_onboard_cron_execution"/>
+                                        <field name="shopify_import_cancel_order_user_id"
+                                               attrs="{'required': [('shopify_cancel_order_auto_import', '=', True)]}"
+                                               class="o_onboard_cron_user"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="o_setting_right_pane">
+                        <div class="row mt16 o_settings_container o_onboard_padding">
+                            <div class="col-12 o_setting_box o_onboard_setting_box">
+                                <div class="o_setting_left_pane">
+                                    <field name="shopify_buy_with_prime_order_auto_import" widget="boolean_toggle"
+                                           class="o_onboard_boolean_toggle"/>
+                                </div>
+                                <div class="o_setting_right_pane">
+                                    <span>
+                                        <h6>Import Buy With Prime Order</h6>
+                                    </span>
+                                    <div class="text-muted">
+                                        If checked, It will create a cron job to automatically Import Buy with Prime
+                                        Orders in Odoo at certain intervals.
+                                    </div>
+                                    <br/>
+
+                                    <div class="o_onboard_cron_settings"
+                                         attrs="{'invisible': [('shopify_buy_with_prime_order_auto_import', '=', False)]}">
+                                        <field name="shopify_import_buy_with_prime_order_interval_number"
+                                               attrs="{'required': [('shopify_buy_with_prime_order_auto_import', '=', True)]}"
+                                               class="o_onboard_cron_box"/>
+                                        <field name="shopify_import_buy_with_prime_order_interval_type"
+                                               attrs="{'required': [('shopify_buy_with_prime_order_auto_import', '=', True)]}"
+                                               class="o_onboard_cron_type"/>
+                                        <field name="shopify_import_buy_with_prime_order_next_execution"
+                                               attrs="{'required': [('shopify_buy_with_prime_order_auto_import', '=', True)]}"
+                                               class="o_onboard_cron_execution"/>
+                                        <field name="shopify_import_buy_with_prime_order_user_id"
+                                               attrs="{'required': [('shopify_buy_with_prime_order_auto_import', '=', True)]}"
                                                class="o_onboard_cron_user"/>
                                     </div>
                                 </div>
@@ -194,6 +307,48 @@
                                     <div class="text-muted">
                                         If checked, It will process the Bank Statements automatically generated by
                                         Payout Reports Once a Day.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </group>
+                <div class="o_horizontal_separator o_onboard_header font-weight-bold"
+                     invisible="context.get('is_calling_from_onboarding_panel', False) and not context.get('is_instance_exists', False)">
+                    Product Information
+                </div>
+                <group invisible="context.get('is_calling_from_onboarding_panel', False) and not context.get('is_instance_exists', False)">
+                    <div class="o_setting_left_pane">
+                        <div class="row mt16 o_settings_container o_onboard_padding">
+                            <div class="col-12 o_setting_box o_onboard_setting_box">
+                                <div class="o_setting_left_pane">
+                                    <field name="shopify_auto_import_product" widget="boolean_toggle"
+                                           class="o_onboard_boolean_toggle"/>
+                                </div>
+                                <div class="o_setting_right_pane">
+                                    <span>
+                                        <h6>Import Product</h6>
+                                    </span>
+                                    <div class="text-muted">
+                                        If checked, It will create a cron job to automatically Import Products in Odoo at
+                                        certain intervals.
+                                    </div>
+                                    <br/>
+
+                                    <div class="o_onboard_cron_settings"
+                                         attrs="{'invisible': [('shopify_auto_import_product', '=', False)]}">
+                                        <field name="shopify_product_import_interval_number"
+                                               attrs="{'required': [('shopify_auto_import_product', '=', True)]}"
+                                               class="o_onboard_cron_box"/>
+                                        <field name="shopify_product_import_interval_type"
+                                               attrs="{'required': [('shopify_auto_import_product', '=', True)]}"
+                                               class="o_onboard_cron_type"/>
+                                        <field name="shopify_product_import_next_execution"
+                                               attrs="{'required': [('shopify_auto_import_product', '=', True)]}"
+                                               class="o_onboard_cron_execution"/>
+                                        <field name="shopify_product_import_user_id"
+                                               attrs="{'required': [('shopify_auto_import_product', '=', True)]}"
+                                               class="o_onboard_cron_user"/>
                                     </div>
                                 </div>
                             </div>

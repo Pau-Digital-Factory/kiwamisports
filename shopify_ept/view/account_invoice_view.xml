@@ -15,7 +15,17 @@
             <field name="partner_id" position="after">
                 <field name='shopify_instance_id' invisible="1"/>
                 <field name="is_refund_in_shopify" invisible="1"/>
+                <field name="is_shopify_multi_payment" invisible="1"/>
             </field>
+            <xpath expr="//header" position="after">
+                <div class="alert alert-warning" role="alert" style="margin-bottom:0px;"
+                     attrs="{'invisible':['|','|','|',('is_shopify_multi_payment','=',False),('state','!=','posted'),('move_type','!=','out_invoice'),('payment_state','not in',['not_paid','in_payment','partial'])]}">
+                    <div>Orders are paid through a variety of
+                        <button name="open_shopify_multi_payment" type="object" string="Payment Methods"/>
+                        We recommend to register payment with different Journal and Amount.
+                    </div>
+                </div>
+            </xpath>
         </field>
     </record>
 
@@ -103,15 +113,12 @@
         <field name="search_view_id" ref="account.view_account_invoice_filter"/>
     </record>
 
-    <menuitem id="menu_item_parent_shopify_invoices_ept" name="Invoices &amp; Payout"
-              parent="shopify_ept.shopify_menu_item_sales" sequence="10"/>
-
     <menuitem name="Invoices" id="menu_item_shopify_invoice_ept"
-              parent="shopify_ept.menu_item_parent_shopify_invoices_ept"
+              parent="shopify_ept.shopify_menu_item_sales"
               action="action_invoice_shopify_invoices" sequence="5"/>
 
     <menuitem name="Refunds" id="menu_item_shopify_refund_ept"
-              parent="shopify_ept.menu_item_parent_shopify_invoices_ept"
-              action="action_refund_shopify_invoices" sequence="7"/>
+              parent="shopify_ept.shopify_menu_item_sales"
+              action="action_refund_shopify_invoices" sequence="6"/>
 
 </odoo>

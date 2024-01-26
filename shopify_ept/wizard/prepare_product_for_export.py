@@ -3,13 +3,14 @@
 
 import base64
 import logging
-
+import io
 from csv import DictWriter
 from datetime import datetime
 from io import StringIO
 
 from odoo import models, fields, _
 from odoo.exceptions import UserError
+from odoo.tools.misc import xlsxwriter
 
 _logger = logging.getLogger("Shopify Layer")
 
@@ -22,8 +23,9 @@ class PrepareProductForExport(models.TransientModel):
     _name = "shopify.prepare.product.for.export.ept"
     _description = "Prepare product for export in Shopify"
 
-    export_method = fields.Selection([("csv", "Export in CSV file"),
-                                      ("direct", "Export in Shopify Layer")], default="csv")
+    export_method = fields.Selection([("direct", "Export in Shopify Layer"),
+                                      ("csv", "Export in CSV file"), ("xlsx", "Export in XLSX file")],
+                                     default="direct")
     shopify_instance_id = fields.Many2one("shopify.instance.ept")
     choose_file = fields.Binary(help="Select CSV file to upload.")
     file_name = fields.Char(help="Name of CSV file.")
@@ -45,7 +47,10 @@ class PrepareProductForExport(models.TransientModel):
 
         if self.export_method == "direct":
             return self.export_direct_in_shopify(product_templates)
-        return self.export_csv_file(product_templates)
+        elif self.export_method == "csv":
+            return self.export_csv_file(product_templates)
+        else:
+            return self.export_xlsx_file(product_templates)
 
     def export_direct_in_shopify(self, product_templates):
         """
@@ -90,7 +95,7 @@ class PrepareProductForExport(models.TransientModel):
 
         shopify_template = shopify_template_obj.search([
             ("shopify_instance_id", "=", shopify_instance.id),
-            ("product_tmpl_id", "=", product_template.id)],limit=1)
+            ("product_tmpl_id", "=", product_template.id)], limit=1)
 
         if not shopify_template:
             shopify_product_template_vals = self.prepare_template_val_for_export_product_in_layer(product_template,
@@ -121,12 +126,20 @@ class PrepareProductForExport(models.TransientModel):
             Task_id: 167537 - Code refactoring
         """
         ir_config_parameter_obj = self.env["ir.config_parameter"]
+        # template_vals = {"product_tmpl_id": product_template.id,
+        #                  "shopify_instance_id": shopify_instance.id,
+        #                  "shopify_product_category": product_template.categ_id.id,
+        #                  "name": product_template.name}
+        # if ir_config_parameter_obj.sudo().get_param("shopify_ept.set_sales_description"):
+        #     template_vals.update({"description": variant.description_sale})
+        name = product_template.with_context(lang=shopify_instance.shopify_lang_id.code).name
         template_vals = {"product_tmpl_id": product_template.id,
                          "shopify_instance_id": shopify_instance.id,
                          "shopify_product_category": product_template.categ_id.id,
-                         "name": product_template.name}
+                         "name": name}
         if ir_config_parameter_obj.sudo().get_param("shopify_ept.set_sales_description"):
-            template_vals.update({"description": variant.description_sale})
+            description = variant.with_context(lang=shopify_instance.shopify_lang_id.code).description_sale
+            template_vals.update({"description": description})
         return template_vals
 
     def prepare_variant_val_for_export_product_in_layer(self, shopify_instance, shopify_template, variant, sequence):
@@ -169,20 +182,13 @@ class PrepareProductForExport(models.TransientModel):
 
         return shopify_variant
 
-    def export_csv_file(self, product_templates):
+    def preapre_product_data_for_file(self, product_templates):
         """
-        This method is used for export the odoo products in csv file.
-        :param self: It contain the current class Instance
-        :param product_templates: Records of odoo template.
-        @author: Nilesh Parmar @Emipro Technologies Pvt. Ltd on date 04/11/2019
+        This method is use to prepare product data for export csv/xlsx file.
+        @author: Haresh Mori @Emipro Technologies Pvt. Ltd on date 2 December 2021 .
+        Task_id: 180489 - Prepare for export changes
         """
-        buffer = StringIO()
-        delimiter, field_names = self.prepare_csv_file_header_and_delimiter()
-
-        csv_writer = DictWriter(buffer, field_names, delimiter=delimiter)
-        csv_writer.writer.writerow(field_names)
-
-        rows = []
+        product_data_list = []
         for template in product_templates:
             if template.attribute_line_ids and len(
                     template.attribute_line_ids.filtered(lambda x: x.attribute_id.create_variant == "always")) > 3:
@@ -190,18 +196,33 @@ class PrepareProductForExport(models.TransientModel):
             if len(template.product_variant_ids.ids) == 1 and not template.default_code:
                 continue
             for product in template.product_variant_ids.filtered(lambda variant: variant.default_code):
-                row = self.prepare_row_data_for_csv(template, product)
-                rows.append(row)
+                product_data = self.prepare_row_data_for_file(template, product)
+                product_data_list.append(product_data)
 
-        if not rows:
+        if not product_data_list:
             raise UserError(_("No data found to be exported.\n\nPossible Reasons:\n   - Number of "
                               "attributes are more than 3.\n   - SKU(s) are not set properly."))
-        csv_writer.writerows(rows)
+        return product_data_list
+
+    def export_csv_file(self, product_templates):
+        """
+        This method is used for export the odoo products in csv file.
+        :param self: It contain the current class Instance
+        :param product_templates: Records of odoo template.
+        @author: Nilesh Parmar @Emipro Technologies Pvt. Ltd on date 04/11/2019
+        """
+        product_data = self.preapre_product_data_for_file(product_templates)
+        buffer = StringIO()
+        delimiter = ","
+        field_names = list(product_data[0].keys())
+        csv_writer = DictWriter(buffer, field_names, delimiter=delimiter)
+        csv_writer.writer.writerow(field_names)
+        csv_writer.writerows(product_data)
         buffer.seek(0)
         file_data = buffer.read().encode()
         self.write({
             "choose_file": base64.encodebytes(file_data),
-            "file_name": "Shopify_export_product"
+            "file_name": "Shopify_export_product_"
         })
 
         return {
@@ -211,35 +232,51 @@ class PrepareProductForExport(models.TransientModel):
             "target": self
         }
 
-    def prepare_csv_file_header_and_delimiter(self):
-        """ This method is used to prepare a csv file header and delimiter.
-            @return: delimiter, field_names
-            @author: Haresh Mori @Emipro Technologies Pvt. Ltd on date 26 October 2020 .
-            Task_id: 167537 - Code refactoring
+    def export_xlsx_file(self, product_templates):
         """
-        delimiter = ","
-        field_names = ["template_name", "product_name", "product_default_code",
-                       "shopify_product_default_code", "product_description",
-                       "PRODUCT_TEMPLATE_ID", "PRODUCT_ID", "CATEGORY_ID"]
+        This method is use to export the product data in xlsx file.
+        @author: Haresh Mori @Emipro Technologies Pvt. Ltd on date 2 December 2021 .
+        Task_id: 180489 - Prepare for export changes
+        """
+        product_data = self.preapre_product_data_for_file(product_templates)
+        output = io.BytesIO()
+        workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+        worksheet = workbook.add_worksheet('Map Product')
+        header = list(product_data[0].keys())
+        header_format = workbook.add_format({'bold': True, 'font_size': 10})
+        general_format = workbook.add_format({'font_size': 10})
+        worksheet.write_row(0, 0, header, header_format)
+        index = 0
+        for product in product_data:
+            index += 1
+            worksheet.write_row(index, 0, list(product.values()), general_format)
+        workbook.close()
+        b_data = base64.b64encode(output.getvalue())
+        self.write({
+            "choose_file": b_data,
+            "file_name": "Shopify_export_product_"
+        })
+        return {
+            "type": "ir.actions.act_url",
+            "url": "web/content/?model=shopify.prepare.product.for.export.ept&id=%s&field=choose_file&download=true&"
+                   "filename=%s.xlsx" % (self.id, self.file_name + str(datetime.now().strftime("%d/%m/%Y:%H:%M:%S"))),
+            "target": self
+        }
 
-        return delimiter, field_names
-
-    def prepare_row_data_for_csv(self, template, product):
+    def prepare_row_data_for_file(self, template, product):
         """ This method is used to prepare a row data of csv file.
-            @param : self
-            @return: row
             @author: Haresh Mori @Emipro Technologies Pvt. Ltd on date 26 October 2020 .
             Task_id: 167537 - Code refactoring
         """
         row = {
-            "PRODUCT_TEMPLATE_ID": template.id,
             "template_name": template.name,
-            "CATEGORY_ID": template.categ_id.id,
+            "product_name": product.name,
             "product_default_code": product.default_code,
             "shopify_product_default_code": product.default_code,
+            "product_description": product.description_sale or None,
+            "PRODUCT_TEMPLATE_ID": template.id,
             "PRODUCT_ID": product.id,
-            "product_name": product.name,
-            "product_description": product.description_sale or None
+            "CATEGORY_ID": template.categ_id.id
         }
         return row
 
@@ -250,7 +287,17 @@ class PrepareProductForExport(models.TransientModel):
         """
         shopify_product_image_list = []
         shopify_product_image_obj = self.env["shopify.product.image.ept"]
+        common_product_image_obj = self.env["common.product.image.ept"]
 
+        common_product_images = common_product_image_obj.search(
+            [('template_id', '=', shopify_template.product_tmpl_id.id)])
+        images = common_product_images.filtered(lambda img: img.image == shopify_template.product_tmpl_id.image_1920)
+        if not images and shopify_template.product_tmpl_id.image_1920:
+            common_product_image_obj.create({
+                "name": shopify_template.name,
+                "template_id": shopify_template.product_tmpl_id.id,
+                "image": shopify_template.product_tmpl_id.image_1920,
+            })
         product_template = shopify_template.product_tmpl_id
         for odoo_image in product_template.ept_image_ids.filtered(lambda x: not x.product_id):
             shopify_product_image = shopify_product_image_obj.search_read(
@@ -271,16 +318,26 @@ class PrepareProductForExport(models.TransientModel):
         @author: Maulik Barad on Date 19-Sep-2020.
         """
         shopify_product_image_obj = self.env["shopify.product.image.ept"]
-        product_id = shopify_variant.product_id
-        odoo_image = product_id.ept_image_ids
-        if odoo_image:
+        common_product_image_obj = self.env["common.product.image.ept"]
+
+        common_product_images = common_product_image_obj.search(
+            [('product_id', '=', shopify_variant.product_id.id)])
+        images = common_product_images.filtered(lambda img: img.image == shopify_variant.product_id.image_1920)
+        if not images and shopify_template.product_tmpl_id.image_1920:
+            common_product_image_obj.create({
+                "name": shopify_template.name,
+                "template_id": shopify_template.product_tmpl_id.id,
+                "image": shopify_variant.product_id.image_1920,
+                "product_id": shopify_variant.product_id.id,
+            })
+        for variant_image in shopify_variant.product_id.ept_image_ids:
             shopify_product_image = shopify_product_image_obj.search_read(
                 [("shopify_template_id", "=", shopify_template.id),
                  ("shopify_variant_id", "=", shopify_variant.id),
-                 ("odoo_image_id", "=", odoo_image[0].id)], ["id"])
+                 ("odoo_image_id", "=", variant_image.id)], ["id"])
             if not shopify_product_image:
                 shopify_product_image_obj.create({
-                    "odoo_image_id": odoo_image[0].id,
+                    "odoo_image_id": variant_image.id,
                     "shopify_variant_id": shopify_variant.id,
                     "shopify_template_id": shopify_template.id,
                     "sequence": 0

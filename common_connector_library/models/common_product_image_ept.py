@@ -19,7 +19,7 @@ class ProductImageEpt(models.Model):
     sequence = fields.Integer(help="Sequence of images.", index=True, default=10)
 
     @api.model
-    def get_image_ept(self, url):
+    def get_image_ept(self, url, verify=False):
         """
         Gets image from url.
         @author: Maulik Barad on Date 13-Dec-2019.
@@ -29,7 +29,7 @@ class ProductImageEpt(models.Model):
         image_types = ["image/jpeg", "image/png", "image/tiff",
                        "image/vnd.microsoft.icon", "image/x-icon",
                        "image/vnd.djvu", "image/svg+xml", "image/gif"]
-        response = requests.get(url, stream=True, verify=False, timeout=10)
+        response = requests.get(url, stream=True, verify=verify, timeout=10)
         if response.status_code == 200 and response.headers["Content-Type"] in image_types:
             image = base64.b64encode(response.content)
             if image:
@@ -54,9 +54,12 @@ class ProductImageEpt(models.Model):
         @author: Maulik Barad on date 13-Dec-2019.
         Migration done by Haresh Mori on September 2021
         """
+        verify = False
         ir_config_parameter_obj = self.env['ir.config_parameter']
         if not vals.get("image", False) and vals.get("url", ""):
-            image = self.get_image_ept(vals.get("url"))
+            if 'ssl_verify' in list(self.env.context.keys()):
+                verify = True
+            image = self.get_image_ept(vals.get("url"), verify=verify)
             vals.update({"image": image})
         record = super(ProductImageEpt, self).create(vals)
 

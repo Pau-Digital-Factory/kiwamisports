@@ -20,7 +20,7 @@
                     <field name="is_action_require" invisible="1"/>
                 </header>
                 <div class="alert alert-danger" role="alert" style="margin-bottom:0px;"
-                     attrs="{'invisible': ['|',('is_action_require','=',False),('state','=','done')]}">
+                     attrs="{'invisible': ['|',('is_action_require','=',False),('state','=','completed')]}">
                     <strong>
                         - Need to process this queue manually.
                         There are 3 attempts been made by automated action to process this queue,
@@ -165,7 +165,7 @@
         <field name="model">shopify.order.data.queue.ept</field>
         <field name="arch" type="xml">
             <tree create="0" default_order="name desc" sample="1"
-                  decoration-primary="is_process_queue==True">
+                  decoration-primary="is_process_queue==True" js_class="queue_line_ept_dashboard">
                 <header>
                     <button name="%(shopify_ept.action_wizard_shopify_import_order)d"
                             string="Process Queue"
@@ -283,12 +283,12 @@
         </field>
     </record>
 
-    <menuitem name="Queues Logs" id="shopify_data_queue_menu" sequence="5"
-              parent="shopify_ept.menu_shopify_processes_ept"/>
+    <menuitem name="Logs" id="shopify_data_log_menu" sequence="5"
+              parent="shopify_ept.shopify_instance_menu_item"/>
 
-    <menuitem name="Unshipped Orders" id="shopify_order_data_queue_ept_menu" sequence="4"
-              parent="shopify_ept.shopify_data_queue_menu" action="action_shopify_order_data_queue_ept"/>
+    <menuitem name="Unshipped Orders Queue" id="shopify_order_data_queue_ept_menu" sequence="1"
+              parent="shopify_ept.shopify_data_log_menu" action="action_shopify_order_data_queue_ept"/>
 
-    <menuitem name="Shipped Orders" id="shopify_shipped_order_data_queue_ept_menu" sequence="5"
-              parent="shopify_ept.shopify_data_queue_menu" action="action_shopify_shipped_order_data_queue_ept"/>
+    <menuitem name="Shipped Orders Queue" id="shopify_shipped_order_data_queue_ept_menu" sequence="2"
+              parent="shopify_ept.shopify_data_log_menu" action="action_shopify_shipped_order_data_queue_ept"/>
 </odoo>

@@ -17,6 +17,7 @@ class CommonLogLineEpt(models.Model):
     mismatch_details = fields.Boolean(string='Mismatch Detail', help="Mismatch Detail of process order")
     file_name = fields.Char()
     sale_order_id = fields.Many2one(comodel_name='sale.order', string='Sale Order')
+    log_line_type = fields.Selection(selection=[('success', 'Success'), ('fail', 'Fail')],default='fail')
 
     @api.model
     def get_model_id(self, model_name):
@@ -26,7 +27,7 @@ class CommonLogLineEpt(models.Model):
             @author: Haresh Mori @Emipro Technologies Pvt. Ltd on date 23 September 2021 .
             Task_id: 178058
         """
-        model = self.env['ir.model'].search([('model', '=', model_name)])
+        model = self.env['ir.model'].sudo().search([('model', '=', model_name)])
         if model:
             return model.id
         return False
@@ -54,3 +55,13 @@ class CommonLogLineEpt(models.Model):
                 }
         log_line = self.create(vals)
         return log_line
+
+    def create_common_log_line_ept(self, **kwargs):
+        values = {}
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                values.update({key: value})
+        if kwargs.get('model_name'):
+            model_id = self.log_book_id._get_model_id(kwargs.get('model_name'))
+            values.update({'model_id': model_id.id})
+        return self.create(values)

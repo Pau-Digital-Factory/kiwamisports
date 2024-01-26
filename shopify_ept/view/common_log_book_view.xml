@@ -80,16 +80,13 @@
         </field>
     </record>
 
-    <menuitem name="Mismatches" id="shopify_logs_menu" sequence="7"
-              parent="shopify_ept.menu_shopify_processes_ept"/>
-
     <menuitem id="shopify_mismatch_ept" name="Log Book"
-              parent="shopify_ept.shopify_logs_menu"
+              parent="shopify_ept.shopify_data_log_menu"
               action="shopify_ept.action_shopify_common_log_book_ept"
-              sequence="2"/>
+              sequence="6"/>
 
     <menuitem id="shopify_log_line_ept" name="Log Lines"
-              parent="shopify_ept.shopify_logs_menu"
+              parent="shopify_ept.shopify_data_log_menu"
               action="shopify_ept.action_shopify_common_log_line_ept"
-              sequence="4"/>
+              sequence="7"/>
 </odoo>

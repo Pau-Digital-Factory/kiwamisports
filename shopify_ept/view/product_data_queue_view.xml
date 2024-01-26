@@ -6,7 +6,8 @@
         <field name="name">Product Queue Data Tree View</field>
         <field name="model">shopify.product.data.queue.ept</field>
         <field name="arch" type="xml">
-            <tree create="0" default_order="name desc" sample="1" decoration-primary="is_process_queue==True">
+            <tree create="0" default_order="name desc" sample="1" decoration-primary="is_process_queue==True"
+                  js_class="queue_line_ept_dashboard">
                 <header>
                     <button
                             name="%(shopify_ept.action_sync_product_queue_data)d"
@@ -21,7 +22,8 @@
                 <field name="is_action_require" invisible="1"/>
                 <button string="Need manual interaction"
                         icon="fa-exclamation-triangle text-danger"
-                        attrs="{'invisible': ['|',('is_action_require','=',False),('state','=','done')]}" special="cancel"/>
+                        attrs="{'invisible': ['|',('is_action_require','=',False),('state','=','done')]}"
+                        special="cancel"/>
                 <field name="is_process_queue" invisible="1"/>
                 <field name="running_status"
                        attrs="{'invisible':[('is_process_queue', '=', False)]}"/>
@@ -51,7 +53,7 @@
                 </header>
                 <div class="alert alert-danger" role="alert"
                      style="margin-bottom:0px;"
-                     attrs="{'invisible': ['|',('is_action_require','=',False),('state','=','done')]}">
+                     attrs="{'invisible': ['|',('is_action_require','=',False),('state','=','completed')]}">
                     <strong>
                         - Need to process this queue manually.
                         There are 3 attempts been made by automated action to process this queue,
@@ -256,7 +258,7 @@
         </field>
     </record>
 
-    <menuitem name="Products" id="shopify_data_menu"
-              parent="shopify_ept.shopify_data_queue_menu" sequence="6"
+    <menuitem name="Products Queue" id="shopify_data_menu"
+              parent="shopify_ept.shopify_data_log_menu" sequence="3"
               action="action_shopify_product_data_queue"/>
 </odoo>

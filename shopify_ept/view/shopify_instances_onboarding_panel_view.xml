@@ -59,7 +59,6 @@
                 <t t-set="bg_image" t-value="'/sale/static/src/img/sale_quotation_onboarding_bg.jpg'"/>
                 <t t-set="close_method" t-value="'action_close_shopify_instances_onboarding_panel'"/>
                 <t t-set="close_model" t-value="'res.company'"/>
-                <!--                <t t-call="base.onboarding_company_step" name="company_step"/>-->
                 <t t-call="shopify_ept.onboarding_shopify_instance_configuration" name="shopify_instance_step"/>
                 <t t-call="shopify_ept.onboarding_shopify_basic_configuration"
                    name="shopify_basic_configuration_step"/>

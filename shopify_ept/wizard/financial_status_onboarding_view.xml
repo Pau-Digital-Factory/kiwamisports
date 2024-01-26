@@ -15,6 +15,7 @@
                 <div class="oe_title" attrs="{'invisible': [('shopify_instance_id', '=', False)]}">
                     <h1 class="font-weight-bold o_on_board_heading">
                         <field name="shopify_instance_id" readonly="1" options="{'no_open': True}"/>
+                        <field name="shopify_company_id" invisible="1"/>
                     </h1>
                 </div>
                 <div class="row o_settings_container o_onboard_padding"
@@ -71,7 +72,7 @@
                             <label for="shopify_settlement_report_journal_id"
                                    class="o_onboard_label"/>
                             <field name="shopify_settlement_report_journal_id"
-                                   domain="[('type','in',['cash','bank'])]"
+                                   domain="[('type','in',['cash','bank']),('company_id','=',shopify_company_id)]"
                                    class="o_onboard_input"
                                    options="{'no_create':True,'no_open':True}"/>
                             <a href="javascript:void(0)"

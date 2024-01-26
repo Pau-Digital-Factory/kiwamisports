@@ -5,7 +5,7 @@ from odoo import models, fields, api
 
 class CommonLogBookEpt(models.Model):
     _name = "common.log.book.ept"
-    _inherit = ["mail.thread"]
+    _inherit = ["mail.thread", "mail.activity.mixin"]
     _order = 'id desc'
     _description = "Common log book Ept"
 
@@ -55,3 +55,17 @@ class CommonLogBookEpt(models.Model):
                                    "model_id": model_id,
                                    "active": True})
         return log_book_id
+
+    def create_common_log_book_ept(self, **kwargs):
+        values = {}
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                values.update({key: value})
+        if kwargs.get('model_name'):
+            model = self._get_model_id(kwargs.get('model_name'))
+            values.update({'model_id': model.id})
+        return self.create(values)
+
+    def _get_model_id(self, model_name):
+        model_id = self.env['ir.model']
+        return model_id.sudo().search([('model', '=', model_name)])

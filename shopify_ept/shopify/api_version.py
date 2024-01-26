@@ -27,13 +27,17 @@ class ApiVersion(object):
     @classmethod
     def define_known_versions(cls):
         cls.define_version(Unstable())
-        cls.define_version(Release("2020-01"))
-        cls.define_version(Release("2020-04"))
-        cls.define_version(Release("2020-07"))
         cls.define_version(Release("2020-10"))
         cls.define_version(Release("2021-01"))
         cls.define_version(Release("2021-04"))
-
+        cls.define_version(Release("2021-07"))
+        cls.define_version(Release("2021-10"))
+        cls.define_version(Release("2022-01"))
+        cls.define_version(Release("2022-04"))
+        cls.define_version(Release("2022-07"))
+        cls.define_version(Release("2022-10"))
+        cls.define_version(Release("2023-01"))
+        cls.define_version(Release("2024-01"))
     @classmethod
     def clear_defined_versions(cls):
         cls.versions = {}
@@ -56,15 +60,15 @@ class ApiVersion(object):
 
 
 class Release(ApiVersion):
-    FORMAT = re.compile(r'^\d{4}-\d{2}$')
-    API_PREFIX = '/admin/api'
+    FORMAT = re.compile(r"^\d{4}-\d{2}$")
+    API_PREFIX = "/admin/api"
 
     def __init__(self, version_number):
         if not self.FORMAT.match(version_number):
             raise InvalidVersionError
         self._name = version_number
-        self._numeric_version = int(version_number.replace('-', ''))
-        self._path = '%s/%s' % (self.API_PREFIX, version_number)
+        self._numeric_version = int(version_number.replace("-", ""))
+        self._path = "%s/%s" % (self.API_PREFIX, version_number)
 
     @property
     def stable(self):
@@ -73,9 +77,9 @@ class Release(ApiVersion):
 
 class Unstable(ApiVersion):
     def __init__(self):
-        self._name = 'unstable'
+        self._name = "unstable"
         self._numeric_version = 9000000
-        self._path =  '/admin/api/unstable'
+        self._path = "/admin/api/unstable"
 
     @property
     def stable(self):

@@ -36,7 +36,7 @@ class ResPartner(models.Model):
                 if not vals.get(key):
                     continue
                 if (key in vals) and isinstance(vals.get(key), str):
-                    _domain.append((key, '=ilike', vals.get(key)))
+                    _domain.append((key, '=ilike', self._remove_special_chars(vals.get(key))))
                 else:
                     _domain.append((key, '=', vals.get(key)))
             partner = self.search(_domain, limit=1) if _domain else False
@@ -138,3 +138,25 @@ class ResPartner(models.Model):
         partner = super(ResPartner, self).create(vals)
         partner._onchange_country_id()
         return partner
+
+    def remove_special_chars_from_partner_vals(self, partner_values):
+        """
+        Remove special Chars from end of the partner values
+        :param partner_values: partner values
+        :return: partner values
+        """
+        for key, value in partner_values.items():
+            if isinstance(value, str):
+                partner_values[key] = self._remove_special_chars(value)
+        return partner_values
+
+    def _remove_special_chars(self, partner_value):
+        """
+        Remove special chars from the end of partner value
+        :param partner_value: partner value
+        :return: partner value
+        """
+        if partner_value[-1:] == "\\":
+            partner_value = partner_value[:-1]
+            partner_value = self._remove_special_chars(partner_value)
+        return partner_value

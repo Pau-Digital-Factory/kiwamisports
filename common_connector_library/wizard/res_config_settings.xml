@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_in_app_notification" model="ir.ui.view">
+        <field name="name">res.config.settings.commercehub.instance</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@data-key='general_settings']/div[@id='user_default_rights']" position="after">
+                <h2>Emipro App Update Notification</h2>
+                <div class="row mt16 o_settings_container">
+                    <div class="col-12 col-lg-6 o_setting_box">
+                        <div class="o_setting_left_pane">
+                            <field name="app_update_notify_ept"/>
+                        </div>
+                        <div class="o_setting_right_pane">
+                            <span>
+                                <h6>
+                                    Enable Emipro's app update notification?
+                                </h6>
+                            </span>
+                            <div class="text-muted">
+                                If checked, It will create a cron job to automatically get all
+                                Emipro's app update information and send it to Emipro server.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-lg-6 o_setting_box">
+                        <div class="o_setting_left_pane"/>
+                        <div class="o_setting_right_pane">
+                            <span>
+                                <h6>
+                                    App Order Number
+                                </h6>
+                            </span>
+                            <div class="text-muted">
+                                Your App Purchase Registered Numer
+                            </div>
+                            <span>
+                                <field name="customer_so_number"/>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>
