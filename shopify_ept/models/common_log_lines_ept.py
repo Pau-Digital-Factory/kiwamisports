@@ -14,6 +14,8 @@ class CommonLogLineEpt(models.Model):
     shopify_customer_data_queue_line_id = fields.Many2one("shopify.customer.data.queue.line.ept",
                                                           "Shopify Customer Queue Line")
     shopify_payout_report_line_id = fields.Many2one("shopify.payout.report.line.ept")
+    shopify_export_stock_queue_line_id = fields.Many2one("shopify.export.stock.queue.line.ept",
+                                                         "Shopify Export Stock Queue Line")
 
     def shopify_create_product_log_line(self, message, model_id, queue_line_id, log_book_id, sku=""):
         """
@@ -42,11 +44,10 @@ class CommonLogLineEpt(models.Model):
             log_line = self.search(domain)
             if log_line:
                 log_line.update({"write_date": datetime.now(), "log_book_id": log_book_id.id if log_book_id else False,
-                                 "shopify_order_data_queue_line_id": queue_line_id and queue_line_id.id or False})
+                                 "shopify_order_data_queue_line_id": queue_line_id and queue_line_id.id or False,
+                                 'mismatch_details': self._context.get('is_mismatch_details', False)})
                 return log_line
-
         vals = self.shopify_prepare_log_line_vals(message, model_id, queue_line_id, log_book_id)
-
         vals.update({'shopify_order_data_queue_line_id': queue_line_id and queue_line_id.id or False,
                      "order_ref": order_ref})
         log_line = self.create(vals)
@@ -76,6 +77,7 @@ class CommonLogLineEpt(models.Model):
                 'model_id': model_id,
                 'res_id': res_id.id if res_id else False,
                 'log_book_id': log_book_id.id if log_book_id else False,
+                'mismatch_details': self._context.get('is_mismatch_details', False)
                 }
         return vals
 
@@ -93,10 +95,11 @@ class CommonLogLineEpt(models.Model):
             date_deadline = datetime.strftime(
                 datetime.now() + timedelta(days=int(log_book.shopify_instance_id.shopify_date_deadline)), "%Y-%m-%d")
             model_id = self.get_model_id("shopify.payout.report.ept")
-            group_accountant = self.env.ref('account.group_account_user')
+            # group_accountant = self.env.ref('account.group_account_user')
+            user_ids = log_book.shopify_instance_id.shopify_payout_user_ids
 
             if note:
-                for user_id in group_accountant.users:
+                for user_id in user_ids:
                     mail_activity = mail_activity_obj.search(
                         [('res_model_id', '=', model_id), ('user_id', '=', user_id.id), ('note', '=', note),
                          ('activity_type_id', '=', activity_type_id)])
@@ -109,4 +112,17 @@ class CommonLogLineEpt(models.Model):
                             'res_model_id': model_id,
                             'date_deadline': date_deadline}
                     mail_activity_obj.create(vals)
-        
+
+    def shopify_create_export_stock_log_line(self, message, model_id, queue_line_id, log_book_id):
+        """
+        This method used to create a log line for Export Stock mismatch logs.
+        @return: log_line
+        @author: Nilam Kubavat @Emipro Technologies Pvt. Ltd on date 29-Aug-2022.
+        """
+        vals = self.shopify_prepare_log_line_vals(message, model_id, queue_line_id, log_book_id)
+
+        vals.update({
+            'shopify_export_stock_queue_line_id': queue_line_id.id if queue_line_id else False
+        })
+        log_line = self.create(vals)
+        return log_line

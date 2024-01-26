@@ -1,5 +1,25 @@
 <?xml version="1.0" ?>
 <odoo>
+    <!--Tree view of customer data queue line which is use in queue line dashboard-->
+    <record id="view_customer_data_queue_line_tree" model="ir.ui.view">
+        <field name="name">shopify.customer.data.queue.line.ept.tree</field>
+        <field name="model">shopify.customer.data.queue.line.ept</field>
+        <field name="arch" type="xml">
+            <tree create="0" duplicate="0" edit="false" sample="1" decoration-danger="state=='failed'"
+                  decoration-success="state=='done'" decoration-info="state=='draft'">
+                <header>
+                    <button name="%(shopify_ept.action_wizard_shopify_import_customer)d"
+                            string="Process Queue Line"
+                            type="action"/>
+                </header>
+                <field name="name"/>
+                <field name="shopify_customer_data_id"/>
+                <field name="last_process_date"/>
+                <field name="state"/>
+            </tree>
+        </field>
+    </record>
+
     <!--Form view of customer queue line.-->
     <record id="shopify_shopify_customer_data_queue_line_ept_form_view" model="ir.ui.view">
         <field name="name">Shopify Synced Customer Line</field>

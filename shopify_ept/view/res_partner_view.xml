@@ -41,6 +41,6 @@
     </record>
 
     <menuitem id="ept_menu_shopify_partner" action="action_shopify_partner_form"
-              parent="shopify_ept.shopify_menu_item_sales" sequence="5"
+              parent="shopify_ept.shopify_menu_item_sales" sequence="8"
               name="Customers"/>
 </odoo>

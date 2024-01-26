@@ -38,7 +38,7 @@
                     <footer>
                         <button string="Process Queues Manually"
                                 class="oe_highlight" type="object" name="manual_queue_process"
-                                invisible="context.get('queue_process','') not in ['process_product_queue_manually','process_customer_queue_manually','process_order_queue_manually']"/>
+                                invisible="context.get('queue_process','') not in ['process_product_queue_manually','process_customer_queue_manually','process_order_queue_manually','process_export_stock_queue_manually']"/>
                         <button string="Cancel" class="oe_highlight"
                                 special="cancel"/>
                     </footer>
@@ -145,12 +145,19 @@
         <field name="context">{'queue_process':'process_order_queue_manually'}</field>
     </record>
 
+    <!--Action for export stock queue process manually-->
+    <record id="action_sync_export_stock_queue" model="ir.actions.act_window">
+        <field name="name">Process Queue Manually</field>
+        <field name="res_model">shopify.queue.process.ept</field>
+        <field name="target">new</field>
+        <field name="view_id" ref="shopify_ept.view_queue_process_action"/>
+        <field name="context">{'queue_process':'process_export_stock_queue_manually'}</field>
+    </record>
+
     <!--Action for the manually set to completed product queue-->
     <record id="action_wizard_set_to_completed_product_queue" model="ir.actions.act_window">
         <field name="name">Set To Completed</field>
         <field name="res_model">shopify.queue.process.ept</field>
-        <!--            <field name="binding_model_id" ref="model_shopify_product_data_queue_ept"/>-->
-        <!--            <field name="binding_view_types">list</field>-->
         <field name="target">new</field>
         <field name="view_id" ref="shopify_ept.view_set_to_completed_queue_process_action"/>
         <field name="context">{'queue_process':'set_to_completed_product_queue'}</field>
@@ -160,8 +167,6 @@
     <record id="action_wizard_set_to_completed_customer_queue" model="ir.actions.act_window">
         <field name="name">Set To Completed</field>
         <field name="res_model">shopify.queue.process.ept</field>
-        <!--            <field name="binding_model_id" ref="model_shopify_customer_data_queue_ept"/>-->
-        <!--            <field name="binding_view_types">list</field>-->
         <field name="target">new</field>
         <field name="view_id" ref="shopify_ept.view_set_to_completed_queue_process_action"/>
         <field name="context">{'queue_process':'set_to_completed_customer_queue'}</field>
@@ -171,11 +176,18 @@
     <record id="action_wizard_set_to_completed_order_queue" model="ir.actions.act_window">
         <field name="name">Set To Completed</field>
         <field name="res_model">shopify.queue.process.ept</field>
-        <!--            <field name="binding_model_id" ref="model_shopify_order_data_queue_ept"/>-->
-        <!--            <field name="binding_view_types">list</field>-->
         <field name="target">new</field>
         <field name="view_id" ref="shopify_ept.view_set_to_completed_queue_process_action"/>
         <field name="context">{'queue_process':'set_to_completed_order_queue'}</field>
+    </record>
+
+    <!--Action for the manually set to completed stock export queue-->
+    <record id="action_wizard_set_to_completed_stock_export" model="ir.actions.act_window">
+        <field name="name">Set To Completed</field>
+        <field name="res_model">shopify.queue.process.ept</field>
+        <field name="target">new</field>
+        <field name="view_id" ref="shopify_ept.view_set_to_completed_queue_process_action"/>
+        <field name="context">{'queue_process':'set_to_completed_export_stock_queue'}</field>
     </record>
 
 </odoo>

@@ -10,7 +10,8 @@ _logger = logging.getLogger("Shopify Controller")
 
 class Main(http.Controller):
 
-    @http.route(['/shopify_odoo_webhook_for_product_update', '/shopify_odoo_webhook_for_product_delete'], csrf=False,
+    @http.route(['/shopify_odoo_webhook_for_product_create', '/shopify_odoo_webhook_for_product_update',
+                 '/shopify_odoo_webhook_for_product_delete'], csrf=False,
                 auth="public", type="json")
     def create_update_delete_product_webhook(self):
         """
@@ -32,7 +33,12 @@ class Main(http.Controller):
         shopify_template = request.env["shopify.product.template.ept"].sudo().with_context(active_test=False).search(
             [("shopify_tmpl_id", "=", res.get("id")), ("shopify_instance_id", "=", instance.id)], limit=1)
 
-        if webhook_route == 'shopify_odoo_webhook_for_product_update' and shopify_template or res.get("published_at"):
+        if webhook_route == 'shopify_odoo_webhook_for_product_create' and shopify_template or res.get("published_at"):
+            request.env["shopify.product.data.queue.ept"].sudo().create_shopify_product_queue_from_webhook(res,
+                                                                                                           instance)
+
+        if webhook_route == 'shopify_odoo_webhook_for_product_update' and shopify_template or res.get(
+                "status") == 'active':
             request.env["shopify.product.data.queue.ept"].sudo().create_shopify_product_queue_from_webhook(res,
                                                                                                            instance)
 
@@ -55,9 +61,10 @@ class Main(http.Controller):
         res, instance = self.get_basic_info(webhook_route)
         if not res:
             return
-
-        _logger.info("%s call for Customer: %s", webhook_route, (res.get("first_name") + " " + res.get("last_name")))
-        self.customer_webhook_process(res, instance)
+        if res.get("first_name") or res.get("last_name"):
+            _logger.info("%s call for Customer: %s", webhook_route,
+                         (res.get("first_name") + " " + res.get("last_name")))
+            self.customer_webhook_process(res, instance)
         return
 
     def customer_webhook_process(self, response, instance):

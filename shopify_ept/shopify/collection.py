@@ -2,6 +2,7 @@ from . pyactiveresource.collection import Collection
 from six.moves.urllib.parse import urlparse, parse_qs
 import cgi
 
+
 class PaginatedCollection(Collection):
     """
     A subclass of Collection which allows cycling through pages of
@@ -29,11 +30,11 @@ class PaginatedCollection(Collection):
             super(PaginatedCollection, self).__init__(metadata=metadata or {}, *args, **kwargs)
 
         if not ("resource_class" in self.metadata):
-            raise AttributeError("Cursor-based pagination requires a \"resource_class\" attribute in the metadata.")
+            raise AttributeError('Cursor-based pagination requires a "resource_class" attribute in the metadata.')
 
         self.metadata["pagination"] = self.__parse_pagination()
-        self.next_page_url = self.metadata["pagination"].get('next', None)
-        self.previous_page_url = self.metadata["pagination"].get('previous', None)
+        self.next_page_url = self.metadata["pagination"].get("next", None)
+        self.previous_page_url = self.metadata["pagination"].get("previous", None)
 
         self._next = None
         self._previous = None
@@ -55,13 +56,11 @@ class PaginatedCollection(Collection):
         return result
 
     def has_previous_page(self):
-        """Returns true if the current page has any previous pages before it.
-        """
+        """Returns true if the current page has any previous pages before it."""
         return bool(self.previous_page_url)
 
     def has_next_page(self):
-        """Returns true if the current page has any pages beyond the current position.
-        """
+        """Returns true if the current page has any pages beyond the current position."""
         return bool(self.next_page_url)
 
     def previous_page(self, no_cache=False):
@@ -141,6 +140,7 @@ class PaginatedIterator(object):
     ...
     # every page and the page items are iterated
     """
+
     def __init__(self, collection):
         if not isinstance(collection, PaginatedCollection):
             raise TypeError("PaginatedIterator expects a PaginatedCollection instance")

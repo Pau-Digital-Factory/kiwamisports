@@ -40,6 +40,7 @@
                 <field name="payment_term_id" required="1"/>
                 <field name="auto_workflow_id" required="1"/>
                 <field name="financial_status" required="1"/>
+                <field name="shopify_order_payment_status" required="1"/>
             </tree>
         </field>
     </record>

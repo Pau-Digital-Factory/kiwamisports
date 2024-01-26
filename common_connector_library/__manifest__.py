@@ -2,7 +2,7 @@
 # See LICENSE file for full copyright and licensing details.
 {
     'name': 'Common Connector Library',
-    'version': '15.0.1.1',
+    'version': '15.0.7.0.3',
     'category': 'Sales',
     'license': 'OPL-1',
     'author': 'Emipro Technologies Pvt. Ltd.',
@@ -10,10 +10,11 @@
     'maintainer': 'Emipro Technologies Pvt. Ltd.',
     'summary': """Develop generalize method to process different operations & auto workflow process to manage
     order process automatically.""",
-    'depends': ['delivery', 'sale_stock', 'sale_management','account'],
+    'depends': ['delivery', 'sale_stock', 'sale_management', 'account', 'digest'],
     'data': ['security/ir.model.access.csv',
              'data/ir_sequence.xml',
              'data/ir_cron.xml',
+             'data/digest_data.xml',
              'views/stock_quant_package_view.xml',
              'views/common_log_book_view.xml',
              'views/account_fiscal_position.xml',
@@ -24,6 +25,10 @@
              'views/sale_workflow_process_view.xml',
              'data/automatic_workflow_data.xml',
              'views/common_log_lines_ept.xml',
+             'views/digest_views.xml',
+             'views/delivery_carrier_view.xml',
+             'views/app_version.xml',
+             'wizard/res_config_settings.xml',
              ],
     'installable': True,
     'price': 20.00,
@@ -35,10 +40,17 @@
         'web.assets_backend': [
             '/common_connector_library/static/src/scss/graph_widget_ept.scss',
             '/common_connector_library/static/src/scss/on_boarding_wizards.css',
-            '/common_connector_library/static/src/js/graph_widget_ept.js'
+            '/common_connector_library/static/src/scss/queue_line_dashboard.scss',
+            '/common_connector_library/static/src/scss/in_app_notification.scss',
+            '/common_connector_library/static/src/js/in_app_widget.js',
+            '/common_connector_library/static/src/js/community.js',
+            '/common_connector_library/static/src/js/queue_line_dashboard.js',
+            '/common_connector_library/static/src/js/dom_ready.js',
+            '/common_connector_library/static/src/js/graph_widget_ept.js',
+            '/common_connector_library/static/src/js/enterprise.js',
         ],
         'web.assets_qweb': [
-            '/common_connector_library/static/src/xml/dashboard_widget.xml',
-        ]
+            '/common_connector_library/static/src/xml/*.xml',
+        ],
     },
 }

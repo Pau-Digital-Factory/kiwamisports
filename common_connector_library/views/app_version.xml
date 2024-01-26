@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="customer_app_version_detail_tree_view" model="ir.ui.view">
+        <field name="name">customer.app.version.detail.tree.view</field>
+        <field name="model">emipro.app.version.details</field>
+        <field name="arch" type="xml">
+            <tree string="Version Details" create="0" edit="0" default_order="id desc">
+                <field name="module_id"/>
+                <field name="version"/>
+                <field name="is_latest"/>
+                <field name="upgrade_require"/>
+                <field name="is_notify"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="customer_app_version_detail_form_view" model="ir.ui.view">
+        <field name="name">customer.app.version.detail.form.view</field>
+        <field name="model">emipro.app.version.details</field>
+        <field name="arch" type="xml">
+            <form string="Version Details">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="module_id" readonly="1"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group>
+                            <field name="version" readonly="1"/>
+                            <field name="update_url" readonly="1"/>
+                            <field name="is_notify" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="is_latest" readonly="1"/>
+                            <field name="upgrade_require" readonly="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Update Details">
+                            <field name="update_detail" widget="html" readonly="1"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="customer_app_version_detail_search_view" model="ir.ui.view">
+        <field name="name">emipro.app.version.details.search.view</field>
+        <field name="model">emipro.app.version.details</field>
+        <field name="arch" type="xml">
+            <search string="Search Applications">
+                <field name="version"/>
+                <group expand="0" string="Group By">
+                    <filter name="group_by_module_id" string="Application"
+                            context="{'group_by': 'module_id'}"/>
+                    <filter name="group_by_version" string="Version"
+                            context="{'group_by':'version'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+<!--    <record id="emipro_app_version_detail_action" model="ir.actions.act_window">-->
+<!--        <field name="name">Emipro App Updates</field>-->
+<!--        <field name="res_model">emipro.app.version.details</field>-->
+<!--        <field name="view_mode">kanban,tree,form</field>-->
+<!--        <field name="domain">[]</field>-->
+<!--        <field name="context">{"search_default_group_by_module_id": 1}</field>-->
+<!--        <field name="view_id" ref="common_connector_library.customer_app_version_detail_tree_view"/>-->
+<!--    </record>-->
+
+<!--    <menuitem id="menu_act_sale_workflow_process_form_ept"-->
+<!--              name="Emipro App Updates"-->
+<!--              sequence="9"-->
+<!--              parent="base.menu_management"-->
+<!--              action="common_connector_library.emipro_app_version_detail_action"/>-->
+</odoo>

@@ -104,14 +104,15 @@ class ShopifyProductDataQueue(models.Model):
         @author: Maulik Barad on Date 28-Aug-2020.
         """
         product_queue_list = []
+        product_queue = False
         order_data_queue_line = self.env['shopify.order.data.queue.line.ept']
         count = 125
         for result in results:
             if count == 125:
                 product_queue = self.shopify_create_product_queue(instance, skip_existing_product=skip_existing_product)
-                product_queue_list.append(product_queue.id)
                 message = "Product Queue Created", product_queue.name
-                order_data_queue_line.generate_simple_notification(message)
+                if self.env.context.get('queue_created_by'):
+                    order_data_queue_line.generate_simple_notification(message)
                 self._cr.commit()
                 _logger.info(message)
                 count = 0
@@ -119,12 +120,16 @@ class ShopifyProductDataQueue(models.Model):
                     product_queue.message_post(body=_('%s products are not imported') % ','.join(template_ids))
             self.shopify_create_product_data_queue_line(result, instance, product_queue)
             count = count + 1
+        if product_queue and not product_queue.product_data_queue_lines:
+            product_queue.unlink()
+        elif product_queue:
+            product_queue_list.append(product_queue.id)
         self._cr.commit()
         return product_queue_list
 
     def shopify_create_product_data_queue(self, instance, import_based_on='', from_date=False,
                                           to_date=False, skip_existing_product=False,
-                                          template_ids=""):
+                                          template_ids="", is_import_draft_product=False):
         """
         This method used to create a product data queue while syncing product from Shopify to Odoo.
         @param instance: Shopify Instance.
@@ -145,24 +150,38 @@ class ShopifyProductDataQueue(models.Model):
             if product_queue_list:
                 results = True
         else:
-            if import_based_on == "create_date":
-                results = shopify.Product().find(status='active', created_at_min=from_date, created_at_max=to_date,
-                                                 limit=250)
-            else:
-                results = shopify.Product().find(status='active', updated_at_min=from_date, updated_at_max=to_date,
-                                                 limit=250)
-
+            results = self.find_shopify_draft_prodcut_for_import('active', import_based_on, from_date, to_date)
             product_queue_list += self.create_product_queues(instance, results, skip_existing_product)
 
             if len(results) >= 250:
                 product_queue_list += self.shopify_list_all_products(instance, results, skip_existing_product)
             if results:
                 instance.shopify_last_date_product_import = datetime.now()
+
+            if is_import_draft_product:
+                results = self.find_shopify_draft_prodcut_for_import('draft', import_based_on, from_date, to_date)
+                product_queue_list += self.create_product_queues(instance, results, skip_existing_product)
+
+                if len(results) >= 250:
+                    product_queue_list += self.shopify_list_all_products(instance, results, skip_existing_product)
         if not results:
             _logger.info("No Products found to be imported from Shopify.")
             return False
 
         return product_queue_list
+
+    def find_shopify_draft_prodcut_for_import(self, product_status, import_based_on, from_date, to_date):
+        """
+        This method used to find product in shopify store which is in draft state.
+        @author: Yagnik Joshi on Date 29-November-2020.
+        """
+        if import_based_on == "create_date":
+            results = shopify.Product().find(status=product_status, created_at_min=from_date, created_at_max=to_date,
+                                             limit=250)
+        else:
+            results = shopify.Product().find(status=product_status, updated_at_min=from_date, updated_at_max=to_date,
+                                             limit=250)
+        return results
 
     def import_products_by_remote_ids(self, template_ids, instance):
         """ This method is used to import Shopify products into Odoo using remote ids(open product in Shopify store,
@@ -201,7 +220,9 @@ class ShopifyProductDataQueue(models.Model):
         catch = ""
         while result:
             page_info = ""
-            link = shopify.ShopifyResource.connection.response.headers.get("Link")
+            link = shopify.ShopifyResource.connection.response.headers.get(
+                "Link") if shopify.ShopifyResource.connection.response.headers.get(
+                "Link") else shopify.ShopifyResource.connection.response.headers.get("link")
             if not link or not isinstance(link, str):
                 return product_queue_list
             for page_link in link.split(","):
@@ -253,6 +274,10 @@ class ShopifyProductDataQueue(models.Model):
         image_import_state = 'done'
         if instance.sync_product_with_images:
             image_import_state = 'pending'
+        existing_product_data_queue = product_data_queue_line_obj.search(
+            [('product_data_id', '=', result.get('id')), ('shopify_instance_id', '=', instance.id),
+             ('state', 'in', ['draft', 'failed']), ('product_data_queue_id.is_action_require', '=', False)])
+        existing_product_queue = existing_product_data_queue.product_data_queue_id
         product_queue_line_vals = {"product_data_id": result.get("id"),
                                    "shopify_instance_id": instance and instance.id or False,
                                    "name": result.get("title"),
@@ -260,7 +285,12 @@ class ShopifyProductDataQueue(models.Model):
                                    "product_data_queue_id": product_data_queue and product_data_queue.id or False,
                                    "shopify_image_import_state": image_import_state,
                                    }
-        product_data_queue_line_obj.create(product_queue_line_vals)
+        if not existing_product_data_queue:
+            product_data_queue_line_obj.create(product_queue_line_vals)
+        else:
+            existing_product_data_queue.write({"synced_product_data": data, 'state': 'draft'})
+            if not existing_product_queue.product_data_queue_lines:
+                existing_product_queue.unlink()
         return True
 
     def create_schedule_activity_for_product(self, queue_line, from_sale=False):
@@ -325,7 +355,7 @@ class ShopifyProductDataQueue(models.Model):
         @author: Dipak Gogiya on Date 10-Jan-2020.
         """
         product_data_queue = self.search([("created_by", "=", "webhook"), ("state", "=", "draft"),
-                                          ("shopify_instance_id", "=", instance.id)])
+                                          ("shopify_instance_id", "=", instance.id), ('is_action_require', '=', False)])
         if product_data_queue:
             message = "Product %s added into Queue %s." % (product_data.get("id"), product_data_queue.name)
         else:
@@ -338,4 +368,28 @@ class ShopifyProductDataQueue(models.Model):
         if len(self.product_data_queue_lines) == 50:
             product_data_queue.product_data_queue_lines.process_product_queue_line_data()
             _logger.info("Processed product %s of %s via Webhook Successfully.", product_data.get("id"), instance.name)
+        if not product_data_queue.product_data_queue_lines:
+            product_data_queue.unlink()
         return True
+
+    @api.model
+    def retrieve_dashboard(self, *args, **kwargs):
+        dashboard = self.env['queue.line.dashboard']
+        return dashboard.get_data(table='shopify.product.data.queue.line.ept', )
+
+    def import_product_cron_action(self, ctx=False):
+        """
+        This method is used to import Products from the auto-import cron job.
+        """
+        if isinstance(ctx, dict):
+            instance_id = ctx.get('shopify_instance_id')
+            instance = self.env['shopify.instance.ept'].browse(instance_id)
+            from_date = instance.shopify_last_date_product_import
+            to_date = datetime.now()
+            import_products_based_on_date = "update_date"
+            skip_existing_product = False
+            if not from_date:
+                from_date = to_date - timedelta(30)
+            self.shopify_create_product_data_queue(instance, import_products_based_on_date, from_date, to_date,
+                                                   skip_existing_product)
+            return True

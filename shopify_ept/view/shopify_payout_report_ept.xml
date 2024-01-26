@@ -11,6 +11,8 @@
                 <field name="state"/>
                 <field name="instance_id"/>
                 <field name="statement_id"/>
+                <field name="payout_transaction_ids" string="Shopify Order ID"
+                       filter_domain="[('payout_transaction_ids.source_order_id', '=', self)]"/>
                 <filter name="remaining_reports" string="Remaining Reports" domain="[('state', '!=', 'validated')]"/>
                 <group expand="0" string="Group By...">
                     <filter name="instance" string="Instance" context="{'group_by':'instance_id'}"/>
@@ -62,14 +64,16 @@
                             attrs="{'invisible':[('state','not in',['processed'])]}"
                             class="oe_highlight" type="object"/>
                     <button name="shopify_view_bank_statement" string="View Statement"
-                        attrs="{'invisible':[('statement_id','=',False)]}"
-                        class="oe_highlight"
-                        type="object" />
+                            attrs="{'invisible':[('statement_id','=',False)]}"
+                            class="oe_highlight"
+                            type="object"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,generated,processed,validated"/>
                 </header>
-                <div class="alert alert-danger" role="alert" style="margin-bottom:0px;" attrs="{'invisible': ['|',('is_skip_from_cron','=',False),('state','=','validated')]}">
+                <div class="alert alert-danger" role="alert" style="margin-bottom:0px;"
+                     attrs="{'invisible': ['|',('is_skip_from_cron','=',False),('state','=','validated')]}">
                     <strong>
-                        - Due to some issue in the process, This report is not processed via Automatic Scheduler, Please process it manually.
+                        - Due to some issue in the process, This report is not processed via Automatic Scheduler, Please
+                        process it manually.
                     </strong>
                 </div>
                 <sheet>
@@ -184,6 +188,6 @@
 
 
     <menuitem id="menu_shopify_payout_report" name="Payout Reports"
-              parent="shopify_ept.menu_item_parent_shopify_invoices_ept"
-              groups="account.group_account_user" action="action_shopify_payout_report_ept" sequence="9"/>
+              parent="shopify_ept.shopify_menu_item_sales"
+              groups="account.group_account_user" action="action_shopify_payout_report_ept" sequence="10"/>
 </odoo>

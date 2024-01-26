@@ -40,6 +40,8 @@ class AccountFiscalPosition(models.Model):
         """
         if not country_id:
             return False
+        if self._context.get('is_b2b_amz_order', False):
+            vat_required = self._context.get('is_b2b_amz_order', False)
         base_domain = [('vat_required', '=', vat_required), ('company_id', 'in', [self.env.company.id, False]),
                        ('origin_country_ept', 'in', [origin_country_id, False])]
         null_state_dom = state_domain = [('state_ids', '=', False)]
@@ -48,6 +50,9 @@ class AccountFiscalPosition(models.Model):
         is_amazon_fpos = self._context.get('is_amazon_fpos', False)
         if is_amazon_fpos:
             base_domain.append(('is_amazon_fpos', '=', is_amazon_fpos))
+        is_bol_fpos = self._context.get('is_bol_fpos', False)
+        if is_bol_fpos:
+            base_domain.append(('is_bol_fiscal_position', '=', is_bol_fpos))
         if zipcode:
             zip_domain = [('zip_from', '<=', zipcode), ('zip_to', '>=', zipcode)]
         if state_id:

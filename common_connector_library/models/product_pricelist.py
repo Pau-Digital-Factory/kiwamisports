@@ -55,3 +55,10 @@ class ProductPricelist(models.Model):
             'fixed_price': price,
         }
         return vals
+
+    def get_product_price_list_rule(self, product, quantity, partner):
+        """ add method for a get price and rule base on given pricelist and product
+            added by : Nilam Kubavat at 21st April 2023
+        """
+        rule = self.get_product_price_rule(product, quantity, partner, date=False, uom_id=product.uom_id.id)
+        return rule

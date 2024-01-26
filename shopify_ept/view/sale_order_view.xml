@@ -47,6 +47,8 @@
         <field name="inherit_id" ref="sale.view_sales_order_filter"/>
         <field name="arch" type="xml">
             <filter name="my_sale_orders_filter" position="after">
+                <field name="shopify_order_number" string="Shopify Order Number"/>
+                <field name="shopify_order_id" string="Shopify Order Ref"/>
                 <filter string="Shipped Order"
                         domain="[('shopify_order_status', '=', 'fulfilled')]"
                         help="While import order from shopify at time shipped order"
@@ -56,12 +58,12 @@
                         domain="[('updated_in_shopify', '=', True)]"/>
                 <filter string="Order status not updated in Shopify"
                         name="order_status_not_updated"
-                        domain="[('updated_in_shopify', '!=', True)]"/>
+                        domain="['&amp;',('picking_ids.state','=','done'),('updated_in_shopify', '!=', True)]"/>
             </filter>
         </field>
     </record>
 
-    <!--Inherit Form view of shopify shopify sale order -->
+    <!--Inherit Form view of shopify sale order -->
     <record id="view_order_form" model="ir.ui.view">
         <field name="name">sale.order.form.inherit</field>
         <field name="model">sale.order</field>
@@ -69,12 +71,24 @@
         <field name="inherit_id" ref="sale.view_order_form"/>
         <field name="arch" type="xml">
             <data>
+                <xpath expr="//page[@name='order_lines']/field[@name='order_line']/tree/field[@name='warehouse_id_ept']"
+                       position="attributes">
+                    <attribute name="invisible">0</attribute>
+                    <attribute name="optional">hide</attribute>
+                </xpath>
                 <notebook position="inside">
                     <page string="Shopify Info" name="shopify_ept"
                           attrs="{'invisible':[('shopify_instance_id','=',False)]}">
                         <group>
                             <group>
-                                <field name="shopify_order_id" readonly="True"/>
+                                <label for="shopify_order_id"/>
+                                <div name="shopify_order_link">
+                                    <field name="shopify_order_id" readonly="True"/>
+                                    <button name="action_order_ref_redirect"
+                                            type="object"
+                                            icon="fa-external-link ">
+                                    </button>
+                                </div>
                                 <field name="shopify_order_number" readonly="True"/>
                                 <field name="shopify_payment_gateway_id" readonly="True"/>
                                 <field name="shopify_instance_id" readonly="True"
@@ -87,6 +101,7 @@
                                 <field name="closed_at_ept" readonly="True"/>
                                 <field name="shopify_location_id" readonly="1"/>
                                 <field name="is_pos_order" readonly="1" invisible="1"/>
+                                <field name="is_shopify_multi_payment" invisible="1"/>
                             </group>
                         </group>
                         <group string="Risks">
@@ -114,6 +129,29 @@
                                     </group>
                                     <group string="Message">
                                         <field name="message" nolabel="1"/>
+                                    </group>
+                                </form>
+                            </field>
+                        </group>
+                        <group string="Multi Payments" name="multi_payments"
+                               attrs="{'invisible':[('is_shopify_multi_payment','=',False)]}">
+                            <field name="shopify_payment_ids" readonly="1" nolabel="1">
+                                <tree>
+                                    <field name="payment_gateway_id"/>
+                                    <field name="workflow_id"/>
+                                    <field name="amount"/>
+                                    <field name="remaining_refund_amount"/>
+                                </tree>
+                                <form>
+                                    <group>
+                                        <group>
+                                            <field name="payment_gateway_id"/>
+                                            <field name="workflow_id"/>
+                                        </group>
+                                        <group>
+                                            <field name="amount"/>
+                                            <field name="remaining_refund_amount"/>
+                                        </group>
                                     </group>
                                 </form>
                             </field>
@@ -385,24 +423,36 @@
         </field>
     </record>
 
+    <!--Tree view of multi payments which used to display the multi-payment gateway in an invoice-->
+    <record id="shopify_multi_payment_gateway_tree_view_ept"
+            model="ir.ui.view">
+        <field name="name">Multi Payment</field>
+        <field name="model">shopify.order.payment.ept</field>
+        <field name="arch" type="xml">
+            <tree create="false" duplicate="false">
+                <field name="payment_gateway_id"/>
+                <field name="workflow_id"/>
+                <field name="amount"/>
+                <field name="remaining_refund_amount"/>
+            </tree>
+        </field>
+    </record>
+
     <!--Main of Sale -->
     <menuitem id="shopify_menu_item_sales" name="Sales" parent="shopify_ept.shopify_instance_menu_item"
-              sequence="4"/>
-
-    <menuitem id="shopify_order_parent_menu" name="Orders" parent="shopify_ept.shopify_menu_item_sales"
-              sequence="7"/>
+              sequence="2"/>
 
     <!--Quotation Order menuitem -->
     <menuitem id="shopify_menu_item_quotation_order" name="Quotations"
-              parent="shopify_ept.shopify_order_parent_menu" action="action_shopify_sale_quotation" sequence="5"/>
+              parent="shopify_ept.shopify_menu_item_sales" action="action_shopify_sale_quotation" sequence="1"/>
 
     <!--Risky Order menuitem -->
     <menuitem id="shopify_menu_item_risky_quotation_order" name="Risky Quotations"
-              parent="shopify_ept.shopify_order_parent_menu" action="action_shopify_risky_quotations"
-              sequence="10"/>
+              parent="shopify_ept.shopify_menu_item_sales" action="action_shopify_risky_quotations"
+              sequence="2"/>
 
     <!--Confirm Order menuitem -->
-    <menuitem id="shopify_menu_item_sales_order" name="Sales Order" parent="shopify_ept.shopify_order_parent_menu"
-              action="action_shopify_sales_order" sequence="15"/>
+    <menuitem id="shopify_menu_item_sales_order" name="Orders" parent="shopify_ept.shopify_menu_item_sales"
+              action="action_shopify_sales_order" sequence="3"/>
 </odoo>
 	

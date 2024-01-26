@@ -41,11 +41,12 @@
                                             'PRODUCT_ID' and 'CATEGORY_ID' in CSV file.
                                         </li>
                                         <li>
-                                            You can import CSV file here: Shopify => Processes => Shopify Operations.
-                                            Select the instance and Operation > Import Products From CSV.
+                                            You can import CSV/XLSX file here: Shopify => Processes => Shopify
+                                            Operations.
+                                            Select the instance and Operation > Import Products From CSV/XLSX.
                                         </li>
                                     </ol>
-                                    <ol attrs="{'invisible':[('export_method','=','csv')]}">
+                                    <ol attrs="{'invisible':[('export_method','in',('csv','xlsx'))]}">
                                         <li>
                                             You can use this option, when you want to export the
                                             details without making changes in the current values of
@@ -78,7 +79,7 @@
 
     <!--Action for prepare product for export-->
     <record id="action_shopify_export_odoo_products_ept" model="ir.actions.act_window">
-        <field name="name">Shopify - Export Products</field>
+        <field name="name">Shopify - Prepare Product for Export</field>
         <field name="res_model">shopify.prepare.product.for.export.ept</field>
         <field name="binding_model_id" ref="model_product_template"/>
         <field name="binding_view_types">form,list</field>

@@ -17,6 +17,7 @@ from .rule import Rule
 from .tax_line import TaxLine
 from .script_tag import ScriptTag
 from .application_charge import ApplicationCharge
+from .application_credit import ApplicationCredit
 from .recurring_application_charge import RecurringApplicationCharge
 from .usage_charge import UsageCharge
 from .asset import Asset
@@ -38,6 +39,7 @@ from .page import Page
 from .country import Country
 from .refund import Refund
 from .fulfillment import Fulfillment, FulfillmentOrders
+from .fulfillment_event import FulfillmentEvent
 from .fulfillment_service import FulfillmentService
 from .carrier_service import CarrierService
 from .transaction import Transaction

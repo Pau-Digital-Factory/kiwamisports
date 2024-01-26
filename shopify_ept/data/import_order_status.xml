@@ -9,5 +9,9 @@
             <field name="name">Partially Fulfilled</field>
             <field name="status">partial</field>
         </record>
+        <record model="import.shopify.order.status" id="fulfilled">
+            <field name="name">Fulfilled</field>
+            <field name="status">fulfilled</field>
+        </record>
     </data>
 </odoo>

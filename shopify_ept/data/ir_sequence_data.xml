@@ -38,5 +38,14 @@
             <field name="padding">5</field>
             <field name="company_id" eval="False"/>
         </record>
+
+        <!-- Sequences for Export Stock queue-->
+        <record id="seq_export_stock_queue" model="ir.sequence">
+            <field name="name">Shopify Export Stock Queue Sequence</field>
+            <field name="code">shopify.export.stock.queue.ept</field>
+            <field name="prefix">ESQ</field>
+            <field name="padding">6</field>
+            <field name="company_id" eval="False"/>
+        </record>
     </data>
 </odoo>

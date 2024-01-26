@@ -54,15 +54,25 @@ class ShopifyCustomerDataQueueLineEpt(models.Model):
         name = "%s %s" % (result.get("first_name") or "", result.get("last_name") or "")
         customer_id = result.get("id")
         data = json.dumps(result)
+        existing_customer_data_queue = synced_shopify_customers_line_obj.search(
+            [('shopify_customer_data_id', '=', customer_id), ('shopify_instance_id', '=', customer_queue_id.shopify_instance_id.id),
+             ('state', 'in', ['draft', 'failed'])])
+        existing_customer_queue = existing_customer_data_queue.synced_customer_queue_id
         line_vals = {
             "synced_customer_queue_id": customer_queue_id.id,
             "shopify_customer_data_id": customer_id or "",
             "name": name.strip(),
             "shopify_synced_customer_data": data,
-            "shopify_instance_id": self.shopify_instance_id.id,
+            "shopify_instance_id": customer_queue_id.shopify_instance_id.id,
             "last_process_date": datetime.now(),
         }
-        return synced_shopify_customers_line_obj.create(line_vals)
+        if not existing_customer_data_queue:
+            synced_shopify_customers_line_obj.create(line_vals)
+        else:
+            existing_customer_data_queue.write({'shopify_synced_customer_data': data, 'state': 'draft'})
+            if not existing_customer_queue.synced_customer_queue_line_ids:
+                existing_customer_queue.unlink()
+        return True
 
     @api.model
     def sync_shopify_customer_into_odoo(self):
@@ -175,7 +185,8 @@ class ShopifyCustomerDataQueueLineEpt(models.Model):
                         continue
                     shopify_partner_obj.shopify_create_or_update_address(address, main_partner, "other")
 
-                line.update({"state": "done", "last_process_date": datetime.now()})
+                line.update(
+                    {"state": "done", "last_process_date": datetime.now(), 'shopify_synced_customer_data': False})
             else:
                 line.update({"state": "failed", "last_process_date": datetime.now()})
             queue.is_process_queue = False

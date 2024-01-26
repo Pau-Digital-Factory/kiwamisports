@@ -52,6 +52,16 @@ class ShopifyInstanceEpt(models.Model):
         return discount_product
 
     @api.model
+    def _default_duties_product(self):
+        """
+        This method is used to set the duties product in an instance.
+        @author: Nilam kubavat on Date 03-06-2022
+        @Task_id : 191580
+        """
+        duties_product = self.env.ref('shopify_ept.shopify_duties_product', False)
+        return duties_product
+
+    @api.model
     def _default_shipping_product(self):
         """
         This method is used to set the shipping product in an instance.
@@ -122,6 +132,21 @@ class ShopifyInstanceEpt(models.Model):
         """
         order_after_date = datetime.now() - timedelta(30)
         return order_after_date
+
+    @api.model
+    def _default_uom_category(self):
+        product_weight_in_lbs_param = self.env['ir.config_parameter'].sudo().get_param('product.weight_in_lbs')
+        if product_weight_in_lbs_param and product_weight_in_lbs_param == '1':
+            uom = self.env.ref('uom.product_uom_lb')
+        else:
+            uom = self.env.ref('uom.product_uom_kgm')
+        return uom
+
+    @api.model
+    def _get_default_language(self):
+        lang_code = self.env.user.lang
+        language = self.env["res.lang"].search([('code', '=', lang_code)])
+        return language.id if language else False
 
     name = fields.Char(size=120, required=True)
     shopify_company_id = fields.Many2one('res.company', string='Company', required=True,
@@ -200,6 +225,11 @@ class ShopifyInstanceEpt(models.Model):
     is_shopify_create_schedule = fields.Boolean("Create Schedule Activity ? ", default=False,
                                                 help="If checked, Then Schedule Activity create on order data queues"
                                                      " will any queue line failed.")
+
+    # fields for payout schedule activity
+    shopify_payout_user_ids = fields.Many2many('res.users', 'shopify_instance_ept_payout_res_users_rel',
+                                               'res_config_settings_id', 'res_users_id')
+
     active = fields.Boolean(default=True)
     sync_product_with_images = fields.Boolean("Sync Images?",
                                               help="Check if you want to import images along with "
@@ -220,6 +250,9 @@ class ShopifyInstanceEpt(models.Model):
     shopify_default_pos_customer_id = fields.Many2one("res.partner", "Default POS customer",
                                                       help="This customer will be set in POS order, when"
                                                            "customer is not found.")
+    # Auto Import Shipped Order
+    auto_import_shipped_order = fields.Boolean(default=False)
+
     # Shopify Payout Report
     transaction_line_ids = fields.One2many("shopify.payout.account.config.ept", "instance_id",
                                            string="Transaction Line")
@@ -228,6 +261,10 @@ class ShopifyInstanceEpt(models.Model):
     payout_last_import_date = fields.Date(string="Last Date of Payout Import")
     last_shipped_order_import_date = fields.Datetime(string="Last Date Of Shipped Order Import",
                                                      help="Last date of sync orders from Shopify to Odoo")
+    last_cancel_order_import_date = fields.Datetime(string="Last Date Of Cancel Order Import",
+                                                    help="Last date of sync orders from Shopify to Odoo")
+    last_buy_with_prime_order_import_date = fields.Datetime(string="Last Date Of Buy with Prime Order Import",
+                                                            help="Last date of sync orders from Shopify to Odoo")
     is_instance_create_from_onboarding_panel = fields.Boolean(default=False)
     is_onboarding_configurations_done = fields.Boolean(default=False)
     shipping_product_id = fields.Many2one("product.product", domain=[('detailed_type', '=', 'service')],
@@ -268,6 +305,57 @@ class ShopifyInstanceEpt(models.Model):
                                      domain=[('detailed_type', '=', 'service')],
                                      default=_default_tip_product,
                                      help="This is used for set Tip product in a sale order lines")
+    # Analytic
+    shopify_analytic_account_id = fields.Many2one('account.analytic.account', string='Analytic Account',
+                                                  domain="['|', ('company_id', '=', False), "
+                                                         "('company_id', '=', shopify_company_id)]")
+    shopify_analytic_tag_ids = fields.Many2many('account.analytic.tag', string='Analytic Tags',
+                                                domain="['|', ('company_id', '=', False), "
+                                                       "('company_id', '=', shopify_company_id)]")
+    shopify_lang_id = fields.Many2one('res.lang', string='Language', default=_get_default_language)
+
+    # presentment currency
+    order_visible_currency = fields.Boolean(string="Import order in customer visible currency?")
+
+    duties_product_id = fields.Many2one("product.product", "Duties",
+                                        domain=[('detailed_type', '=', 'service')],
+                                        default=_default_duties_product,
+                                        help="This is used for set duties product in a sale order lines")
+
+    is_shopify_digest = fields.Boolean(string="Set Shopify Digest?")
+    is_delivery_fee = fields.Boolean(string='Are you selling for Colorado State(US)')
+    delivery_fee_name = fields.Char(string='Delivery fee name')
+
+    is_delivery_multi_warehouse = fields.Boolean(string="Is Delivery from Multiple warehouse?")
+    shopify_product_uom_id = fields.Many2one('uom.uom', string='Unit of Measure',
+                                             default=_default_uom_category,
+                                             )
+
+    ship_order_webhook = fields.Boolean("Want to ship order", default=True,
+                                        help="If checked, it will fulfill order in odoo")
+    forcefully_reserve_stock_webhook = fields.Boolean("ForceFully Reserve Stock",
+                                                      help="If checked, It will forcefully reserve stock in the picking")
+    refund_order_webhook = fields.Boolean("Want to refund order", default=True,
+                                          help="If checked, it will create a refund in odoo")
+    customer_order_webhook = fields.Boolean("Want to update customer",
+                                            help="If checked, it will update the customer in order")
+    update_qty_order_webhook = fields.Boolean("Want to update Quantity",
+                                              help="If checked, it will update the customer in order")
+    add_new_product_order_webhook = fields.Boolean("Want to Add New Product",
+                                                   help="If checked, it will add new product in the order if receive in the webhook")
+    import_buy_with_prime_shopify_order = fields.Boolean(string="Import Buy with Prime Orders",
+                                                         help="If checked, it will import order of buy with prime orders")
+    buy_with_prime_warehouse_id = fields.Many2one("stock.warehouse", string="Shopify Warehouse",
+                                                  domain="[('company_id', '=',shopify_company_id)]")
+    buy_with_prime_tag_ids = fields.Many2many("shopify.tags", "shopify_instance_buy_with_prime_shopify_tags_rel",
+                                              "product_tmpl_id", "tag_id",
+                                              "Tags for import buy with prime orders")
+    force_transfer_move_of_buy_with_prime_orders = fields.Boolean(string="Force Transfer",
+                                                                  help="If checked, it will forcefully done the stock move while stock also not there.")
+    return_picking_order = fields.Boolean("Want to return picking", help="If checked, it will create a return in odoo")
+    stock_validate_for_return = fields.Boolean("Want to validate return picking",
+                                               help="If checked, it will validate a return picking")
+    return_location_id = fields.Many2one('stock.location', 'Return Location')
 
     _sql_constraints = [('unique_host', 'unique(shopify_host)',
                          "Instance already exists for given host. Host must be Unique for the instance!")]
@@ -723,7 +811,9 @@ class ShopifyInstanceEpt(models.Model):
         Added on: 29/10/20
         :return: shopify report action details
         """
-        view = self.env.ref('shopify_ept.shopify_sale_report_action_dashboard').sudo().read()[0]
+        sale_report_obj = self.env['sale.report']
+        view = sale_report_obj.shopify_sale_report()
+        # view = self.env.ref('shopify_ept.shopify_sale_report_action_dashboard').sudo().read()[0]
         action = self.prepare_action(view, [('shopify_instance_id', '=', record_id)])
         action.update({'context': {'search_default_shopify_instances': record_id, 'search_default_Sales': 1,
                                    'search_default_filter_date': 1}})
@@ -821,9 +911,9 @@ class ShopifyInstanceEpt(models.Model):
         """
         shop = host.split("//")
         if len(shop) == 2:
-            shop_url = shop[0] + "//" + api_key + ":" + password + "@" + shop[1] + "/admin/api/2021-01"
+            shop_url = shop[0] + "//" + api_key + ":" + password + "@" + shop[1] + "/admin/api/2024-01"
         else:
-            shop_url = "https://" + api_key + ":" + password + "@" + shop[0] + "/admin/api/2021-01"
+            shop_url = "https://" + api_key + ":" + password + "@" + shop[0] + "/admin/api/2024-01"
 
         return shop_url
 
@@ -928,7 +1018,7 @@ class ShopifyInstanceEpt(models.Model):
         """
         topic_list = []
         if event == 'product':
-            topic_list = ["products/update", "products/delete"]
+            topic_list = ["products/create", "products/update", "products/delete"]
         if event == 'customer':
             topic_list = ["customers/create", "customers/update"]
         if event == 'order':

@@ -91,3 +91,16 @@ class DeliveryCarrier(models.Model):
                     {'name': delivery_title, 'shopify_code': delivery_code, 'shopify_source': delivery_source,
                      'product_id': instance.shipping_product_id.id})
         return carrier
+
+    def search_carrier_for_webhook_fulfillment(self, instance, fulfillment_data):
+        """
+        This method is use to search the carrier for webhook fulfillment
+        """
+        carrier_name = fulfillment_data.get('service')
+        carrier = False
+        if carrier_name:
+            carrier = self.search([('name', '=', carrier_name)], limit=1)
+            if not carrier:
+                carrier = self.create(
+                    {'name': carrier_name, 'shopify_code': carrier_name, 'shopify_source': carrier_name,'product_id': instance.shipping_product_id.id})
+        return carrier

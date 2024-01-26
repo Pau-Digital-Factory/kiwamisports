@@ -26,4 +26,19 @@
         <field name="state">code</field>
         <field name="code">model.auto_workflow_process_ept()</field>
     </record>
+
+    <!--Auto send Request In App Notification to the emipro webserver.-->
+    <record id="send_in_app_notification_ept" model="ir.cron">
+        <field name="name">Emipro: Request for App Update</field>
+        <field eval="False" name="active"/>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="interval_number">1</field>
+        <field name="interval_type">weeks</field>
+        <field name="numbercall">-1</field>
+        <field eval="False" name="doall"/>
+        <field eval="ref('common_connector_library.model_emipro_app_version_details')"
+               name="model_id"/>
+        <field name="state">code</field>
+        <field name="code">model.auto_send_installed_app_details_ept()</field>
+    </record>
 </odoo>

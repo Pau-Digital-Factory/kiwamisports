@@ -63,6 +63,13 @@
                                                 Shopify > Configuration > Settings > Select an
                                                 instance.
                                             </li>
+                                            <li>
+                                                For more details please check
+                                                <a href='https://docs.emiprotechnologies.com/shopify-odoo-connector/v15/shopify-configurations-in-odoo/product-configuration.html'
+                                                   target="_blank">
+                                                    User Guide
+                                                </a>
+                                            </li>
                                         </ol>
                                     </b>
                                 </p>
@@ -94,6 +101,13 @@
                                             <li>
                                                 Example of define shopify product template ids:
                                                 4341100314679,4341100314680,4341100314678,4341100314658
+                                            </li>
+                                            <li>
+                                                For more details please check
+                                                <a href='https://docs.emiprotechnologies.com/shopify-odoo-connector/v15/shopify-configurations-in-odoo/product-configuration.html'
+                                                   target="_blank">
+                                                    User Guide
+                                                </a>
                                             </li>
                                         </ol>
                                     </b>
@@ -137,11 +151,18 @@
                                                 Of Import Process)
                                                 in the configuration.
                                             </li>
+                                            <li>
+                                                For more details please check
+                                                <a href='https://docs.emiprotechnologies.com/shopify-odoo-connector/v15/shopify-orders-management/import-unshipped-order.html'
+                                                   target="_blank">
+                                                    User Guide
+                                                </a>
+                                            </li>
                                         </ol>
                                     </b>
                                 </p>
                             </div>
-                            <div attrs="{'invisible':[('shopify_operation','!=','import_shipped_orders')]}">
+                            <div attrs="{'invisible':[('shopify_operation','not in',['import_shipped_orders', 'import_buy_with_prime_orders'])]}">
                                 <p colspan="2" class="alert alert-warning" role="alert">
                                     <b>
                                         <u>
@@ -184,6 +205,50 @@
                                                 Order After Date) in
                                                 the configuration.
                                             </li>
+                                            <li>
+                                                For more details please check
+                                                <a href='https://docs.emiprotechnologies.com/shopify-odoo-connector/v15/shopify-orders-management/import-shipped-order.html'
+                                                   target="_blank">
+                                                    User Guide
+                                                </a>
+                                            </li>
+                                        </ol>
+                                    </b>
+                                </p>
+                            </div>
+                            <div attrs="{'invisible':[('shopify_operation','!=','import_cancel_orders')]}">
+                                <p colspan="2" class="alert alert-warning" role="alert">
+                                    <b>
+                                        <u>
+                                            <h3 style="font-weight:bold;color:#7d5a29">Note :
+                                            </h3>
+                                        </u>
+                                        <ol>
+                                            <li>
+                                                It will start fetching Cancel Order data from Shopify store
+                                                and will cancel imported orders if imported orders are canceled on
+                                                Shopify store.
+                                            </li>
+                                            <li>
+                                                It will fetch the cancel orders for the dates specified in
+                                                'From Date' and 'To Date' fields below.
+                                            </li>
+                                            <li>
+                                                The default value for 'From Date' will be the last
+                                                execution date of this operation. It will be blank if the last
+                                                execution date is not found.
+                                            </li>
+                                            <li>
+                                                The default value for 'To Date' will be current date
+                                                and time.
+                                            </li>
+                                            <li>
+                                                For more details please check
+                                                <a href='https://docs.emiprotechnologies.com/shopify-odoo-connector/v15/shopify-orders-management/import-cancel-order.html'
+                                                   target="_blank">
+                                                    User Guide
+                                                </a>
+                                            </li>
                                         </ol>
                                     </b>
                                 </p>
@@ -215,26 +280,6 @@
                                             <li>
                                                 Please do not use any special symbols like:
                                                 ~,!,@,#,$,%,^,*,?,/,\,;,.,=,+,-,
-                                            </li>
-                                        </ol>
-                                    </b>
-                                </p>
-                            </div>
-                            <div attrs="{'invisible':[('shopify_operation','!=','is_update_order_status')]}">
-                                <p colspan="2" class="alert alert-warning" role="alert">
-                                    <b>
-                                        <u>
-                                            <h3 style="font-weight:bold;color:#7d5a29">Note :</h3>
-                                        </u>
-                                        <ol>
-                                            <li>
-                                                The Update Order Status allows you to update order
-                                                fulfillment and
-                                                tracking reference details to Shopify store.
-                                            </li>
-                                            <li>
-                                                An order's status gets updated only once to Shopify
-                                                store.
                                             </li>
                                         </ol>
                                     </b>
@@ -317,6 +362,13 @@
                                                 updated since last 30
                                                 days.
                                             </li>
+                                            <li>
+                                                For more details please check
+                                                <a href='https://docs.emiprotechnologies.com/shopify-odoo-connector/v15/shopify-product-management/update-export-product-and-stock.html'
+                                                   target="_blank">
+                                                    User Guide
+                                                </a>
+                                            </li>
                                         </ol>
                                     </b>
                                 </p>
@@ -358,8 +410,7 @@
                                     </b>
                                 </p>
                             </div>
-                            <div
-                                    attrs="{'invisible':[('shopify_operation','!=','update_order_status')]}">
+                            <div attrs="{'invisible':[('shopify_operation','!=','update_order_status')]}">
                                 <p colspan="2" class="alert alert-warning" role="alert">
                                     <b>
                                         <u>
@@ -370,12 +421,18 @@
                                             <li>
                                                 The Update Order Shipping Status allows you to
                                                 update order fulfillment and tracking reference
-                                                details to Shopify
-                                                store.
+                                                details to Shopify store.
                                             </li>
                                             <li>
                                                 An order's status gets updated only once to
                                                 Shopify store.
+                                            </li>
+                                            <li>
+                                                For more details please check
+                                                <a href='https://docs.emiprotechnologies.com/shopify-odoo-connector/v15/shopify-orders-management/update-order-shipping-status.html'
+                                                   target="_blank">
+                                                    User Guide
+                                                </a>
                                             </li>
                                         </ol>
                                     </b>
@@ -398,6 +455,13 @@
                                                 Payout Report record will be added under Shopify >
                                                 Sales >
                                                 Invoices &amp; Payout > Payout Reports.
+                                            </li>
+                                            <li>
+                                                For more details please check
+                                                <a href='https://docs.emiprotechnologies.com/shopify-odoo-connector/v15/shopify-payouts.html'
+                                                   target="_blank">
+                                                    User Guide
+                                                </a>
                                             </li>
                                         </ol>
                                     </b>
@@ -423,6 +487,16 @@
                                                 the 'Shopify - Export Products' action from Action
                                                 menu. Select
                                                 Export Method > Export in CSV file.
+                                            </li>
+
+                                            <li>
+                                                You can export the products into xlsx from Sales >
+                                                Products >
+                                                Products. Select Multiple Products or Open a product
+                                                and click on
+                                                the 'Shopify - Export Products' action from Action
+                                                menu. Select
+                                                Export Method > Export in XLSX file.
                                             </li>
                                         </ol>
                                     </b>
@@ -450,9 +524,27 @@
                                                 Configuration
                                                 > Shopify Locations.
                                             </li>
+                                            <li>
+                                                For more details please check
+                                                <a href='https://docs.emiprotechnologies.com/shopify-odoo-connector/v15/sale-auto-workflow-payment-gateway-and-financial-status-configurations/shopify-locations.html'
+                                                   target="_blank">
+                                                    User Guide
+                                                </a>
+                                            </li>
                                         </ol>
                                     </b>
                                 </p>
+                            </div>
+                            <div class='row' style="display: contents;"
+                                 attrs="{'invisible':[('shopify_operation','not in',['import_customers','update_order_status','import_location'])]}">
+                                <style>
+                                    .embed-responsive-item {
+                                    width: -webkit-fill-available;
+                                    height: 240px !important;
+                                    }
+                                </style>
+                                <field name="shopify_video_embed_code" string="WooCommerce Operation Video"
+                                       nolable="1"/>
                             </div>
                             <div attrs="{'invisible':[('cron_process_notification','=',False)]}">
                                 <p colspan="2" class="alert alert-info" role="alert">
@@ -468,57 +560,68 @@
                         </div>
                     </group>
                     <notebook
-                            attrs="{'invisible': [('shopify_operation', 'not in', ['sync_product','import_shipped_orders','import_unshipped_orders','import_orders_by_remote_ids','sync_product_by_remote_ids','export_stock','import_stock','import_payout_report','import_products_from_csv'])]}">
+                            attrs="{'invisible': [('shopify_operation', 'not in', ['sync_product','import_shipped_orders','import_unshipped_orders','import_orders_by_remote_ids','sync_product_by_remote_ids','export_stock','import_stock','import_payout_report','import_products_from_csv','import_cancel_orders','import_buy_with_prime_orders'])]}">
                         <page string='Sync Option'>
-                            <group name='sync_order_date_wise'
-                                   attrs="{'invisible':[('shopify_operation','not in',['import_shipped_orders','import_unshipped_orders','sync_product'])]}">
-                                <group>
-                                    <field name="import_products_based_on_date"
-                                           attrs="{'invisible':[('shopify_operation','!=','sync_product')],'required':[('shopify_operation','=','sync_product')]}"/>
-                                    <field name='orders_from_date' style="width:60%"
-                                           attrs="{'required':[('shopify_operation','in',['import_shipped_orders','import_unshipped_orders','sync_product'])]}"/>
-                                    <field name='orders_to_date' style="width:60%"
-                                           attrs="{'required':[('shopify_operation','in',['import_shipped_orders','import_unshipped_orders','sync_product'])]}"/>
+                            <div class="row">
+                                <div class='col-md-6'>
+                                    <group name='sync_order_date_wise'
+                                           attrs="{'invisible':[('shopify_operation','not in',['import_shipped_orders','import_unshipped_orders','sync_product','import_cancel_orders','import_buy_with_prime_orders'])]}">
+                                        <field name="import_products_based_on_date"
+                                               attrs="{'invisible':[('shopify_operation','!=','sync_product')],'required':[('shopify_operation','=','sync_product')]}"/>
+                                        <field name='orders_from_date' style="width:60%"
+                                               attrs="{'required':[('shopify_operation','in',['import_shipped_orders','import_unshipped_orders','sync_product','import_cancel_orders','import_buy_with_prime_orders'])]}"/>
+                                        <field name='orders_to_date' style="width:60%"
+                                               attrs="{'required':[('shopify_operation','in',['import_shipped_orders','import_unshipped_orders','sync_product','import_cancel_orders','import_buy_with_prime_orders'])]}"/>
+                                        <field name="skip_existing_product"
+                                               attrs="{'invisible':[('shopify_operation','!=','sync_product')]}"/>
+                                        <field name="is_import_draft_product"
+                                               attrs="{'invisible':[('shopify_operation','!=','sync_product')]}"/>
+                                    </group>
+                                    <group name="export_stock_by_date"
+                                           attrs="{'invisible':[('shopify_operation','!=','export_stock')]}">
+                                        <field name="export_stock_from"
+                                               attrs="{'required':[('shopify_operation','=','export_stock')]}"/>
+                                    </group>
+                                    <group name="is_auto_validate_inventory"
+                                           attrs="{'invisible':[('shopify_operation','!=','import_stock')]}">
+                                        <field name="is_auto_validate_inventory"
+                                               string="Auto apply inventory adjustment"
+                                               attrs="{'required':[('shopify_operation','=','import_stock')]}"/>
+                                    </group>
+
+                                    <group name="import_products_from_csv"
+                                           attrs="{'invisible':[('shopify_operation','!=','import_products_from_csv')]}">
+                                        <field name="file_name" invisible="1"/>
+                                        <field name="csv_file" filename="file_name" string="Choose File"
+                                               attrs="{'required':[('shopify_operation','=','import_products_from_csv')]}"/>
+                                    </group>
+                                </div>
+                                <div class='col-md-6'
+                                     attrs="{'invisible':[('shopify_operation','in',['import_cancel_orders','import_orders_by_remote_ids','sync_product_by_remote_ids','import_payout_report'])]}">
+                                    <field name="shopify_video_embed_code" string="Shopify Operation Video"
+                                           nolable='1'/>
+                                </div>
+                            </div>
+                            <div class="row"
+                                 attrs="{'invisible': [('shopify_operation', 'not in', ['import_orders_by_remote_ids','sync_product_by_remote_ids','import_payout_report'])]}">
+                                <group name='sync_order_based_on_template_ids'
+                                       attrs="{'invisible':[('shopify_operation','!=','import_orders_by_remote_ids')]}">
+                                    <field name='shopify_order_ids' string="Order IDs"
+                                           attrs="{'required':[('shopify_operation','=','import_orders_by_remote_ids')]}"/>
                                 </group>
-                                <group name="sync_product"
-                                       attrs="{'invisible':[('shopify_operation','!=','sync_product')]}">
-                                    <field name="skip_existing_product"/>
+                                <group name='sync_product_based_on_template_ids'
+                                       attrs="{'invisible':[('shopify_operation','!=','sync_product_by_remote_ids')]}">
+                                    <field name='shopify_template_ids'
+                                           attrs="{'required':[('shopify_operation','=','sync_product_by_remote_ids')]}"/>
                                 </group>
-                            </group>
-                            <group name='sync_order_based_on_template_ids'
-                                   attrs="{'invisible':[('shopify_operation','!=','import_orders_by_remote_ids')]}">
-                                <field name='shopify_order_ids' string="Order IDs"
-                                       attrs="{'required':[('shopify_operation','=','import_orders_by_remote_ids')]}"/>
-                            </group>
-                            <group name='sync_product_based_on_template_ids'
-                                   attrs="{'invisible':[('shopify_operation','!=','sync_product_by_remote_ids')]}">
-                                <field name='shopify_template_ids'
-                                       attrs="{'required':[('shopify_operation','=','sync_product_by_remote_ids')]}"/>
-                            </group>
-                            <group name="export_stock_by_date"
-                                   attrs="{'invisible':[('shopify_operation','!=','export_stock')]}">
-                                <field name="export_stock_from"
-                                       attrs="{'required':[('shopify_operation','=','export_stock')]}"/>
-                            </group>
-                            <group name="is_auto_validate_inventory"
-                                   attrs="{'invisible':[('shopify_operation','!=','import_stock')]}">
-                                <field name="is_auto_validate_inventory"
-                                       string="Auto apply inventory adjustment"
-                                       attrs="{'required':[('shopify_operation','=','import_stock')]}"/>
-                            </group>
-                            <group name='import_payout_report'
-                                   attrs="{'invisible':[('shopify_operation','!=','import_payout_report')]}">
-                                <field name='payout_start_date' style="width:19%"
-                                       attrs="{'required':[('shopify_operation','=','import_payout_report')]}"/>
-                                <field name='payout_end_date' style="width:19%"
-                                       attrs="{'required':[('shopify_operation','=','import_payout_report')]}"/>
-                            </group>
-                            <group name="import_products_from_csv"
-                                   attrs="{'invisible':[('shopify_operation','!=','import_products_from_csv')]}">
-                                <field name="file_name" invisible="1"/>
-                                <field name="csv_file" filename="file_name" string="Choose File"
-                                       attrs="{'required':[('shopify_operation','=','import_products_from_csv')]}"/>
-                            </group>
+                                <group name='import_payout_report'
+                                       attrs="{'invisible':[('shopify_operation','!=','import_payout_report')]}">
+                                    <field name='payout_start_date' style="width:19%"
+                                           attrs="{'required':[('shopify_operation','=','import_payout_report')]}"/>
+                                    <field name='payout_end_date' style="width:19%"
+                                           attrs="{'required':[('shopify_operation','=','import_payout_report')]}"/>
+                                </group>
+                            </div>
                         </page>
                     </notebook>
                     <footer>
@@ -726,12 +829,7 @@
     </record>
 
     <menuitem id="menu_shopify_processes_ept"
-              parent="shopify_ept.shopify_instance_menu_item" name="Processes"
-              sequence="10"/>
-
-    <menuitem id="menu_shopify_import_export_process_ept"
-              parent="menu_shopify_processes_ept" name="Shopify Operations"
-              action="action_wizard_shopify_import_orders_in_shopify_ept"
-              sequence="2"/>
+              parent="shopify_ept.shopify_instance_menu_item" name="Operations"
+              action="action_wizard_shopify_import_orders_in_shopify_ept" sequence="4"/>
 
 </odoo>

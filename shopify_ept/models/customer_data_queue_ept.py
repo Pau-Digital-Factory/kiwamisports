@@ -88,3 +88,13 @@ class ShopifyCustomerDataQueueEpt(models.Model):
             "record_created_from": record_created_from
         }
         return self.create(customer_queue_vals)
+
+    @api.model
+    def retrieve_dashboard(self, *args, **kwargs):
+        """
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        dashboard = self.env['queue.line.dashboard']
+        return dashboard.get_data(table='shopify.customer.data.queue.line.ept')

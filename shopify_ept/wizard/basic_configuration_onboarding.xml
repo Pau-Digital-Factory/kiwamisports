@@ -34,6 +34,16 @@
                                    attrs="{'required':[('shopify_instance_id','!=',False)]}"/>
                         </div>
                     </div>
+                    <div class="col-xs-12 col-md-6 o_setting_box o_onboard_setting_box">
+                        <div>
+                            <label for="shopify_lang_id" class="o_onboard_label" string="Shopify Instance Language"/>
+                            <field name="shopify_lang_id"
+                                   options="{'no_open':True,'no_create':True,'no_create_edit':True}"
+                                   attrs="{'required':[('shopify_instance_id','!=',False)]}"
+                                   class="o_light_label w-50 o_onboard_select" widget="selection"
+                            />
+                        </div>
+                    </div>
                 </div>
                 <div class="o_horizontal_separator font-weight-bold o_onboard_header"
                      attrs="{'invisible': [('shopify_instance_id', '=', False)]}">Product
@@ -110,6 +120,27 @@
                                class="ml-2 o_doc_link o_onboard_doc_link"/>
                         </div>
                     </div>
+                    <div class="col-xs-12 col-md-6 o_setting_box o_onboard_setting_box"
+                         groups="analytic.group_analytic_accounting">
+                        <div class="ml-2 pl-1">
+                            <label for="shopify_analytic_account_id" class="o_onboard_label"/>
+                            <field name="shopify_analytic_account_id" class="o_light_label o_onboard_input"/>
+                            <a href="javascript:void(0)"
+                               title="- Set the Analytic Account for shopify orders. &#013;Note :- The configuration of the analytic account for this instance will be applied to all sales orders created by the connector. With this configuration, the Analytic Default Rule configured in Odoo will not apply to Shopify orders Invoices. If you wish to use Odoo Analytic Default Rule, you will not have to configure any analytic account here."
+                               class="ml-2 o_doc_link o_onboard_doc_link"/>
+                        </div>
+                    </div>
+                    <div class="col-xs-12 col-md-6 o_setting_box o_onboard_setting_box"
+                         groups="analytic.group_analytic_tags">
+                        <div class="ml-2 pl-1">
+                            <label for="shopify_analytic_tag_ids" class="o_onboard_label"/>
+                            <field name="shopify_analytic_tag_ids" class="o_light_label o_onboard_input"
+                                   widget="many2many_tags"/>
+                            <a href="javascript:void(0)"
+                               title="- Set the Analytic Tags for shopify orders line. &#013;Note :- The configuration of the analytic tags for this instance will be applied to all sales orders created by the connector. With this configuration, the Analytic Default Rule configured in Odoo will not apply to Shopify orders invoices. If you wish to use Odoo Analytic Default Rule, you will not have to configure any analytic tags here."
+                               class="ml-2 o_doc_link o_onboard_doc_link"/>
+                        </div>
+                    </div>
                     <div class="col-xs-12 col-md-6 o_setting_box o_onboard_setting_box">
                         <div class="ml-2 pl-1">
                             <field name="shopify_is_use_default_sequence"
@@ -169,6 +200,7 @@
                                    string="Credit Note Tax Account"
                                    class="o_onboard_label"/>
                             <field name="shopify_credit_tax_account_id"
+                                   attrs="{'required' : [('shopify_apply_tax_in_order','=','create_shopify_tax'),('shopify_instance_id','!=',False)]}"
                                    class="o_light_label o_onboard_input"/>
                             <a href="javascript:void(0)"
                                title="Set the credit tax account base on this account we will set this account in the newly created tax when import import from Shopify to Odoo."
@@ -181,6 +213,7 @@
                             <label for="shopify_invoice_tax_account_id" string="Invoice Tax Account"
                                    class="o_onboard_label"/>
                             <field name="shopify_invoice_tax_account_id"
+                                   attrs="{'required' : [('shopify_apply_tax_in_order','=','create_shopify_tax'),('shopify_instance_id','!=',False)]}"
                                    class="o_light_label o_onboard_input"/>
                             <a href="javascript:void(0)"
                                title="Set the invoice tax account base on this account we will set this account in the newly created tax when import orders from Shopify to Odoo."

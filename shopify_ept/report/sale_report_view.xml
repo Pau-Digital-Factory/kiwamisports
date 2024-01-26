@@ -65,9 +65,9 @@
     </record>
 
     <menuitem id="menu_item_parent_shopify_reporting_ept" name="Reporting"
-              parent="shopify_ept.shopify_instance_menu_item" sequence="14"/>
+              parent="shopify_ept.shopify_instance_menu_item" sequence="6"/>
 
     <menuitem action="action_order_report_all" id="menu_report_product_all" name="Sales"
-              parent="shopify_ept.menu_item_parent_shopify_reporting_ept" sequence="10"/>
+              parent="shopify_ept.menu_item_parent_shopify_reporting_ept" sequence="1"/>
 
 </odoo>

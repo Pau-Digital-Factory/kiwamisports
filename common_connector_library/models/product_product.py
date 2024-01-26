@@ -88,8 +88,8 @@ class ProductProduct(models.Model):
         if mrp_module:
             result = self.get_product_movement_of_bom_product(date, company)
 
-        qry = ("""select product_id from stock_move where date >= '%s' and company_id = %d and
-                 state in ('partially_available','assigned','done')""" % (date, company.id))
+        qry = ("""select distinct product_id from stock_move where write_date >= '%s' and company_id = %d and
+                 state in ('partially_available','assigned','done','cancel')""" % (date, company.id))
         self._cr.execute(qry)
         result += self._cr.dictfetchall()
         product_ids = [product_id.get('product_id') for product_id in result]
@@ -112,12 +112,12 @@ class ProductProduct(models.Model):
             @author: Haresh Mori @Emipro Technologies Pvt. Ltd on date 21 September 2021 .
             Task_id: 178058
         """
-        mrp_qry = ("""select p.id as product_id from product_product as p
+        mrp_qry = ("""select distinct p.id as product_id from product_product as p
                     inner join mrp_bom as mb on mb.product_tmpl_id=p.product_tmpl_id
                     inner join mrp_bom_line as ml on ml.bom_id=mb.id
                     inner join stock_move as sm on sm.product_id=ml.product_id
-                    where sm.date >= '%s' and sm.company_id = %d and sm.state in 
-                    ('partially_available','assigned','done')""" % (date, company.id))
+                    where sm.write_date >= '%s' and sm.company_id = %d and sm.state in 
+                    ('partially_available','assigned','done','cancel')""" % (date, company.id))
         self._cr.execute(mrp_qry)
         result = self._cr.dictfetchall()
         return result
@@ -172,6 +172,21 @@ class ProductProduct(models.Model):
                 where pp.id in (%s) group by pp.id;""" % (location_ids, simple_product_list_ids)
         return query
 
+    def prepare_onhand_qty_query(self, location_ids, simple_product_list_ids):
+        """
+        This method prepares query for fetching the On hand qty.
+        @param location_ids:Ids of Locations.
+        @param simple_product_list_ids: Ids of products which are not BoM.
+        @return: Prepared query in string.
+        @author: Hardik Dhankecha on Date 10-March-2022.
+        """
+        query = """select pp.id as product_id,
+                COALESCE(sum(sq.quantity),0) as stock
+                from product_product pp
+                left join stock_quant sq on pp.id = sq.product_id and sq.location_id in (%s)
+                where pp.id in (%s) group by pp.id;""" % (location_ids, simple_product_list_ids)
+        return query
+
     def prepare_forecasted_qty_query(self, location_ids, simple_product_list_ids):
         """
         This method prepares query for fetching the forecasted qty.
@@ -206,7 +221,10 @@ class ProductProduct(models.Model):
 
         bom_product_ids = self.check_for_bom_products(product_ids)
         if bom_product_ids:
-            bom_products = self.with_context(warehouse=warehouse.ids).browse(bom_product_ids)
+            # Passed location instead of the warehouse in with_context, because it was doing export the product stock
+            # of all locations of the warehouse instead of the stock location of the warehouse.
+            bom_products = self.with_context(location=[int(location) for location in location_ids.split(',')]).browse(
+                bom_product_ids)
             for product in bom_products:
                 actual_stock = getattr(product, 'free_qty')
                 qty_on_hand.update({product.id: actual_stock})
@@ -221,6 +239,22 @@ class ProductProduct(models.Model):
                 qty_on_hand.update({i.get('product_id'): i.get('stock')})
         return qty_on_hand
 
+    def prepare_forecasted_qty_query_for_bom_product(self, location_ids, product_ids):
+
+        query = (("""select product_id, free_qty+incoming_qty-outgoing_qty stock from (
+            select sq.product_id, COALESCE(sum(sq.quantity)-sum(sq.reserved_quantity),0) free_qty,
+            COALESCE(sum(sm_in.product_qty),0) incoming_qty,COALESCE(sum(sm_out.product_qty),0) outgoing_qty 
+            from 
+            stock_quant sq 
+            left join stock_move sm_in on sm_in.product_id= sq.product_id and (sm_in.location_id in (%s) or sm_in.location_dest_id in (%s))
+                                          and sm_in.state in ('waiting', 'confirmed', 'assigned', 'partially_available')
+            left join stock_move sm_out on sm_out.product_id= sq.product_id and (sm_out.location_dest_id in (%s) or sm_out.location_id in (%s))
+                                          and sm_out.state in ('waiting', 'confirmed', 'assigned', 'partially_available')
+            where sq.product_id in (%s) and 
+                  sq.location_id in (%s) group by sq.product_id) as test;""" % (
+            location_ids, location_ids, location_ids, location_ids, product_ids, location_ids)))
+        return query
+
     def get_forecasted_qty_ept(self, warehouse, product_list):
         """ This method is used to get forecast quantity based on warehouse and products.
             @param warehouse: Records of warehouse
@@ -233,16 +267,52 @@ class ProductProduct(models.Model):
         location_ids, product_ids = self.prepare_location_and_product_ids(warehouse, product_list)
 
         bom_product_ids = self.check_for_bom_products(product_ids)
+        # bom_product_list_ids = ','.join(str(e) for e in bom_product_ids)
+        # if bom_product_list_ids:
+        #     qry = self.prepare_forecasted_qty_query_for_bom_product(location_ids, bom_product_list_ids)
+        #     self._cr.execute(qry)
+        #     actual_stock = self._cr.dictfetchall()
+        #     for i in actual_stock:
+        #         forcasted_qty.update({i.get('product_id'): i.get('stock')})
         if bom_product_ids:
             bom_products = self.with_context(warehouse=warehouse.ids).browse(bom_product_ids)
             for product in bom_products:
-                actual_stock = getattr(product, 'free_qty') + getattr(product, 'incoming_qty')
+                actual_stock = getattr(product, 'free_qty') + getattr(product, 'incoming_qty') - getattr(product,
+                                                                                                         'outgoing_qty')
                 forcasted_qty.update({product.id: actual_stock})
 
         simple_product_list = list(set(product_list) - set(bom_product_ids))
         simple_product_list_ids = ','.join(str(e) for e in simple_product_list)
         if simple_product_list_ids:
             qry = self.prepare_forecasted_qty_query(location_ids, simple_product_list_ids)
+            self._cr.execute(qry)
+            result = self._cr.dictfetchall()
+            for i in result:
+                forcasted_qty.update({i.get('product_id'): i.get('stock')})
+        return forcasted_qty
+
+    def get_onhand_qty_ept(self, warehouse, product_list):
+        """
+        This method is return On Hand quantity based on warehouse and product list
+        @author:Hardik Dhankecha
+        :param warehouse:warehouse object
+        :param product_list:list of product_ids (Not browsable records)
+        :return: On hand Quantity
+        """
+        forcasted_qty = {}
+        location_ids, product_ids = self.prepare_location_and_product_ids(warehouse, product_list)
+
+        bom_product_ids = self.check_for_bom_products(product_ids)
+        if bom_product_ids:
+            bom_products = self.with_context(warehouse=warehouse.ids).browse(bom_product_ids)
+            for product in bom_products:
+                actual_stock = getattr(product, 'qty_available')
+                forcasted_qty.update({product.id: actual_stock})
+
+        simple_product_list = list(set(product_list) - set(bom_product_ids))
+        simple_product_list_ids = ','.join(str(e) for e in simple_product_list)
+        if simple_product_list_ids:
+            qry = self.prepare_onhand_qty_query(location_ids, simple_product_list_ids)
             self._cr.execute(qry)
             result = self._cr.dictfetchall()
             for i in result:

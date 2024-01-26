@@ -1,5 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
+    <!--Tree view of order data queue line which is use in queue line dashboard-->
+    <record id="view_order_data_queue_line_tree" model="ir.ui.view">
+        <field name="name">shopify.order.data.queue.line.ept.tree</field>
+        <field name="model">shopify.order.data.queue.line.ept</field>
+        <field eval="100" name="priority"/>
+        <field name="arch" type="xml">
+            <tree create="false" duplicate="false" edit="false" sample="1" decoration-danger="state=='failed'"
+                  decoration-success="state=='done'" decoration-info="state=='draft'">
+                <header>
+                    <button
+                            name="%(shopify_ept.action_wizard_shopify_import_order)d"
+                            string="Process Queue Line" type="action"/>
+                </header>
+                <field name="name"/>
+                <field name="shopify_order_id"/>
+                <field name="processed_at"/>
+                <field name="customer_name"/>
+                <field name="customer_email" optional="hide"/>
+                <field name="state"/>
+            </tree>
+        </field>
+    </record>
+
     <!--Form view of order data queue line-->
     <record id="view_shopify_order_data_queue_line_ept_form" model="ir.ui.view">
         <field name="name">shopify.order.data.queue.line.ept.form</field>
@@ -23,7 +46,6 @@
                         <page string="Log Lines">
                             <field name="shopify_order_common_log_lines_ids">
                                 <tree create="false" editable="bottom">
-                                    <!--<field name="shopify_order_data_queue_line_id"/>-->
                                     <field name="message"/>
                                 </tree>
                             </field>

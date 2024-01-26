@@ -4,6 +4,8 @@ import json
 import logging
 import time
 from odoo import models, fields
+from .. import shopify
+from ..shopify.pyactiveresource.connection import ClientError
 
 _logger = logging.getLogger("Shopify Order Queue Line")
 
@@ -42,6 +44,36 @@ class ShopifyOrderDataQueueLineEpt(models.Model):
         :param order_queue_id: Record of order queue.
         @author: Maulik Barad on Date 10-Sep-2020.
         """
+        instance.connect_in_shopify()
+        order_data_queue_line_obj = self.env["shopify.order.data.queue.line.ept"]
+        # get transaction data call api
+        result = []
+        transactions = []
+        if len(order_dict.get('payment_gateway_names')) > 1:
+            try:
+                transactions = shopify.Transaction().find(order_id=order_dict.get('id'))
+            except ClientError as error:
+                if hasattr(error,
+                           "response") and error.response.code == 429 and error.response.msg == "Too Many Requests":
+                    time.sleep(int(float(error.response.headers.get('Retry-After', 5))))
+                    transactions = shopify.Transaction().find(order_id=order_dict.get('id'))
+
+            for transaction in transactions:
+                transaction_dict = transaction.to_dict()
+                result.append(transaction_dict)
+        order_data.update({'transaction': result})
+
+        # get fulfillment data call api
+        # shopify_order = shopify.Order().find(order_dict.get('id'))
+        # fulfillment_data = shopify_order.get('fulfillment_orders')
+        # new_order_data.update({'fulfillment_data': fulfillment_data})
+
+        order_data = json.dumps(order_data)
+
+        existing_order_data = order_data_queue_line_obj.search(
+            [('shopify_order_id', '=', order_dict.get("id")), ('shopify_instance_id', '=', instance.id),
+             ('state', 'in', ['draft', 'failed']), ('shopify_order_data_queue_id.is_action_require', '=', False)])
+        existing_queue = existing_order_data.shopify_order_data_queue_id
         order_queue_line_vals = {"shopify_order_id": order_dict.get("id", False),
                                  "shopify_instance_id": instance.id,
                                  "order_data": order_data,
@@ -49,7 +81,15 @@ class ShopifyOrderDataQueueLineEpt(models.Model):
                                  "customer_name": customer_name,
                                  "customer_email": customer_email,
                                  "shopify_order_data_queue_id": order_queue_id.id}
-        return self.create(order_queue_line_vals)
+        if not existing_order_data:
+            self.create(order_queue_line_vals)
+        else:
+            existing_order_data.write({"order_data": order_data,
+                                       "state": 'draft',
+                                       'shopify_order_data_queue_id': existing_queue.id})
+            if not existing_queue.order_data_queue_line_ids:
+                existing_queue.unlink()
+        return True
 
     def create_order_data_queue_line(self, orders_data, instance, queue_type, created_by="import"):
         """
@@ -61,8 +101,18 @@ class ShopifyOrderDataQueueLineEpt(models.Model):
         need_to_create_queue = True
         orders_data.reverse()
         order_queue_list = []
+        fulfillment_data = []
         is_new_order = bool(self._context.get('is_new_order'))
+        queue_type_is_buy_with_prime = False
         for order in orders_data:
+            if queue_type != 'shipped' and instance.is_delivery_multi_warehouse:
+                try:
+                    fulfillment_data = order.get('fulfillment_orders')
+                except ClientError as error:
+                    if hasattr(error,
+                               "response") and error.response.code == 429 and error.response.msg == "Too Many Requests":
+                        time.sleep(int(float(error.response.headers.get('Retry-After', 5))))
+                        fulfillment_data = order.get('fulfillment_orders')
             if created_by == "webhook" and not is_new_order:
                 order_queue, need_to_create_queue = self.search_webhook_order_queue(created_by, instance, order,
                                                                                     queue_type, need_to_create_queue)
@@ -73,12 +123,18 @@ class ShopifyOrderDataQueueLineEpt(models.Model):
                 order_queue = self.shopify_create_order_queue(instance, queue_type, created_by)
                 order_queue_list.append(order_queue.id)
                 message = "Order Queue %s created." % order_queue.name
-                self.generate_simple_notification(message)
+                if self.env.context.get('queue_created_by'):
+                    self.generate_simple_notification(message)
                 self._cr.commit()
                 need_to_create_queue = False
                 _logger.info(message)
 
-            data = json.dumps(order)
+            data = json.loads(json.dumps(order))
+            if instance.import_buy_with_prime_shopify_order:
+                queue_type_is_buy_with_prime = any(buy_with_prime_tag.name in data.get("tags") for buy_with_prime_tag in
+                                                   instance.buy_with_prime_tag_ids)
+            data.update({'fulfillment_data': fulfillment_data, "buy_with_prime": queue_type_is_buy_with_prime})
+
             customer_name, customer_email = self.get_customer_name_and_email(order)
             self.create_order_queue_line(order, instance, data, customer_name, customer_email, order_queue)
             if created_by == "webhook" and len(order_queue.order_data_queue_line_ids) >= 50:
@@ -103,7 +159,7 @@ class ShopifyOrderDataQueueLineEpt(models.Model):
 
         order_queue = shopify_order_queue_obj.search(
             [("created_by", "=", created_by), ("state", "=", "draft"), ("shopify_instance_id", "=", instance.id),
-             ("queue_type", "=", queue_type)], limit=1)
+             ("queue_type", "=", queue_type), ('is_action_require', '=', False)], limit=1)
         if order_queue:
             message = "Order %s added into Order Queue %s." % (order.get("name"), order_queue.name)
             need_to_create_queue = False
@@ -117,8 +173,8 @@ class ShopifyOrderDataQueueLineEpt(models.Model):
         """
         bus_bus_obj = self.env["bus.bus"]
         bus_bus_obj._sendone(self.env.user.partner_id, 'simple_notification',
-                            {"title": "Shopify Connector",
-                             "message": message, "sticky": False, "warning": True})
+                             {"title": "Shopify Connector",
+                              "message": message, "sticky": False, "warning": True})
 
     def get_customer_name_and_email(self, order):
         """ This method is used to search the customer name and email from the order response.
@@ -246,7 +302,8 @@ class ShopifyOrderDataQueueLineEpt(models.Model):
             queue_id.is_process_queue = True
             # Below two line used for When the update order webhook calls.
             if update_order or queue_id.created_by == "webhook":
-                sale_order_obj.update_shopify_order(self, log_book_id)
+                created_by = 'Webhook'
+                sale_order_obj.update_shopify_order(self, log_book_id, created_by)
             else:
                 sale_order_obj.import_shopify_orders(self, log_book_id)
             queue_id.write({'is_process_queue': False, 'shopify_order_common_log_book_id': log_book_id})

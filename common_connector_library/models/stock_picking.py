@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # See LICENSE file for full copyright and licensing details.
-from odoo import models
+from odoo import models, fields, api
+from datetime import timedelta
 
 
 class StockPicking(models.Model):
@@ -22,7 +23,22 @@ class StockPicking(models.Model):
             delivery_lines = picking.move_line_ids.filtered(lambda l: l.product_id.invoice_policy == 'delivery')
 
             if work_flow_process_record and delivery_lines and work_flow_process_record.create_invoice and \
-                picking.picking_type_id.code == 'outgoing':
+                    picking.location_dest_id.usage == 'customer':
                 order.validate_and_paid_invoices_ept(work_flow_process_record)
         return result
 
+    @api.depends('move_lines.state', 'move_lines.date', 'move_type')
+    def _compute_scheduled_date(self):
+        for picking in self:
+            carrier_id = picking.carrier_id
+            order = picking.sale_id
+            if order and carrier_id and carrier_id.on_time_shipping > 0.0:
+                order_date = fields.Datetime.from_string(order.date_order)
+                picking.scheduled_date = order_date + timedelta(days=carrier_id.on_time_shipping or 0.0)
+            else:
+                moves_dates = picking.move_lines.filtered(lambda move: move.state not in ('done', 'cancel')).mapped(
+                    'date')
+                if picking.move_type == 'direct':
+                    picking.scheduled_date = min(moves_dates, default=picking.scheduled_date or fields.Datetime.now())
+                else:
+                    picking.scheduled_date = max(moves_dates, default=picking.scheduled_date or fields.Datetime.now())
