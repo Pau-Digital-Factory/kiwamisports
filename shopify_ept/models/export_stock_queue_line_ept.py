@@ -12,7 +12,7 @@ utc = pytz.utc
 _logger = logging.getLogger("Shopify Export Stock Queue Line")
 
 
-class ShopifyOrderDataQueueLineEpt(models.Model):
+class ShopifyExportStockQueueLineEpt(models.Model):
     _name = "shopify.export.stock.queue.line.ept"
     _inherit = ["mail.thread", "mail.activity.mixin"]
     _description = "Shopify Export Stock Queue Line"
@@ -33,6 +33,7 @@ class ShopifyOrderDataQueueLineEpt(models.Model):
                                            "shopify_export_stock_queue_line_id",
                                            help="Log lines created against which line.")
 
+
     def auto_export_stock_queue_data(self):
         """
         This method is used to find export stock queue which queue lines have state
@@ -42,26 +43,36 @@ class ShopifyOrderDataQueueLineEpt(models.Model):
         """
         export_stock_queue_obj = self.env["shopify.export.stock.queue.ept"]
         export_stock_queue_ids = []
+        query = """
+            UPDATE shopify_export_stock_queue_ept
+            SET is_process_queue = %s
+            WHERE is_process_queue = %s
+        """
+        params = (False, True)
 
-        self.env.cr.execute(
-            """update shopify_export_stock_queue_ept set is_process_queue = False where is_process_queue = True""")
+        self.env.cr.execute(query, params)
         self._cr.commit()
+        query = """
+            SELECT DISTINCT queue.id
+            FROM shopify_export_stock_queue_line_ept AS queue_line
+            INNER JOIN shopify_export_stock_queue_ept AS queue
+            ON queue_line.export_stock_queue_id = queue.id
+            WHERE queue_line.state IN (%s) AND queue.is_action_require = %s
+            GROUP BY queue.id
+            ORDER BY queue.id
+        """
+        params = ('draft', False)
 
-        query = """select distinct queue.id
-                           from shopify_export_stock_queue_line_ept as queue_line
-                           inner join shopify_export_stock_queue_ept as queue on queue_line.export_stock_queue_id = queue.id
-                           where queue_line.state in ('draft') and queue.is_action_require = 'False'
-                           GROUP BY queue.id
-                           ORDER BY queue.id;
-           """
-        self._cr.execute(query)
+        self._cr.execute(query, params)
+
         export_stock_queue_list = self._cr.fetchall()
         if not export_stock_queue_list:
             return True
 
-        for result in export_stock_queue_list:
-            if result[0] not in export_stock_queue_ids:
-                export_stock_queue_ids.append(result[0])
+        export_stock_queue_ids = [result[0] for result in export_stock_queue_list]
+        # for result in export_stock_queue_list:
+        #     if result[0] not in export_stock_queue_ids:
+        #         export_stock_queue_ids.append(result[0])
 
         queues = export_stock_queue_obj.browse(export_stock_queue_ids)
         self.filter_export_stock_queue_lines_and_post_message(queues)
@@ -73,8 +84,7 @@ class ShopifyOrderDataQueueLineEpt(models.Model):
         @author: Nilam Kubavat @Emipro Technologies Pvt.Ltd on date 31-Aug-2022.
         Task Id : 199065
         """
-        ir_model_obj = self.env["ir.model"]
-        common_log_book_obj = self.env["common.log.book.ept"]
+        common_log_line_obj = self.env["common.log.lines.ept"]
         start = time.time()
         export_stock_queue_process_cron_time = queues.shopify_instance_id.get_shopify_cron_execution_time(
             "shopify_ept.process_shopify_export_stock_queue")
@@ -90,8 +100,8 @@ class ShopifyOrderDataQueueLineEpt(models.Model):
                        "automated action to process this queue,<br/>- Ignore, if this queue is already processed.</p>"
                 queue.message_post(body=note)
                 if queue.shopify_instance_id.is_shopify_create_schedule:
-                    model_id = ir_model_obj.search([("model", "=", "shopify.export.stock.queue.ept")]).id
-                    common_log_book_obj.create_crash_queue_schedule_activity(queue, model_id, note)
+                    common_log_line_obj.create_crash_queue_schedule_activity(queue, "shopify.export.stock.queue.ept",
+                                                                             note)
                 continue
 
             self._cr.commit()
@@ -105,20 +115,19 @@ class ShopifyOrderDataQueueLineEpt(models.Model):
         @author: Nilam Kubavat @Emipro Technologies Pvt.Ltd on date 31-Aug-2022.
         Task Id : 199065
         """
-        common_log_book_obj = self.env["common.log.book.ept"]
         common_log_line_obj = self.env['common.log.lines.ept']
-        model_id = common_log_book_obj.log_lines.get_model_id("shopify.export.stock.queue.ept")
+        model = "shopify.export.stock.queue.ept"
         queue_id = self.export_stock_queue_id if len(self.export_stock_queue_id) == 1 else False
         if queue_id:
             instance = queue_id.shopify_instance_id
             instance.connect_in_shopify()
-            if queue_id.common_log_book_id:
-                log_book_id = queue_id.common_log_book_id
-            else:
-                log_book_id = common_log_book_obj.shopify_create_common_log_book("export", instance, model_id)
-                queue_id.write({'common_log_book_id': log_book_id})
-            self.env.cr.execute(
-                """update shopify_export_stock_queue_ept set is_process_queue = False where is_process_queue = True""")
+            query = """
+                UPDATE shopify_export_stock_queue_ept
+                SET is_process_queue = %s
+                WHERE is_process_queue = %s
+            """
+            params = (False, True)
+            self.env.cr.execute(query, params)
             self._cr.commit()
             for queue_line in self:
                 log_line = False
@@ -130,56 +139,43 @@ class ShopifyOrderDataQueueLineEpt(models.Model):
                 except ClientError as error:
                     if hasattr(error,
                                "response") and error.response.code == 429 and error.response.msg == "Too Many Requests":
-                        try:
-                            time.sleep(int(float(error.response.headers.get('Retry-After', 5))))
-                            shopify.InventoryLevel.set(queue_line.location_id,
-                                                       queue_line.inventory_item_id,
-                                                       queue_line.quantity)
-                            queue_line.write({"state": "done"})
-                        except Exception as error:
-                            message = "Error while Export stock for Product ID: %s & Product Name: '%s' for instance:" \
-                                      "'%s'not found in Shopify store\nError: %s\n%s" % (
-                                          odoo_product.id, odoo_product.name, instance.name,
-                                          str(error.response.code) + " " + error.response.msg,
-                                          json.loads(error.response.body.decode()).get("errors")[0]
-                                      )
-                            log_line = common_log_line_obj.shopify_create_export_stock_log_line(message, model_id,
-                                                                                                queue_line,
-                                                                                                log_book_id)
-                            queue_line.write({"state": "failed"})
+                        time.sleep(int(float(error.response.headers.get('Retry-After', 5))))
+                        shopify.InventoryLevel.set(queue_line.location_id,
+                                                   queue_line.inventory_item_id,
+                                                   queue_line.quantity)
+                        queue_line.write({"state": "done"})
                         continue
-
-                    elif error.response.code == 422 and error.response.msg == "Unprocessable Entity":
-                        if json.loads(error.response.body.decode()).get("errors")[0] \
-                                == 'Inventory item does not have inventory tracking enabled':
+                    if hasattr(error, "response") and error.response.code == 422 and error.response.msg == "Unprocessable Entity":
+                        if json.loads(error.response.body.decode()).get("errors")[
+                            0] == 'Inventory item does not have inventory tracking enabled':
                             queue_line.shopify_product_id.write({'inventory_management': "Dont track Inventory"})
                             queue_line.write({'state': 'done'})
                         continue
-                    elif hasattr(error, "response"):
+                    if hasattr(error, "response"):
                         message = "Error while Export stock for Product ID: %s & Product Name: '%s' for instance:" \
                                   "'%s'not found in Shopify store\nError: %s\n%s" % (
                                       odoo_product.id, odoo_product.name, instance.name,
                                       str(error.response.code) + " " + error.response.msg,
                                       json.loads(error.response.body.decode()).get("errors")[0]
                                   )
-                        log_line = common_log_line_obj.shopify_create_export_stock_log_line(message, model_id,
-                                                                                            queue_line,
-                                                                                            log_book_id)
+                        log_line = common_log_line_obj.create_common_log_line_ept(shopify_instance_id=instance.id,module="shopify_ept",
+                                                                                  message=message,
+                                                                                  model_name=model,
+                                                                                  shopify_export_stock_queue_line_id=queue_line.id if queue_line else False)
                         queue_line.write({"state": "failed"})
                         continue
                 except Exception as error:
                     message = "Error while Export stock for Product ID: %s & Product Name: '%s' for instance: " \
                               "'%s'\nError: %s" % (odoo_product.id, odoo_product.name, instance.name, str(error))
-                    log_line = common_log_line_obj.shopify_create_export_stock_log_line(message, model_id, queue_line,
-                                                                                        log_book_id)
-                    queue_line.write({"state": "failed"})
-                    continue
+                    log_line = common_log_line_obj.create_common_log_line_ept(shopify_instance_id=instance.id,module="shopify_ept",
+                                                                              message=message,
+                                                                              model_name=model,
+                                                                              shopify_export_stock_queue_line_id=queue_line.id if queue_line else False)
+
                 if not log_line:
                     queue_id.is_process_queue = True
                     queue_line.write({"state": "done"})
                 else:
                     queue_line.write({"state": "failed"})
-                self._cr.commit()
-            if not log_book_id.log_lines:
-                log_book_id.unlink()
+            self._cr.commit()
         return True

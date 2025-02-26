@@ -29,10 +29,7 @@ class ShopifyOrderDataQueueEpt(models.Model):
                               ('completed', 'Completed'), ('failed', 'Failed')], tracking=True,
                              default='draft', copy=False, compute="_compute_queue_state",
                              store=True)
-    shopify_order_common_log_book_id = fields.Many2one("common.log.book.ept", help="""Related Log book which has
-                                                                    all logs for current queue.""")
-    shopify_order_common_log_lines_ids = fields.One2many(
-        related="shopify_order_common_log_book_id.log_lines")
+    shopify_order_common_log_lines_ids = fields.One2many("common.log.lines.ept", compute="_compute_log_lines")
 
     order_data_queue_line_ids = fields.One2many("shopify.order.data.queue.line.ept",
                                                 "shopify_order_data_queue_id")
@@ -57,6 +54,11 @@ class ShopifyOrderDataQueueEpt(models.Model):
     is_action_require = fields.Boolean(default=False, help="it is used  to find the action require queue")
     queue_type = fields.Selection([("shipped", "Shipped Order Queue"), ("unshipped", "Unshipped Order Queue")],
                                   help="Identify to queue for which type of order import.")
+
+    @api.depends('order_data_queue_line_ids.shopify_order_common_log_lines_ids')
+    def _compute_log_lines(self):
+        for line in self:
+            line.shopify_order_common_log_lines_ids = line.order_data_queue_line_ids.shopify_order_common_log_lines_ids
 
     @api.depends('order_data_queue_line_ids.state')
     def _compute_queue_state(self):
@@ -89,17 +91,18 @@ class ShopifyOrderDataQueueEpt(models.Model):
             order_queue.order_queue_line_fail_record = len(queue_lines.filtered(lambda x: x.state == "failed"))
             order_queue.order_queue_line_cancel_record = len(queue_lines.filtered(lambda x: x.state == "cancel"))
 
-    @api.model
+    @api.model_create_multi
     def create(self, vals):
         """This method used to create a sequence for Order Queue Data.
             @author: Haresh Mori @Emipro Technologies Pvt. Ltd on date 04/11/2019.
         """
-        sequence_id = self.env.ref('shopify_ept.seq_order_queue_data').ids
-        if sequence_id:
-            record_name = self.env['ir.sequence'].browse(sequence_id).next_by_id()
-        else:
-            record_name = '/'
-        vals.update({'name': record_name or ''})
+        for val in vals:
+            sequence_id = self.env.ref('shopify_ept.seq_order_queue_data').ids
+            if sequence_id:
+                record_name = self.env['ir.sequence'].browse(sequence_id).next_by_id()
+            else:
+                record_name = '/'
+            val.update({'name': record_name or ''})
         return super(ShopifyOrderDataQueueEpt, self).create(vals)
 
     def import_order_cron_action(self, ctx=False):
@@ -209,6 +212,12 @@ class ShopifyOrderDataQueueEpt(models.Model):
                 _logger.info("Import Buy with Prime Configuration is not Active.")
         end = time.time()
         _logger.info("Imported Orders in %s seconds.", str(end - start))
+        if order_queues:
+            order_queue_cron = self.env.ref("shopify_ept.process_shopify_order_queue")
+            if not order_queue_cron.active:
+                _logger.info("Active the Order data process queue cron job")
+                order_queue_cron.write(
+                    {'active': True, 'nextcall': datetime.now() + timedelta(seconds=120)})
         return order_queues
 
     def shopify_order_request(self, instance, from_date, to_date, order_type):
@@ -238,7 +247,7 @@ class ShopifyOrderDataQueueEpt(models.Model):
         order_data_queue_line_obj = self.env["shopify.order.data.queue.line.ept"]
         order_queues = []
         queue_type = 'shipped'
-        order_ids = self.shopify_order_request(instance, from_date, to_date, order_type)
+        order_ids = self.shopify_order_request(instance, from_date, to_date, queue_type)
         if order_ids and order_type == "buy_with_prime":
             order_ids = self.filter_buy_with_prime_order(instance, order_ids)
         if order_ids:
@@ -257,10 +266,11 @@ class ShopifyOrderDataQueueEpt(models.Model):
         for order_id in order_ids:
             order = order_id.to_dict()
             for buy_with_prime_tag in instance.buy_with_prime_tag_ids:
-                if buy_with_prime_tag.name in order.get("tags"):
+                tags = order.get("tags", "").strip().split(",")
+                tags = [tag.strip() for tag in tags]
+                if buy_with_prime_tag.name in tags:
                     buy_with_prime_order_ids.append(order_id)
         return buy_with_prime_order_ids
-
 
     def list_all_orders(self, result, instance, created_by, queue_type):
         """
@@ -281,12 +291,10 @@ class ShopifyOrderDataQueueEpt(models.Model):
         while result:
             page_info = ""
             # link: link of next page.
-            if not shopify.ShopifyResource.connection.response:
-                link = result.metadata and result.metadata.get('headers', {}).get('Link', {})
-            else:
-                link = shopify.ShopifyResource.connection.response.headers.get(
-                    "Link") if shopify.ShopifyResource.connection.response.headers.get(
-                    "Link") else shopify.ShopifyResource.connection.response.headers.get("link")
+            link = (result.metadata.get('headers', {}).get('Link') or
+                    result.metadata.get('headers', {}).get('link') or
+                    shopify.ShopifyResource.connection.response.headers.get('Link') or
+                    shopify.ShopifyResource.connection.response.headers.get('link'))
             if not link or not isinstance(link, str):
                 return order_queue_list
 
@@ -339,58 +347,67 @@ class ShopifyOrderDataQueueEpt(models.Model):
                 if order_ids_list:
                     _logger.warning("Orders are not found for ids :%s", str(order_ids_list))
                 if instance.create_shopify_orders_webhook:
-                    order_queues = self.create_order_queue_for_webhook_order(results, instance, queue_type,
-                                                                             created_by="import")
+                    order_queues = self.create_webhook_order_queue_ept(results, instance, queue_type,
+                                                                       created_by="import")
                 else:
                     order_queues = order_data_queue_line_obj.create_order_data_queue_line(results,
                                                                                           instance,
                                                                                           queue_type,
                                                                                           created_by="import")
+                if order_queues:
+                    order_queue_cron = self.env.ref("shopify_ept.process_shopify_order_queue")
+                    if not order_queue_cron.active:
+                        _logger.info("Active the Order data process queue cron job")
+                        order_queue_cron.write(
+                            {'active': True, 'nextcall': datetime.now() + timedelta(seconds=120)})
                 return order_queues
                 # order_queue_obj.browse(order_queues).order_data_queue_line_ids.process_import_order_queue_data()
         return True
 
-    def create_order_queue_for_webhook_order(self, results, instance, queue_type, created_by="import"):
+    def create_webhook_order_queue_ept(self, results, instance, queue_type, created_by="import"):
         """
-        This method is used to create order queue for webhook for import specific order.
-        @author: Yagnik Joshi @Emipro Technologies Pvt. Ltd on date 05 December 2023 .
+        This method is use to create a webhook order queue in the import specific order process.
+        @author: Haresh Mori @Emipro Technologies Pvt. Ltd on date 19 October 2023 .
         """
         sale_order_obj = self.env['sale.order']
-        order_data_queue_line_obj = self.env["shopify.order.data.queue.line.ept"]
-        existing_shopify_orders = self.search_existing_shopify_orders(results, instance)
-        order_list = []
-        new_order_list = []
         order_queues = []
+        order_data_queue_line_obj = self.env["shopify.order.data.queue.line.ept"]
+        existing_order_queue_list = self.prepare_existing_shopify_order_query_ept(results, instance)
+        webhook_result = []
+        order_create_result = []
         for result in results:
-            if str(result.id) in existing_shopify_orders:
-                order_list.append(result)
+            if str(result.id) in existing_order_queue_list:
+                webhook_result.append(result)
             else:
-                new_order_list.append(result)
-        if order_list:
-            for orders in order_list:
-                order_data = orders.to_dict()
-                sale_order_obj.sudo().process_shopify_order_via_webhook(order_data, instance, True)
-        if new_order_list:
-            order_queues += order_data_queue_line_obj.create_order_data_queue_line(new_order_list, instance, queue_type,
+                order_create_result.append(result)
+        if webhook_result:
+            for webhook_response in webhook_result:
+                sale_order_obj.sudo().process_shopify_order_via_webhook(webhook_response.to_dict(), instance, True)
+
+        if order_create_result:
+            order_queues += order_data_queue_line_obj.create_order_data_queue_line(order_create_result,
+                                                                                   instance,
+                                                                                   queue_type,
                                                                                    created_by="import")
         return order_queues
 
-    def search_existing_shopify_orders(self, results, instance):
+    def prepare_existing_shopify_order_query_ept(self, results, instance):
         """
-        This method will find existing shopify orders.
+        This method is use to prepare a query to find the existing shopify orders.
+        @author: Haresh Mori @Emipro Technologies Pvt. Ltd on date 19 October 2023 .
         """
-        order_list = [str(result.id) for result in results]
-        if len(order_list) > 1:
-            domain_for_orders = "in %s" % str(tuple(order_list))
+        shopify_order_list = [str(result.id) for result in results]
+        order_ids = tuple(shopify_order_list)
+        if len(shopify_order_list) == 1:
+            query = """SELECT shopify_order_id FROM sale_order  WHERE shopify_order_id = %s  AND shopify_instance_id = %s"""
+            self._cr.execute(query, (shopify_order_list[0], instance.id))
         else:
-            domain_for_orders = "= '%s'" % (tuple(order_list)[0])
-        existing_orders_qry = """select shopify_order_id from sale_order where shopify_instance_id = %s and shopify_order_id %s""" % (
-            instance.id, domain_for_orders)
-        self._cr.execute(existing_orders_qry)
-        existing_order_data = self._cr.dictfetchall()
-        existing_order = [queue_data.get('shopify_order_id') for queue_data in existing_order_data]
-        return existing_order
+            query = """SELECT shopify_order_id FROM sale_order WHERE shopify_order_id IN %s AND shopify_instance_id = %s"""
+            self._cr.execute(query, (order_ids, instance.id))
+        order_data_queue_list = self._cr.dictfetchall()
+        existing_order_queue_list = [queue_data.get('shopify_order_id') for queue_data in order_data_queue_list]
 
+        return existing_order_queue_list
 
     def create_schedule_activity(self, queue_id):
         """
@@ -432,5 +449,10 @@ class ShopifyOrderDataQueueEpt(models.Model):
 
     @api.model
     def retrieve_dashboard(self, *args, **kwargs):
+        """
+        :param args:
+        :param kwargs:
+        :return:
+        """
         dashboard = self.env['queue.line.dashboard']
         return dashboard.get_data(table='shopify.order.data.queue.line.ept')

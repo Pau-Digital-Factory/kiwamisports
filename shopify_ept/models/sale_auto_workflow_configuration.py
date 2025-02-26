@@ -33,9 +33,8 @@ class SaleAutoWorkflowConfiguration(models.Model):
     shopify_instance_id = fields.Many2one("shopify.instance.ept", "Instance")
     active = fields.Boolean("Active", default=True)
     shopify_order_payment_status = fields.Many2one("import.shopify.order.status", string="Shopify Order Status", default=_default_shopify_order_status)
-
     _sql_constraints = [('_workflow_unique_constraint',
-                         'unique(financial_status,shopify_instance_id,payment_gateway_id, shopify_order_payment_status)',
+                         'unique(financial_status,shopify_instance_id,payment_gateway_id,shopify_order_payment_status)',
                          "Financial status must be unique in the list")]
 
     def create_financial_status(self, instance, financial_status):
@@ -45,8 +44,7 @@ class SaleAutoWorkflowConfiguration(models.Model):
         @param financial_status: Status as paid or not paid.
         """
         payment_methods = self.env['shopify.payment.gateway.ept'].search([('shopify_instance_id', '=', instance.id)])
-        auto_workflow_record = self.env.ref("common_connector_library.automatic_validation_ept",
-                                            raise_if_not_found=False)
+        auto_workflow_record = self.env.ref("common_connector_library.automatic_validation_ept")
 
         for payment_method in payment_methods:
             domain = [('shopify_instance_id', '=', instance.id),
@@ -59,7 +57,7 @@ class SaleAutoWorkflowConfiguration(models.Model):
 
             vals = {
                 'shopify_instance_id': instance.id,
-                'auto_workflow_id': auto_workflow_record.id if auto_workflow_record else False,
+                'auto_workflow_id': auto_workflow_record.id,
                 'payment_gateway_id': payment_method.id,
                 'financial_status': financial_status
             }

@@ -110,6 +110,10 @@ class ResPartner(models.Model):
         return res_partner
 
     def create_or_search_tag(self, tag):
+        """
+        :param tag:
+        :return:
+        """
         res_partner_category_obj = self.env['res.partner.category']
 
         exists_tag = res_partner_category_obj.search([('name', '=ilike', tag)], limit=1)

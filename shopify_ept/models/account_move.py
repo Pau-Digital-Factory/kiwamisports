@@ -66,3 +66,11 @@ class AccountMove(models.Model):
             "target": "new",
             'context': context
         }
+
+    def _reconcile_reversed_moves(self, reverse_moves, move_reverse_cancel):
+        ''' Inherit Method to not reverse the invoice while create refund from the payout process.
+        '''
+        if self._context.get('is_shopify_reverse_move_ept', False):
+            return reverse_moves
+        return super(AccountMove, self)._reconcile_reversed_moves(reverse_moves, move_reverse_cancel)
+

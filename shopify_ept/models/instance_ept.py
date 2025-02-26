@@ -134,7 +134,7 @@ class ShopifyInstanceEpt(models.Model):
         return order_after_date
 
     @api.model
-    def _default_uom_category(self):
+    def _default_UOM_category(self):
         product_weight_in_lbs_param = self.env['ir.config_parameter'].sudo().get_param('product.weight_in_lbs')
         if product_weight_in_lbs_param and product_weight_in_lbs_param == '1':
             uom = self.env.ref('uom.product_uom_lb')
@@ -161,6 +161,10 @@ class ShopifyInstanceEpt(models.Model):
                                                 "2.During order sync operation, this pricelist "
                                                 "will be set in the order if the order currency from store and the "
                                                 "currency from the pricelist set here, matches.")
+
+    shopify_compare_pricelist_id = fields.Many2one('product.pricelist', string='Compare At Pricelist',
+                                                   help="During product sync, Import and Export operation, prices will be Imported/Exported "
+                                                        "using this Pricelist.")
 
     shopify_order_prefix = fields.Char(size=10, string='Order Prefix',
                                        help="Enter your order prefix")
@@ -193,7 +197,7 @@ class ShopifyInstanceEpt(models.Model):
     shopify_store_time_zone = fields.Char("Store Time Zone",
                                           help='This field used to import order process')
     discount_product_id = fields.Many2one("product.product", "Discount",
-                                          domain=[('detailed_type', '=', 'service')],
+                                          domain=[('type', '=', 'service')],
                                           default=_default_discount_product,
                                           help="This is used for set discount product in a sale order lines")
 
@@ -225,11 +229,6 @@ class ShopifyInstanceEpt(models.Model):
     is_shopify_create_schedule = fields.Boolean("Create Schedule Activity ? ", default=False,
                                                 help="If checked, Then Schedule Activity create on order data queues"
                                                      " will any queue line failed.")
-
-    # fields for payout schedule activity
-    shopify_payout_user_ids = fields.Many2many('res.users', 'shopify_instance_ept_payout_res_users_rel',
-                                               'res_config_settings_id', 'res_users_id')
-
     active = fields.Boolean(default=True)
     sync_product_with_images = fields.Boolean("Sync Images?",
                                               help="Check if you want to import images along with "
@@ -267,7 +266,7 @@ class ShopifyInstanceEpt(models.Model):
                                                             help="Last date of sync orders from Shopify to Odoo")
     is_instance_create_from_onboarding_panel = fields.Boolean(default=False)
     is_onboarding_configurations_done = fields.Boolean(default=False)
-    shipping_product_id = fields.Many2one("product.product", domain=[('detailed_type', '=', 'service')],
+    shipping_product_id = fields.Many2one("product.product", domain=[('type', '=', 'service')],
                                           default=_default_shipping_product,
                                           help="This is used for set shipping product in a Carrier.")
     shopify_order_data = fields.Text(compute="_compute_kanban_shopify_order_data")
@@ -276,7 +275,7 @@ class ShopifyInstanceEpt(models.Model):
                                                 default=_default_order_status,
                                                 help="Select order status in which "
                                                      "you want to import the orders from Shopify to Odoo.")
-    gift_card_product_id = fields.Many2one("product.product", domain=[('detailed_type', '=', 'service')],
+    gift_card_product_id = fields.Many2one("product.product", domain=[('type', '=', 'service')],
                                            default=_default_gift_card_product,
                                            help="This is used to manage the gift card in sale order")
     auto_fulfill_gift_card_order = fields.Boolean(
@@ -287,38 +286,39 @@ class ShopifyInstanceEpt(models.Model):
                                                    "given date.", default=_default_shopify_import_after_date)
 
     custom_service_product_id = fields.Many2one("product.product", "Custom Service Product",
-                                                domain=[('detailed_type', '=', 'service')],
+                                                domain=[('type', '=', 'service')],
                                                 default=_default_custom_service_product,
                                                 help="This is used for set custom service products in sale order "
                                                      "lines while receiving the custom item in order response.")
     custom_storable_product_id = fields.Many2one("product.product", "Custom Storable Product",
-                                                 domain=[('type', '=', 'product')],
+                                                 domain=[('type', '=', 'consu'),('is_storable','=',True)],
                                                  default=_default_custom_storable_product,
                                                  help="This is used for set custom storable products in sale order "
                                                       "lines while receiving the custom item as required shipping in "
                                                       "order response.")
     refund_adjustment_product_id = fields.Many2one("product.product", "Refund Adjustment",
-                                                   domain=[('detailed_type', '=', 'service')],
+                                                   domain=[('type', '=', 'service')],
                                                    default=_default_refund_adjustment_product,
                                                    help="This is used for set refund adjustment in a credit note")
     tip_product_id = fields.Many2one("product.product", "Tip",
-                                     domain=[('detailed_type', '=', 'service')],
+                                     domain=[('type', '=', 'service')],
                                      default=_default_tip_product,
                                      help="This is used for set Tip product in a sale order lines")
     # Analytic
+    shopify_is_use_analytic_account = fields.Boolean(default=True)
     shopify_analytic_account_id = fields.Many2one('account.analytic.account', string='Analytic Account',
                                                   domain="['|', ('company_id', '=', False), "
                                                          "('company_id', '=', shopify_company_id)]")
-    shopify_analytic_tag_ids = fields.Many2many('account.analytic.tag', string='Analytic Tags',
-                                                domain="['|', ('company_id', '=', False), "
-                                                       "('company_id', '=', shopify_company_id)]")
+    # shopify_analytic_tag_ids = fields.Many2many('account.analytic.tag', string='Analytic Tags',
+    #                                             domain="['|', ('company_id', '=', False),
+    #                                             ('company_id', '=', shopify_company_id)]")
     shopify_lang_id = fields.Many2one('res.lang', string='Language', default=_get_default_language)
 
     # presentment currency
     order_visible_currency = fields.Boolean(string="Import order in customer visible currency?")
 
     duties_product_id = fields.Many2one("product.product", "Duties",
-                                        domain=[('detailed_type', '=', 'service')],
+                                        domain=[('type', '=', 'service')],
                                         default=_default_duties_product,
                                         help="This is used for set duties product in a sale order lines")
 
@@ -327,16 +327,14 @@ class ShopifyInstanceEpt(models.Model):
     delivery_fee_name = fields.Char(string='Delivery fee name')
 
     is_delivery_multi_warehouse = fields.Boolean(string="Is Delivery from Multiple warehouse?")
+    import_customer_as_company = fields.Boolean(string="Import customer as a Company")
     shopify_product_uom_id = fields.Many2one('uom.uom', string='Unit of Measure',
-                                             default=_default_uom_category,
+                                             default=_default_UOM_category,
                                              )
-
-    ship_order_webhook = fields.Boolean("Want to ship order", default=True,
-                                        help="If checked, it will fulfill order in odoo")
+    ship_order_webhook = fields.Boolean("Want to ship order", help="If checked, it will fulfill order in odoo")
     forcefully_reserve_stock_webhook = fields.Boolean("ForceFully Reserve Stock",
                                                       help="If checked, It will forcefully reserve stock in the picking")
-    refund_order_webhook = fields.Boolean("Want to refund order", default=True,
-                                          help="If checked, it will create a refund in odoo")
+    refund_order_webhook = fields.Boolean("Want to refund order", help="If checked, it will create a refund in odoo")
     customer_order_webhook = fields.Boolean("Want to update customer",
                                             help="If checked, it will update the customer in order")
     update_qty_order_webhook = fields.Boolean("Want to update Quantity",
@@ -350,12 +348,24 @@ class ShopifyInstanceEpt(models.Model):
     buy_with_prime_tag_ids = fields.Many2many("shopify.tags", "shopify_instance_buy_with_prime_shopify_tags_rel",
                                               "product_tmpl_id", "tag_id",
                                               "Tags for import buy with prime orders")
-    force_transfer_move_of_buy_with_prime_orders = fields.Boolean(string="Force Transfer",
+    Force_transfer_move_of_buy_with_prime_orders = fields.Boolean(string="Force Transfer",
                                                                   help="If checked, it will forcefully done the stock move while stock also not there.")
     return_picking_order = fields.Boolean("Want to return picking", help="If checked, it will create a return in odoo")
     stock_validate_for_return = fields.Boolean("Want to validate return picking",
                                                help="If checked, it will validate a return picking")
-    return_location_id = fields.Many2one('stock.location', 'Return Location')
+    # return_location_id = fields.Many2one('stock.location', 'Return Location')
+    update_qty_to_invoice_order_webhook = fields.Boolean("Want to changes to invoice as per update Quantity",
+                                                         help="If checked, it will update invoice based on updated quantity")
+    credit_note_register_payment = fields.Boolean("Want to create register payment for credit note",
+                                                  help="If checked, it will create a payment for credit note")
+    credit_note_payment_journal = fields.Many2one("account.journal", string="Credit Note Payment Journal",
+                                                  help=" Selected Journal will be set in Credit note Payment journal.")
+
+    auto_create_product_category = fields.Boolean(string="Auto Create Product Category?", default=True,
+                                                  help="If checked, it will create a product category in odoo.")
+
+    shopify_instance_product_category = fields.Many2one("product.category", string="Default product category",
+                                                        help="Select product category")
 
     _sql_constraints = [('unique_host', 'unique(shopify_host)',
                          "Instance already exists for given host. Host must be Unique for the instance!")]
@@ -426,7 +436,7 @@ class ShopifyInstanceEpt(models.Model):
                                    AND shopify_instance_id=%s and state in ('sale','done')
                                    GROUP  BY 1
                                    ) t USING (day)
-                                ORDER  BY day""" % record.id)
+                                ORDER  BY day""", (record.id,))
             return self._cr.dictfetchall()
 
         def graph_of_current_month(record):
@@ -448,7 +458,7 @@ class ShopifyInstanceEpt(models.Model):
                         group by 1
                         )foo 
                         GROUP  BY 1
-                        ORDER  BY 1""" % record.id)
+                        ORDER  BY 1""", (record.id,))
             return self._cr.dictfetchall()
 
         def graph_of_current_year(record):
@@ -470,14 +480,14 @@ class ShopifyInstanceEpt(models.Model):
                                 order by month
                                 )foo 
                                 GROUP  BY foo.month
-                                order by foo.month""" % record.id)
+                                order by foo.month""",(record.id,))
             return self._cr.dictfetchall()
 
         def graph_of_all_time(record):
             self._cr.execute("""select TRIM(TO_CHAR(DATE_TRUNC('month',date_order),'YYYY-MM')),sum(amount_untaxed)
                                 from sale_order where shopify_instance_id = %s and state in ('sale','done')
                                 group by DATE_TRUNC('month',date_order) 
-                                order by DATE_TRUNC('month',date_order)""" % record.id)
+                                order by DATE_TRUNC('month',date_order)""",(record.id,))
             return self._cr.dictfetchall()
 
         # Prepare values for Graph
@@ -506,7 +516,7 @@ class ShopifyInstanceEpt(models.Model):
             day_of_week = date.weekday(date.today())
             self._cr.execute("""select sum(amount_untaxed) as current_week from sale_order
                                 where date(date_order) >= (select date_trunc('week', date(current_date))) and
-                                shopify_instance_id=%s and state in ('sale','done')""" % record.id)
+                                shopify_instance_id=%s and state in ('sale','done')""", (record.id,))
             current_week_data = self._cr.dictfetchone()
             if current_week_data:
                 current_total = current_week_data.get('current_week') if current_week_data.get('current_week') else 0
@@ -516,7 +526,7 @@ class ShopifyInstanceEpt(models.Model):
                             and (select date_trunc('week', (select date_trunc('week', current_date) - interval '7
                             day')) + interval '%s day')
                             and shopify_instance_id=%s and state in ('sale','done')
-                            """ % (day_of_week, record.id))
+                            """, (day_of_week, record.id))
             previous_week_data = self._cr.dictfetchone()
             if previous_week_data:
                 previous_total = previous_week_data.get('previous_week') if previous_week_data.get(
@@ -529,7 +539,7 @@ class ShopifyInstanceEpt(models.Model):
             day_of_month = date.today().day - 1
             self._cr.execute("""select sum(amount_untaxed) as current_month from sale_order
                                 where date(date_order) >= (select date_trunc('month', date(current_date)))
-                                and shopify_instance_id=%s and state in ('sale','done')""" % record.id)
+                                and shopify_instance_id=%s and state in ('sale','done')""", (record.id,))
             current_data = self._cr.dictfetchone()
             if current_data:
                 current_total = current_data.get('current_month') if current_data.get('current_month') else 0
@@ -539,7 +549,7 @@ class ShopifyInstanceEpt(models.Model):
                             (select date_trunc('month', (select date_trunc('month', current_date) - interval
                             '1 month')) + interval '%s days')
                             and shopify_instance_id=%s and state in ('sale','done')
-                            """ % (day_of_month, record.id))
+                            """, (day_of_month, record.id))
             previous_data = self._cr.dictfetchone()
             if previous_data:
                 previous_total = previous_data.get('previous_month') if previous_data.get('previous_month') else 0
@@ -553,7 +563,7 @@ class ShopifyInstanceEpt(models.Model):
             delta = (year_end - year_begin).days - 1
             self._cr.execute("""select sum(amount_untaxed) as current_year from sale_order
                                 where date(date_order) >= (select date_trunc('year', date(current_date)))
-                                and shopify_instance_id=%s and state in ('sale','done')""" % record.id)
+                                and shopify_instance_id=%s and state in ('sale','done')""",(record.id,))
             current_data = self._cr.dictfetchone()
             if current_data:
                 current_total = current_data.get('current_year') if current_data.get('current_year') else 0
@@ -562,7 +572,7 @@ class ShopifyInstanceEpt(models.Model):
                             between (select date_trunc('year', date(current_date) - interval '1 year')) and 
                             (select date_trunc('year', date(current_date) - interval '1 year') + interval '%s days') 
                             and shopify_instance_id=%s and state in ('sale','done')
-                            """ % (delta, record.id))
+                            """, (delta, record.id))
             previous_data = self._cr.dictfetchone()
             if previous_data:
                 previous_total = previous_data.get('previous_year') if previous_data.get('previous_year') else 0
@@ -593,31 +603,41 @@ class ShopifyInstanceEpt(models.Model):
         Added on: 29/10/20
         :return: total number of shopify sale orders ids and action for sale orders of current instance
         """
-        order_query = """select id from sale_order where shopify_instance_id= %s and state in ('sale','done')""" % \
-                      self.id
+        order_query = """
+            SELECT id
+            FROM sale_order
+            WHERE shopify_instance_id = %s AND state IN ('sale', 'done')
+        """
 
         def orders_of_current_week(order_query):
-            qry = order_query + """ and date(date_order) >= (select date_trunc('week', date(current_date))) order by
-            date(date_order)"""
-            self._cr.execute(qry)
+            qry = order_query + """
+                    AND date(date_order) >= (SELECT date_trunc('week', date(current_date)))
+                    ORDER BY date(date_order)
+                """
+            self._cr.execute(qry, (self.id,))
             return self._cr.dictfetchall()
 
         def orders_of_current_month(order_query):
             qry = order_query + """ and date(date_order) >=(select date_trunc('month', date(current_date))) order by
             date(date_order)"""
-            self._cr.execute(qry)
+            self._cr.execute(qry, (self.id,))
             return self._cr.dictfetchall()
 
         def orders_of_current_year(order_query):
             qry = order_query + """ and date(date_order) >= (select date_trunc('year', date(current_date))) order by
             date(date_order)"""
-            self._cr.execute(qry)
+            self._cr.execute(qry, (self.id,))
             return self._cr.dictfetchall()
 
         def orders_of_all_time(record):
             self._cr.execute(
-                """select id from sale_order where shopify_instance_id = %s and state in ('sale','done')""" % (
-                    record.id))
+                """
+                SELECT id 
+                FROM sale_order 
+                WHERE shopify_instance_id = %s AND state IN ('sale', 'done')
+                """,
+                (record.id,)
+            )
             return self._cr.dictfetchall()
 
         order_data = {}
@@ -643,29 +663,33 @@ class ShopifyInstanceEpt(models.Model):
         Added on: 29/10/20
         :return: total number of shopify shipped orders ids and action for shipped orders of current instance
         """
-        shipped_query = """select so.id from stock_picking sp
-                             inner join sale_order so on so.procurement_group_id=sp.group_id inner 
-                             join stock_location on stock_location.id=sp.location_dest_id and stock_location.usage='customer' 
-                             where sp.updated_in_shopify = True and sp.state != 'cancel' and 
-                             so.shopify_instance_id=%s""" % self.id
+        shipped_query = """
+            SELECT so.id 
+            FROM stock_picking sp
+            INNER JOIN sale_order so ON so.procurement_group_id = sp.group_id
+            INNER JOIN stock_location ON stock_location.id = sp.location_dest_id AND stock_location.usage = 'customer'
+            WHERE sp.updated_in_shopify = True 
+            AND sp.state != 'cancel' 
+            AND so.shopify_instance_id = %s
+        """
 
         def shipped_order_of_current_week(shipped_query):
-            qry = shipped_query + " and date(so.date_order) >= (select date_trunc('week', date(current_date)))"
-            self._cr.execute(qry)
+            qry = shipped_query + " AND date(so.date_order) >= (SELECT date_trunc('week', date(current_date)))"
+            self._cr.execute(qry, (self.id,))
             return self._cr.dictfetchall()
 
         def shipped_order_of_current_month(shipped_query):
             qry = shipped_query + " and date(so.date_order) >= (select date_trunc('month', date(current_date)))"
-            self._cr.execute(qry)
+            self._cr.execute(qry, (self.id,))
             return self._cr.dictfetchall()
 
         def shipped_order_of_current_year(shipped_query):
             qry = shipped_query + " and date(so.date_order) >= (select date_trunc('year', date(current_date)))"
-            self._cr.execute(qry)
+            self._cr.execute(qry, (self.id,))
             return self._cr.dictfetchall()
 
         def shipped_order_of_all_time(shipped_query):
-            self._cr.execute(shipped_query)
+            self._cr.execute(shipped_query, (self.id,))
             return self._cr.dictfetchall()
 
         order_data = {}
@@ -693,7 +717,7 @@ class ShopifyInstanceEpt(models.Model):
         """
         product_data = {}
         self._cr.execute("""select count(id) as total_count from shopify_product_template_ept where
-                        exported_in_shopify = True and shopify_instance_id = %s""" % self.id)
+                        exported_in_shopify = True and shopify_instance_id = %s""" , (self.id,))
         result = self._cr.dictfetchall()
         if result:
             total_count = result[0].get('total_count')
@@ -712,7 +736,7 @@ class ShopifyInstanceEpt(models.Model):
         """
         customer_data = {}
         self._cr.execute("""select partner_id from shopify_res_partner_ept where shopify_instance_id = %s"""
-                         % self.id)
+                         , (self.id,))
         result = self._cr.dictfetchall()
         customer_ids = [data.get('partner_id') for data in result]
         view = self.env.ref('shopify_ept.action_shopify_partner_form').sudo().read()[0]
@@ -728,26 +752,30 @@ class ShopifyInstanceEpt(models.Model):
         Added on: 03/11/20
         :return: total number of refund order ids and action for customers
         """
-        refund_query = """select id from account_move where shopify_instance_id=%s and
-                            move_type='out_refund'""" % self.id
+        refund_query = """
+            SELECT id 
+            FROM account_move 
+            WHERE shopify_instance_id = %s 
+            AND move_type = 'out_refund'
+        """
 
         def refund_of_current_week(refund_query):
-            qry = refund_query + " and date(invoice_date) >= (select date_trunc('week', date(current_date)))"
-            self._cr.execute(qry)
+            qry = refund_query + " AND date(invoice_date) >= (SELECT date_trunc('week', date(current_date)))"
+            self._cr.execute(qry, (self.id,))
             return self._cr.dictfetchall()
 
         def refund_of_current_month(refund_query):
             qry = refund_query + " and date(invoice_date) >= (select date_trunc('month', date(current_date)))"
-            self._cr.execute(qry)
+            self._cr.execute(qry, (self.id,))
             return self._cr.dictfetchall()
 
         def refund_of_current_year(refund_query):
             qry = refund_query + " and date(invoice_date) >= (select date_trunc('year', date(current_date)))"
-            self._cr.execute(qry)
+            self._cr.execute(qry, (self.id,))
             return self._cr.dictfetchall()
 
         def refund_of_all_time(refund_query):
-            self._cr.execute(refund_query)
+            self._cr.execute(refund_query, (self.id,))
             return self._cr.dictfetchall()
 
         refund_data = {}
@@ -828,10 +856,10 @@ class ShopifyInstanceEpt(models.Model):
         Added on: 29/10/20
         :return: shopify logs action details
         """
-        view = self.env.ref('shopify_ept.action_common_log_book_ept_shopify').sudo().read()[0]
+        view = self.env.ref('shopify_ept.action_shopify_common_log_line_ept').sudo().read()[0]
         return self.prepare_action(view, [('shopify_instance_id', '=', record_id)])
 
-    @api.model
+    @api.model_create_multi
     def create(self, vals):
         """
         Inherited for creating generic POS customer.
@@ -839,15 +867,16 @@ class ShopifyInstanceEpt(models.Model):
         @author: Maulik Barad on date 25-Feb-2020.
         """
         res_partner_obj = self.env["res.partner"]
-        if vals.get("shopify_host").endswith('/'):
-            vals["shopify_host"] = vals.get("shopify_host").rstrip('/')
+        for val in vals:
+            if val.get("shopify_host").endswith('/'):
+                val["shopify_host"] = val.get("shopify_host").rstrip('/')
 
-        customer_vals = {"name": "POS Customer(%s)" % vals.get("name"), "customer_rank": 1}
-        customer = res_partner_obj.create(customer_vals)
+            customer_vals = {"name": "POS Customer(%s)" % val.get("name"), "customer_rank": 1}
+            customer = res_partner_obj.create(customer_vals)
 
-        sales_team = self.create_sales_channel(vals.get('name'))
+            sales_team = self.create_sales_channel(val.get('name'))
 
-        vals.update({"shopify_default_pos_customer_id": customer.id, "shopify_section_id": sales_team.id})
+            val.update({"shopify_default_pos_customer_id": customer.id, "shopify_section_id": sales_team.id})
         return super(ShopifyInstanceEpt, self).create(vals)
 
     def create_sales_channel(self, name):
@@ -859,7 +888,6 @@ class ShopifyInstanceEpt(models.Model):
         crm_team_obj = self.env['crm.team']
         vals = {
             'name': name,
-            'use_quotations': True
         }
         return crm_team_obj.create(vals)
 
@@ -882,6 +910,8 @@ class ShopifyInstanceEpt(models.Model):
         message = _("Connection Test Succeeded!")
         self.env['bus.bus']._sendone(self.env.user.partner_id, 'simple_notification',
                                      {'title': title, 'message': message, 'sticky': False, 'warning': True})
+        self.env['onboarding.onboarding.step'].sudo().action_validate_step(
+            "shopify_ept.onboarding_onboarding_step_shopify")
         return True
 
     def connect_in_shopify(self, vals=False):

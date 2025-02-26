@@ -54,25 +54,21 @@ class ShopifyCustomerDataQueueLineEpt(models.Model):
         name = "%s %s" % (result.get("first_name") or "", result.get("last_name") or "")
         customer_id = result.get("id")
         data = json.dumps(result)
-        existing_customer_data_queue = synced_shopify_customers_line_obj.search(
-            [('shopify_customer_data_id', '=', customer_id), ('shopify_instance_id', '=', customer_queue_id.shopify_instance_id.id),
+        instance_id = customer_queue_id.shopify_instance_id.id
+        existing_customer_data = synced_shopify_customers_line_obj.search(
+            [('shopify_customer_data_id', '=', customer_id), ('shopify_instance_id', '=', instance_id),
              ('state', 'in', ['draft', 'failed'])])
-        existing_customer_queue = existing_customer_data_queue.synced_customer_queue_id
         line_vals = {
             "synced_customer_queue_id": customer_queue_id.id,
             "shopify_customer_data_id": customer_id or "",
             "name": name.strip(),
             "shopify_synced_customer_data": data,
-            "shopify_instance_id": customer_queue_id.shopify_instance_id.id,
+            "shopify_instance_id": instance_id,
             "last_process_date": datetime.now(),
         }
-        if not existing_customer_data_queue:
-            synced_shopify_customers_line_obj.create(line_vals)
-        else:
-            existing_customer_data_queue.write({'shopify_synced_customer_data': data, 'state': 'draft'})
-            if not existing_customer_queue.synced_customer_queue_line_ids:
-                existing_customer_queue.unlink()
-        return True
+        if not existing_customer_data:
+            return synced_shopify_customers_line_obj.create(line_vals)
+        return existing_customer_data.write({'shopify_synced_customer_data': data})
 
     @api.model
     def sync_shopify_customer_into_odoo(self):
@@ -84,19 +80,20 @@ class ShopifyCustomerDataQueueLineEpt(models.Model):
         :Task ID: 157065
         """
         shopify_customer_queue_obj = self.env["shopify.customer.data.queue.ept"]
-        customer_queue_ids = []
+        query = """
+            SELECT DISTINCT queue.id, queue_line.create_date
+            FROM shopify_customer_data_queue_line_ept AS queue_line
+            INNER JOIN shopify_customer_data_queue_ept AS queue
+            ON queue_line.synced_customer_queue_id = queue.id
+            WHERE queue_line.state = %s AND queue.is_action_require = %s
+            ORDER BY queue_line.create_date ASC
+        """
+        params = ('draft', 'False')
+        self._cr.execute(query, params)
 
-        query = """select queue.id
-            from shopify_customer_data_queue_line_ept as queue_line
-            inner join shopify_customer_data_queue_ept as queue on queue_line.synced_customer_queue_id = queue.id
-            where queue_line.state='draft' and queue.is_action_require = 'False'
-            ORDER BY queue_line.create_date ASC"""
-        self._cr.execute(query)
-        customer_data_queue_list = self._cr.fetchall()
-        if customer_data_queue_list:
-            for customer_data_queue_id in customer_data_queue_list:
-                if customer_data_queue_id[0] not in customer_queue_ids:
-                    customer_queue_ids.append(customer_data_queue_id[0])
+        customer_data_queue_list = self._cr.dictfetchall()
+        customer_queue_ids = [queue_data.get('id') for queue_data in customer_data_queue_list]
+        if customer_queue_ids:
             queues = shopify_customer_queue_obj.browse(customer_queue_ids)
             self.filter_customer_queue_lines_and_post_message(queues)
         return True
@@ -109,8 +106,7 @@ class ShopifyCustomerDataQueueLineEpt(models.Model):
         @author: Haresh Mori @Emipro Technologies Pvt. Ltd on date 16 October 2020.
         @change: By Maulik Barad on 25-Nov-2020. Task : 167734 - Changes of cron execution utilisation.
         """
-        common_log_book_obj = self.env["common.log.book.ept"]
-        ir_model_obj = self.env["ir.model"]
+        common_log_line_obj = self.env["common.log.lines.ept"]
         start = time.time()
         customer_queue_process_cron_time = queues.shopify_instance_id.get_shopify_cron_execution_time(
             "shopify_ept.process_shopify_customer_queue")
@@ -119,6 +115,7 @@ class ShopifyCustomerDataQueueLineEpt(models.Model):
             results = queue.synced_customer_queue_line_ids.filtered(lambda x: x.state == "draft")
 
             queue.queue_process_count += 1
+            # queue.queue_process_count = 4
             if queue.queue_process_count > 3:
                 queue.is_action_require = True
                 note = _("<p>Need to process this customer queue manually.There are 3 attempts been made by " \
@@ -126,8 +123,8 @@ class ShopifyCustomerDataQueueLineEpt(models.Model):
                          "<br/>- Ignore, if this queue is already processed.</p>")
                 queue.message_post(body=note)
                 if queue.shopify_instance_id.is_shopify_create_schedule:
-                    model_id = ir_model_obj.search([("model", "=", "shopify.customer.data.queue.ept")]).id
-                    common_log_book_obj.create_crash_queue_schedule_activity(queue, model_id, note)
+                    common_log_line_obj.create_crash_queue_schedule_activity(queue, "shopify.customer.data.queue.ept",
+                                                                             note)
                 continue
             self._cr.commit()
             results.process_customer_queue_lines()
@@ -138,35 +135,33 @@ class ShopifyCustomerDataQueueLineEpt(models.Model):
         """
         This method process the queue lines.
         """
-        common_log_book_obj = self.env["common.log.book.ept"]
         queues = self.synced_customer_queue_id
 
         for queue in queues:
             instance = queue.shopify_instance_id
             if instance.active:
-                if queue.common_log_book_id:
-                    log_book_id = queue.common_log_book_id
-                else:
-                    model_id = common_log_book_obj.log_lines.get_model_id("res.partner")
-                    log_book_id = common_log_book_obj.shopify_create_common_log_book("import", instance, model_id)
-                    self.env.cr.execute("""update shopify_product_data_queue_ept set is_process_queue = False where
-                    is_process_queue = True""")
-                    self._cr.commit()
+                query = """
+                    UPDATE shopify_product_data_queue_ept
+                    SET is_process_queue = %s
+                    WHERE is_process_queue = %s
+                """
+                params = (False, True)
+                self.env.cr.execute(query, params)
+                self._cr.commit()
 
-                self.customer_queue_commit_and_process(queue, instance, log_book_id)
+                self.customer_queue_commit_and_process(queue, instance)
 
-                queue.common_log_book_id = log_book_id
                 _logger.info("Customer Queue %s is processed.", queue.name)
-                if log_book_id and not log_book_id.log_lines:
-                    log_book_id.unlink()
+
         return True
 
-    def customer_queue_commit_and_process(self, queue, instance, log_book_id):
+    def customer_queue_commit_and_process(self, queue, instance):
         """ This method is used to commit the customer queue line after 10 customer queue line process
             and call the child method to process the customer queue line.
             :param queue: Record of customer queue.
             @author: Haresh Mori @Emipro Technologies Pvt. Ltd on date 17 October 2020 .
         """
+        company_id = False
         shopify_partner_obj = self.env["shopify.res.partner.ept"]
         commit_count = 0
         for line in self:
@@ -177,13 +172,12 @@ class ShopifyCustomerDataQueueLineEpt(models.Model):
                 commit_count = 0
 
             customer_data = json.loads(line.shopify_synced_customer_data)
-            main_partner = shopify_partner_obj.shopify_create_contact_partner(customer_data, instance, line,
-                                                                              log_book_id)
+            main_partner = shopify_partner_obj.with_context(customer_data_queue=True).shopify_create_contact_partner(customer_data, instance, line)
             if main_partner:
                 for address in customer_data.get("addresses"):
                     if address.get("default"):
                         continue
-                    shopify_partner_obj.shopify_create_or_update_address(address, main_partner, "other")
+                    shopify_partner_obj.shopify_create_or_update_address(instance, address, main_partner, "other")
 
                 line.update(
                     {"state": "done", "last_process_date": datetime.now(), 'shopify_synced_customer_data': False})

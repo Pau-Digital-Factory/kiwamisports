@@ -13,18 +13,18 @@ class ShopifyLocationEpt(models.Model):
 
     name = fields.Char(help="Give this location a short name to make it easy to identify. You’ll see this name in areas"
                             "like orders and products.",
-                       readonly="1")
+                       readonly=True)
     export_stock_warehouse_ids = fields.Many2many('stock.warehouse', string='Warehouses',
                                                   help="Selected warehouse used while Export the stock.")
     import_stock_warehouse_id = fields.Many2one('stock.warehouse', string='Warehouse',
                                                 help="Selected warehouse used while Import the stock.")
-    shopify_location_id = fields.Char(readonly="1")
-    instance_id = fields.Many2one('shopify.instance.ept', "Instance", readonly="1", ondelete="cascade")
+    shopify_location_id = fields.Char(readonly=True)
+    instance_id = fields.Many2one('shopify.instance.ept', "Instance", readonly=True, ondelete="cascade")
     legacy = fields.Boolean('Is Legacy Location', help="Whether this is a fulfillment service location. If true, then"
                                                        "the location is a fulfillment service location. If false, then"
                                                        "the location was created by the merchant and isn't tied to a"
-                                                       "fulfillment service.", readonly="1")
-    is_primary_location = fields.Boolean(readonly="1")
+                                                       "fulfillment service.", readonly=True)
+    is_primary_location = fields.Boolean(readonly=True)
     shopify_instance_company_id = fields.Many2one('res.company', string='Company', readonly=True)
     warehouse_for_order = fields.Many2one('stock.warehouse', "Warehouse in Order",
                                           help="The warehouse to set while importing order, if this"
@@ -86,12 +86,12 @@ class ShopifyLocationEpt(models.Model):
             @author: Haresh Mori @Emipro Technologies Pvt. Ltd on date 16 October 2020 .
         """
         values = {
-            'name':location.get('name'),
-            'shopify_location_id':location.get('id'),
-            'instance_id':instance.id,
-            'legacy':location.get('legacy'),
-            'shopify_instance_company_id':instance.shopify_company_id.id,
-            "active":location.get('active')
+            'name': location.get('name'),
+            'shopify_location_id': location.get('id'),
+            'instance_id': instance.id,
+            'legacy': location.get('legacy'),
+            'shopify_instance_company_id': instance.shopify_company_id.id,
+            "active": location.get('active')
         }
         return values
 
@@ -104,16 +104,16 @@ class ShopifyLocationEpt(models.Model):
         shopify_primary_location = self.search([('is_primary_location', '=', True), ('instance_id', '=', instance.id)],
                                                limit=1)
         if shopify_primary_location:
-            shopify_primary_location.write({'is_primary_location':False})
+            shopify_primary_location.write({'is_primary_location': False})
 
         primary_location_id = shop and shop.to_dict().get('primary_location_id')
         primary_location = self.search(
             [('shopify_location_id', '=', primary_location_id),
              ('instance_id', '=', instance.id)]) if primary_location_id else False
         if primary_location:
-            vals = {'is_primary_location':True}
+            vals = {'is_primary_location': True}
             if not primary_location.export_stock_warehouse_ids:
-                vals.update({'export_stock_warehouse_ids':instance.shopify_warehouse_id})
+                vals.update({'export_stock_warehouse_ids': instance.shopify_warehouse_id})
             if not primary_location.import_stock_warehouse_id:
-                vals.update({'import_stock_warehouse_id':instance.shopify_warehouse_id})
+                vals.update({'import_stock_warehouse_id': instance.shopify_warehouse_id})
             primary_location.write(vals)
