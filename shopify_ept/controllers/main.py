@@ -4,6 +4,7 @@
 import logging
 from odoo import http
 from odoo.http import request
+from .. import shopify
 
 _logger = logging.getLogger("Shopify Controller")
 
@@ -33,13 +34,13 @@ class Main(http.Controller):
         shopify_template = request.env["shopify.product.template.ept"].sudo().with_context(active_test=False).search(
             [("shopify_tmpl_id", "=", res.get("id")), ("shopify_instance_id", "=", instance.id)], limit=1)
 
-        if webhook_route == 'shopify_odoo_webhook_for_product_create' and shopify_template or res.get("published_at"):
-            request.env["shopify.product.data.queue.ept"].sudo().create_shopify_product_queue_from_webhook(res,
-                                                                                                           instance)
-
-        if webhook_route == 'shopify_odoo_webhook_for_product_update' and shopify_template or res.get(
-                "status") == 'active':
-            request.env["shopify.product.data.queue.ept"].sudo().create_shopify_product_queue_from_webhook(res,
+        if webhook_route in ['shopify_odoo_webhook_for_product_update',
+                             'shopify_odoo_webhook_for_product_create'] and shopify_template or res.get("published_at"):
+            # when new product is created via webhook, response does not have require_shipping field
+            # to get all data about the product, external api is being called.
+            instance.connect_in_shopify()
+            shopify_product = shopify.Product().find(ids=str(res.get('id')))[0]
+            request.env["shopify.product.data.queue.ept"].sudo().create_shopify_product_queue_from_webhook(shopify_product,
                                                                                                            instance)
 
         if webhook_route == 'shopify_odoo_webhook_for_product_delete' and shopify_template:
@@ -109,7 +110,7 @@ class Main(http.Controller):
         instance, If no then return response as False and instance.
         @author: Haresh Mori @Emipro Technologies Pvt. Ltd on date 10-Jan-2020..
         """
-        res = request.jsonrequest
+        res = request.get_json_data()
         host = request.httprequest.headers.get("X-Shopify-Shop-Domain")
         instance = request.env["shopify.instance.ept"].sudo().with_context(active_test=False).search(
             [("shopify_host", "ilike", host)], limit=1)
