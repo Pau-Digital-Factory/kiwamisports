@@ -11,18 +11,18 @@
                         <group>
                             <field name="export_method" required="1"/>
                             <field name="shopify_instance_id"
-                                   attrs="{'required':[('export_method','=','direct')],'invisible':[('export_method','!=','direct')]}"
+                                   required="export_method == 'direct'" invisible="export_method != 'direct'"
                                    options="{'no_create':True,'no_create_edit':True}"/>
                         </group>
                     </group>
-                    <group>
+                    <div>
                         <div style="color:#000000" id="export_products_note">
                             <p class="alert alert-warning" role="alert">
                                 <u>
                                     <h3 style="font-weight:bold;color:#7d5a29">Note :</h3>
                                 </u>
                                 <b>
-                                    <ol attrs="{'invisible':[('export_method','=','direct')]}">
+                                    <ol invisible="export_method == 'direct'">
                                         <li>
                                             You can use this option, when you want to export the
                                             details with changes in the current values of the fields
@@ -46,7 +46,7 @@
                                             Select the instance and Operation > Import Products From CSV/XLSX.
                                         </li>
                                     </ol>
-                                    <ol attrs="{'invisible':[('export_method','in',('csv','xlsx'))]}">
+                                    <ol invisible="export_method in ('csv','xlsx')">
                                         <li>
                                             You can use this option, when you want to export the
                                             details without making changes in the current values of
@@ -64,7 +64,7 @@
                                 </b>
                             </p>
                         </div>
-                    </group>
+                    </div>
 
                     <footer>
                         <button name="prepare_product_for_export"

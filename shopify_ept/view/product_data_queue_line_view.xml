@@ -6,7 +6,7 @@
         <field name="model">shopify.product.data.queue.line.ept</field>
         <field eval="100" name="priority"/>
         <field name="arch" type="xml">
-            <tree create="false" duplicate="false" edit="false" sample="1" decoration-danger="state=='failed'"
+            <list create="false" duplicate="false" edit="false" sample="1" decoration-danger="state=='failed'"
                   decoration-success="state=='done'" decoration-info="state=='draft'">
                 <header>
                     <button
@@ -18,7 +18,7 @@
                 <field name="last_process_date"/>
                 <field name="shopify_image_import_state"/>
                 <field name="state"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -46,9 +46,9 @@
                     <notebook>
                         <page string="Log Lines">
                             <field name="common_log_lines_ids">
-                                <tree create="false" editable="bottom">
+                                <list create="false">
                                     <field name="message"/>
-                                </tree>
+                                </list>
                             </field>
                         </page>
                         <page string="Product Data">

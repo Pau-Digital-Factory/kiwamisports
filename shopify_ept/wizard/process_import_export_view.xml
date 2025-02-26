@@ -9,19 +9,26 @@
         <field name="arch" type="xml">
             <form string="Import/Export">
                 <sheet>
-                    <group name='shopify_instance'>
-                        <group>
-                            <field name='shopify_instance_id'
-                                   options="{'no_create':True,'no_create_edit': True,'no_open': True}"
-                                   required="1" domain="[('active','=',True)]"/>
+                    <style>
+                        .embed-responsive-item {
+                        width: 25rem !important;
+                        min-height: 15rem !important;
+                        }
+                    </style>
+                    <div style="padding-left:5px;">
+
+                        <group name='shopify_instance'>
+                            <group>
+                                <field name='shopify_instance_id'
+                                       options="{'no_create':True,'no_create_edit': True,'no_open': True}"
+                                       required="1" domain="[('active','=',True)]"/>
+                            </group>
+                            <group>
+                                <field name='shopify_operation' string="Operations" required="1"/>
+                            </group>
                         </group>
-                        <group>
-                            <field name='shopify_operation' string="Operations" required="1"/>
-                        </group>
-                    </group>
-                    <group>
                         <div name="msg_opr_main">
-                            <div attrs="{'invisible':[('shopify_operation','!=','sync_product')]}">
+                            <div invisible="shopify_operation != 'sync_product'">
                                 <p colspan="2" class="alert alert-warning" role="alert">
                                     <b>
                                         <u>
@@ -74,7 +81,7 @@
                                     </b>
                                 </p>
                             </div>
-                            <div attrs="{'invisible':[('shopify_operation','!=','sync_product_by_remote_ids')]}">
+                            <div invisible="shopify_operation != 'sync_product_by_remote_ids'">
                                 <p colspan="2" class="alert alert-warning" role="alert">
                                     <b>
                                         <u>
@@ -113,7 +120,7 @@
                                     </b>
                                 </p>
                             </div>
-                            <div attrs="{'invisible':[('shopify_operation','!=','import_unshipped_orders')]}">
+                            <div invisible="shopify_operation != 'import_unshipped_orders'">
                                 <p colspan="2" class="alert alert-warning" role="alert">
                                     <b>
                                         <u>
@@ -162,7 +169,7 @@
                                     </b>
                                 </p>
                             </div>
-                            <div attrs="{'invisible':[('shopify_operation','not in',['import_shipped_orders', 'import_buy_with_prime_orders'])]}">
+                            <div invisible="shopify_operation not in ['import_shipped_orders','import_buy_with_prime_orders']">
                                 <p colspan="2" class="alert alert-warning" role="alert">
                                     <b>
                                         <u>
@@ -216,7 +223,7 @@
                                     </b>
                                 </p>
                             </div>
-                            <div attrs="{'invisible':[('shopify_operation','!=','import_cancel_orders')]}">
+                            <div invisible="shopify_operation != 'import_cancel_orders'">
                                 <p colspan="2" class="alert alert-warning" role="alert">
                                     <b>
                                         <u>
@@ -253,7 +260,7 @@
                                     </b>
                                 </p>
                             </div>
-                            <div attrs="{'invisible':[('shopify_operation','!=','import_orders_by_remote_ids')]}">
+                            <div invisible="shopify_operation != 'import_orders_by_remote_ids'">
                                 <p colspan="2" class="alert alert-warning" role="alert">
                                     <b>
                                         <u>
@@ -285,7 +292,7 @@
                                     </b>
                                 </p>
                             </div>
-                            <div attrs="{'invisible':[('shopify_operation','!=','import_customers')]}">
+                            <div invisible="shopify_operation != 'import_customers'">
                                 <p colspan="2" class="alert alert-warning" role="alert">
                                     <b>
                                         <u>
@@ -324,7 +331,7 @@
                                     </b>
                                 </p>
                             </div>
-                            <div attrs="{'invisible':[('shopify_operation','!=','export_stock')]}">
+                            <div invisible="shopify_operation != 'export_stock'">
                                 <p colspan="2" class="alert alert-warning" role="alert">
                                     <b>
                                         <u>
@@ -373,7 +380,7 @@
                                     </b>
                                 </p>
                             </div>
-                            <div attrs="{'invisible':[('shopify_operation','!=','import_stock')]}">
+                            <div invisible="shopify_operation != 'import_stock'">
                                 <p colspan="2" class="alert alert-warning" role="alert">
                                     <b>
                                         <u>
@@ -410,7 +417,7 @@
                                     </b>
                                 </p>
                             </div>
-                            <div attrs="{'invisible':[('shopify_operation','!=','update_order_status')]}">
+                            <div invisible="shopify_operation != 'update_order_status'">
                                 <p colspan="2" class="alert alert-warning" role="alert">
                                     <b>
                                         <u>
@@ -438,7 +445,7 @@
                                     </b>
                                 </p>
                             </div>
-                            <div attrs="{'invisible':[('shopify_operation','!=','import_payout_report')]}">
+                            <div invisible="shopify_operation != 'import_payout_report'">
                                 <p colspan="2" class="alert alert-warning" role="alert">
                                     <b>
                                         <u>
@@ -467,7 +474,7 @@
                                     </b>
                                 </p>
                             </div>
-                            <div attrs="{'invisible':[('shopify_operation','!=','import_products_from_csv')]}">
+                            <div invisible="shopify_operation != 'import_products_from_csv'">
                                 <p colspan="2" class="alert alert-warning" role="alert">
                                     <b>
                                         <u>
@@ -502,7 +509,7 @@
                                     </b>
                                 </p>
                             </div>
-                            <div attrs="{'invisible':[('shopify_operation','!=','import_location')]}">
+                            <div invisible="shopify_operation != 'import_location'">
                                 <p colspan="2" class="alert alert-warning" role="alert">
                                     <b>
                                         <u>
@@ -536,17 +543,10 @@
                                 </p>
                             </div>
                             <div class='row' style="display: contents;"
-                                 attrs="{'invisible':[('shopify_operation','not in',['import_customers','update_order_status','import_location'])]}">
-                                <style>
-                                    .embed-responsive-item {
-                                    width: -webkit-fill-available;
-                                    height: 240px !important;
-                                    }
-                                </style>
-                                <field name="shopify_video_embed_code" string="WooCommerce Operation Video"
-                                       nolable="1"/>
+                                 invisible="shopify_operation not in ['import_customers','update_order_status','import_location']">
+                                <field name="shopify_video_embed_code" string="Shopify Operation Video" nolable="1"/>
                             </div>
-                            <div attrs="{'invisible':[('cron_process_notification','=',False)]}">
+                            <div invisible="not cron_process_notification">
                                 <p colspan="2" class="alert alert-info" role="alert">
                                     <b>
                                         <ol>
@@ -558,80 +558,91 @@
                                 </p>
                             </div>
                         </div>
-                    </group>
-                    <notebook
-                            attrs="{'invisible': [('shopify_operation', 'not in', ['sync_product','import_shipped_orders','import_unshipped_orders','import_orders_by_remote_ids','sync_product_by_remote_ids','export_stock','import_stock','import_payout_report','import_products_from_csv','import_cancel_orders','import_buy_with_prime_orders'])]}">
-                        <page string='Sync Option'>
-                            <div class="row">
-                                <div class='col-md-6'>
-                                    <group name='sync_order_date_wise'
-                                           attrs="{'invisible':[('shopify_operation','not in',['import_shipped_orders','import_unshipped_orders','sync_product','import_cancel_orders','import_buy_with_prime_orders'])]}">
-                                        <field name="import_products_based_on_date"
-                                               attrs="{'invisible':[('shopify_operation','!=','sync_product')],'required':[('shopify_operation','=','sync_product')]}"/>
-                                        <field name='orders_from_date' style="width:60%"
-                                               attrs="{'required':[('shopify_operation','in',['import_shipped_orders','import_unshipped_orders','sync_product','import_cancel_orders','import_buy_with_prime_orders'])]}"/>
-                                        <field name='orders_to_date' style="width:60%"
-                                               attrs="{'required':[('shopify_operation','in',['import_shipped_orders','import_unshipped_orders','sync_product','import_cancel_orders','import_buy_with_prime_orders'])]}"/>
-                                        <field name="skip_existing_product"
-                                               attrs="{'invisible':[('shopify_operation','!=','sync_product')]}"/>
-                                        <field name="is_import_draft_product"
-                                               attrs="{'invisible':[('shopify_operation','!=','sync_product')]}"/>
-                                    </group>
-                                    <group name="export_stock_by_date"
-                                           attrs="{'invisible':[('shopify_operation','!=','export_stock')]}">
-                                        <field name="export_stock_from"
-                                               attrs="{'required':[('shopify_operation','=','export_stock')]}"/>
-                                    </group>
-                                    <group name="is_auto_validate_inventory"
-                                           attrs="{'invisible':[('shopify_operation','!=','import_stock')]}">
-                                        <field name="is_auto_validate_inventory"
-                                               string="Auto apply inventory adjustment"
-                                               attrs="{'required':[('shopify_operation','=','import_stock')]}"/>
-                                    </group>
+                        <notebook
+                                invisible="shopify_operation not in ['sync_product','import_shipped_orders','import_unshipped_orders','import_orders_by_remote_ids','sync_product_by_remote_ids','export_stock','import_stock','import_payout_report','import_products_from_csv','import_cancel_orders','import_buy_with_prime_orders']">
+                            <page string='Sync Option'>
+                                <div class="row">
+                                    <div class='col-md-6'>
+                                        <group name='sync_order_date_wise'
+                                               invisible="shopify_operation not in ['import_shipped_orders','import_unshipped_orders','sync_product','import_cancel_orders','import_buy_with_prime_orders']">
+                                            <field name="import_products_based_on_date"
+                                                   invisible="shopify_operation != 'sync_product'"
+                                                   required="shopify_operation == 'sync_product'"/>
+                                            <field name='orders_from_date' style="width:60%" widget="daterange"
+                                                   placeholder="From Date"
+                                                   options="{'related_end_date': 'orders_to_date'}"
+                                                   required="shopify_operation in ['import_shipped_orders','import_unshipped_orders','sync_product','import_cancel_orders','import_buy_with_prime_orders']"/>
+                                            <field name='orders_to_date' style="width:60%" widget="daterange"
+                                                   placeholder="To Date"
+                                                   options="{'related_start_date': 'orders_from_date'}"
+                                                   required="shopify_operation in ['import_shipped_orders','import_unshipped_orders','sync_product','import_cancel_orders','import_buy_with_prime_orders']"/>
+                                            <field name="skip_existing_product"
+                                                   invisible="shopify_operation != 'sync_product'"/>
+                                            <field name="is_import_draft_product"
+                                                   invisible="shopify_operation != 'sync_product'"/>
+                                        </group>
+                                        <group name="export_stock_by_date"
+                                               invisible="shopify_operation != 'export_stock'">
+                                            <field name="export_stock_from"
+                                                   required="shopify_operation == 'export_stock'"/>
+                                        </group>
+                                        <group name="is_auto_validate_inventory"
+                                               invisible="shopify_operation != 'import_stock'">
+                                            <field name="is_auto_validate_inventory"
+                                                   string="Auto apply inventory adjustment"
+                                                   required="shopify_operation == 'import_stock'"/>
+                                        </group>
 
-                                    <group name="import_products_from_csv"
-                                           attrs="{'invisible':[('shopify_operation','!=','import_products_from_csv')]}">
-                                        <field name="file_name" invisible="1"/>
-                                        <field name="csv_file" filename="file_name" string="Choose File"
-                                               attrs="{'required':[('shopify_operation','=','import_products_from_csv')]}"/>
+                                        <group name="import_products_from_csv"
+                                               invisible="shopify_operation != 'import_products_from_csv'">
+                                            <field name="file_name" invisible="1"/><!-- Reason for making this field invisible beacuse this field is used in other view field as reference or condition.-->
+                                            <field name="csv_file" filename="file_name" string="Choose File"
+                                                   required="shopify_operation == 'import_products_from_csv'"/>
+                                        </group>
+                                    </div>
+                                    <div class="col-md-6"
+                                         invisible="shopify_operation in ['import_cancel_orders','import_orders_by_remote_ids','sync_product_by_remote_ids','import_payout_report']">
+                                        <field name="shopify_video_embed_code" string="Shopify Operation Video"/>
+                                    </div>
+                                </div>
+                                <div class="row"
+                                     invisible="shopify_operation not in ['import_orders_by_remote_ids','sync_product_by_remote_ids','import_payout_report']">
+                                    <group name='sync_order_based_on_template_ids'
+                                           invisible="shopify_operation != 'import_orders_by_remote_ids'">
+                                        <field name='shopify_order_ids' string="Order IDs"
+                                               placeholder="1966465679415,1966465679446,1966465679416"
+                                               required="shopify_operation == 'import_orders_by_remote_ids'"/>
+                                    </group>
+                                    <group name='sync_product_based_on_template_ids'
+                                           invisible="shopify_operation != 'sync_product_by_remote_ids'">
+                                        <field name='shopify_template_ids'
+                                               placeholder="4341100314679,4341100314680,4341100314678,4341100314658"
+                                               required="shopify_operation == 'sync_product_by_remote_ids'"/>
+                                    </group>
+                                    <group name='import_payout_report'
+                                           invisible="shopify_operation != 'import_payout_report'">
+                                        <field name='payout_start_date' style="width:19%" widget="daterange"
+                                               placeholder="From Date"
+                                               options="{'related_end_date': 'payout_end_date'}"
+                                               required="shopify_operation == 'import_payout_report'"/>
+                                        <field name='payout_end_date' style="width:19%" widget="daterange"
+                                               placeholder="To Date"
+                                               options="{'related_start_date': 'payout_start_date'}"
+                                               required="shopify_operation == 'import_payout_report'"/>
                                     </group>
                                 </div>
-                                <div class='col-md-6'
-                                     attrs="{'invisible':[('shopify_operation','in',['import_cancel_orders','import_orders_by_remote_ids','sync_product_by_remote_ids','import_payout_report'])]}">
-                                    <field name="shopify_video_embed_code" string="Shopify Operation Video"
-                                           nolable='1'/>
-                                </div>
-                            </div>
-                            <div class="row"
-                                 attrs="{'invisible': [('shopify_operation', 'not in', ['import_orders_by_remote_ids','sync_product_by_remote_ids','import_payout_report'])]}">
-                                <group name='sync_order_based_on_template_ids'
-                                       attrs="{'invisible':[('shopify_operation','!=','import_orders_by_remote_ids')]}">
-                                    <field name='shopify_order_ids' string="Order IDs"
-                                           attrs="{'required':[('shopify_operation','=','import_orders_by_remote_ids')]}"/>
-                                </group>
-                                <group name='sync_product_based_on_template_ids'
-                                       attrs="{'invisible':[('shopify_operation','!=','sync_product_by_remote_ids')]}">
-                                    <field name='shopify_template_ids'
-                                           attrs="{'required':[('shopify_operation','=','sync_product_by_remote_ids')]}"/>
-                                </group>
-                                <group name='import_payout_report'
-                                       attrs="{'invisible':[('shopify_operation','!=','import_payout_report')]}">
-                                    <field name='payout_start_date' style="width:19%"
-                                           attrs="{'required':[('shopify_operation','=','import_payout_report')]}"/>
-                                    <field name='payout_end_date' style="width:19%"
-                                           attrs="{'required':[('shopify_operation','=','import_payout_report')]}"/>
-                                </group>
-                            </div>
-                        </page>
-                    </notebook>
-                    <footer>
-                        <field name="is_hide_operation_execute_button" invisible="1"/>
-                        <button string="Execute" class="oe_highlight"
-                                type="object" name="shopify_execute"
-                                attrs="{'invisible':[('is_hide_operation_execute_button','=', True)]}"/>
-                        <button string="Cancel" class="oe_highlight"
-                                special="cancel"/>
-                    </footer>
+                            </page>
+                        </notebook
+                        >
+                        <footer>
+                            <field name="is_hide_operation_execute_button" invisible="1"/><!-- Reason for making this field invisible beacuse this field is used in other view field as reference or condition.-->
+                            <button string="Execute" class="oe_highlight"
+                                    type="object" name="shopify_execute"
+                                    invisible="is_hide_operation_execute_button"/>
+                            <button string="Cancel" class="oe_highlight"
+                                    special="cancel"/>
+                        </footer>
+                    </div>
                 </sheet>
             </form>
         </field>
@@ -672,7 +683,7 @@
         <field name="arch" type="xml">
             <form string="Export Stock">
                 <sheet>
-                    <group name='shopify_export_stock_manual'>
+                    <div name='shopify_export_stock_manual'>
                         <div style="color:#000000">
                             <p class="alert alert-warning" role="alert">
                                 <u>
@@ -693,7 +704,7 @@
                                 </b>
                             </p>
                         </div>
-                    </group>
+                    </div>
                     <footer>
                         <button string="Export Stock Manually"
                                 class="oe_highlight" type="object"
@@ -798,7 +809,7 @@
     <!-- Below action used for export product-->
     <record id="action_wizard_shopify_product_for_export"
             model="ir.actions.act_window">
-        <field name="name">Export New Product in Shopify</field>
+        <field name="name">Export New Product to Shopify</field>
         <field name="res_model">shopify.process.import.export</field>
         <field name="binding_model_id" ref="model_shopify_product_template_ept"/>
         <field name="binding_view_types">form,list</field>

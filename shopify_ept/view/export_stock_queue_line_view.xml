@@ -6,20 +6,19 @@
         <field name="model">shopify.export.stock.queue.line.ept</field>
         <field eval="100" name="priority"/>
         <field name="arch" type="xml">
-            <tree create="false" duplicate="false" edit="false" sample="1" decoration-danger="state=='failed'"
+            <list create="false" duplicate="false" edit="false" sample="1" decoration-danger="state=='failed'"
                   decoration-success="state=='done'" decoration-info="state=='draft'">
                 <header>
                     <button
                             name="%(shopify_ept.action_sync_export_stock_queue)d"
                             string="Process Queue Line" type="action"/>
                 </header>
-                <field name="name"/>
                 <field name="shopify_product_id"/>
                 <field name="quantity"/>
                 <field name="inventory_item_id"/>
-                <field name="__last_update"/>
+<!--                <field name="__last_update"/>-->
                 <field name="state"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -45,9 +44,9 @@
                     <notebook>
                         <page string="Log Lines">
                             <field name="common_log_lines_ids">
-                                <tree create="false" editable="bottom">
+                                <list create="false">
                                     <field name="message"/>
-                                </tree>
+                                </list>
                             </field>
                         </page>
                     </notebook>

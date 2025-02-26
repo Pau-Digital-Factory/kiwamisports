@@ -6,11 +6,11 @@
         <field name="model">res.partner</field>
         <field eval="100" name="priority"/>
         <field name="arch" type="xml">
-            <tree create="false" sample="1">
+            <list create="false" sample="1">
                 <field name="name"/>
                 <field name="phone"/>
                 <field name="email"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -20,7 +20,7 @@
         <field name="type">ir.actions.act_window</field>
         <field name="res_model">res.partner</field>
         <field name="domain">[('is_shopify_customer','=',True)]</field>
-        <field name="view_mode">form,tree</field>
+        <field name="view_mode">form,list</field>
         <field name="context">{"search_default_customer":1}</field>
         <field name="view_id" ref="view_shopify_partner_tree"/>
         <field name="search_view_id" ref="base.view_res_partner_filter"/>

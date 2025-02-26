@@ -5,7 +5,7 @@
         <field name="name">shopify.customer.data.queue.line.ept.tree</field>
         <field name="model">shopify.customer.data.queue.line.ept</field>
         <field name="arch" type="xml">
-            <tree create="0" duplicate="0" edit="false" sample="1" decoration-danger="state=='failed'"
+            <list create="0" duplicate="0" edit="false" sample="1" decoration-danger="state=='failed'"
                   decoration-success="state=='done'" decoration-info="state=='draft'">
                 <header>
                     <button name="%(shopify_ept.action_wizard_shopify_import_customer)d"
@@ -16,7 +16,7 @@
                 <field name="shopify_customer_data_id"/>
                 <field name="last_process_date"/>
                 <field name="state"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -42,9 +42,9 @@
                     <notebook>
                         <page string="Log Lines">
                             <field name="common_log_lines_ids">
-                                <tree create="false" editable="bottom">
+                                <list create="false">
                                     <field name="message"/>
-                                </tree>
+                                </list>
                             </field>
                         </page>
                         <page string="Customer Data">

@@ -8,15 +8,14 @@
         <field eval="12" name="priority"/>
         <field name="arch" type="xml">
             <field name="move_type" position="after">
-                <field name="is_shopify_delivery_order" invisible="1"/>
-                <field name="updated_in_shopify"
-                       attrs="{'invisible':[('is_shopify_delivery_order','!=',True)]}" readonly="True"/>
-                <field name="shopify_instance_id" invisible="1"/>
+                <field name="is_shopify_delivery_order" invisible="1"/><!-- Reason for making this field invisible beacuse this field is used in other view field as reference or condition.-->
+                <field name="updated_in_shopify" invisible="not is_shopify_delivery_order" readonly="True"/>
+                <field name="shopify_instance_id" invisible="1"/><!-- Reason for making this field invisible beacuse this field is used in other view field as reference or condition.-->
             </field>
             <xpath expr="//header" position="inside">
-                <button name="manually_update_shipment" string="Update Order Shipping Status" class="oe_highlight"
-                        type="object"
-                        attrs="{'invisible': ['|','|','|',('updated_in_shopify','=',True),('is_shopify_delivery_order','!=',True),'&amp;',('state','!=','done'),('picking_type_code', 'in', ['outgoing','incoming']),'&amp;',('state','in',['draft','waiting','confirmed','assigned','done','cancel']),('picking_type_code', 'not in', ['outgoing','incoming'])]}"
+                <button name="manually_update_shipment"
+                        string="Update Order Shipping Status" class="oe_highlight" type="object"
+                        invisible="updated_in_shopify or not is_shopify_delivery_order or state != 'done' and picking_type_code in ['outgoing','incoming'] or state in ['draft','waiting','confirmed','assigned','done','cancel'] and picking_type_code not in ['outgoing','incoming']"
                         help="It will update order fulfillment and tracking reference details to Shopify store."/>
             </xpath>
         </field>
@@ -29,9 +28,9 @@
         <field name="inherit_id" ref="stock.vpicktree"/>
         <field name="arch" type="xml">
             <field name="company_id" position="after">
-                <field name="is_shopify_delivery_order" invisible="1"/>
+                <field name="is_shopify_delivery_order" column_invisible="1"/><!-- Reason for making this field invisible beacuse this field is used in other view field as reference or condition.-->
                 <field name="updated_in_shopify" optional="hide"
-                       attrs="{'invisible':[('is_shopify_delivery_order','!=',True)]}" readonly="True"/>
+                       invisible="not is_shopify_delivery_order" readonly="True"/>
             </field>
         </field>
     </record>
@@ -54,7 +53,7 @@
         <field name="name">Delivery Orders</field>
         <field name="res_model">stock.picking</field>
         <field name="type">ir.actions.act_window</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="domain">[('is_shopify_delivery_order','=','True')]</field>
         <field name="search_view_id"
                ref="stock.view_picking_internal_search"/>
@@ -87,7 +86,7 @@
         <field name="name">Delivery Orders</field>
         <field name="res_model">stock.picking</field>
         <field name="type">ir.actions.act_window</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="domain">
             [('is_shopify_delivery_order','=','True'),('state','=','confirmed'),('shopify_instance_id','=',active_id)]
         </field>
@@ -101,7 +100,7 @@
         <field name="name">Delivery Orders</field>
         <field name="res_model">stock.picking</field>
         <field name="type">ir.actions.act_window</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="domain">
             [('is_shopify_delivery_order','=','True'),('state','=','partially_available'),('shopify_instance_id','=',active_id)]
         </field>
@@ -113,7 +112,7 @@
         <field name="name">Delivery Orders</field>
         <field name="res_model">stock.picking</field>
         <field name="type">ir.actions.act_window</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="domain">
             [('is_shopify_delivery_order','=','True'),('state','=','assigned'),('shopify_instance_id','=',active_id)]
         </field>
@@ -127,7 +126,7 @@
         <field name="name">Delivery Orders</field>
         <field name="res_model">stock.picking</field>
         <field name="type">ir.actions.act_window</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="domain">
             [('is_shopify_delivery_order','=','True'),('state','=','done'),('shopify_instance_id','=',active_id)]
         </field>

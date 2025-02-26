@@ -7,14 +7,14 @@
         <field name="name">Shopify Locations Data</field>
         <field name="model">shopify.location.ept</field>
         <field name="arch" type="xml">
-            <tree create="false" duplicate="false" sample="1">
+            <list create="false" duplicate="false" sample="1">
                 <field name="name"/>
                 <field name="instance_id"/>
                 <field name="shopify_instance_company_id"/>
                 <field name="shopify_location_id"/>
                 <field name="is_primary_location"/>
                 <field name="legacy"/>
-            </tree>
+            </list>
         </field>
     </record>
 

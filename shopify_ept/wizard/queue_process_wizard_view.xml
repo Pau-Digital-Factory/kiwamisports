@@ -56,7 +56,7 @@
         <field name="arch" type="xml">
             <form string="Set To Completed">
                 <sheet>
-                    <group name='set_to_completed_queue'>
+                    <div name='set_to_completed_queue'>
                         <div style="color:#000000">
                             <p class="alert alert-warning" role="alert">
                                 <u>
@@ -68,7 +68,7 @@
                                 </li>
                             </p>
                         </div>
-                    </group>
+                    </div>
                     <footer>
                         <button string="Set To Completed Manually"
                                 class="oe_highlight" type="object" name="set_to_completed_queue"/>

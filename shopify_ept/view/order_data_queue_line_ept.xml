@@ -6,7 +6,7 @@
         <field name="model">shopify.order.data.queue.line.ept</field>
         <field eval="100" name="priority"/>
         <field name="arch" type="xml">
-            <tree create="false" duplicate="false" edit="false" sample="1" decoration-danger="state=='failed'"
+            <list create="false" duplicate="false" edit="false" sample="1" decoration-danger="state=='failed'"
                   decoration-success="state=='done'" decoration-info="state=='draft'">
                 <header>
                     <button
@@ -19,7 +19,7 @@
                 <field name="customer_name"/>
                 <field name="customer_email" optional="hide"/>
                 <field name="state"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -34,7 +34,7 @@
                         <group>
                             <field name="shopify_instance_id" readonly="1"/>
                             <field string="Order Data ID" name="shopify_order_id" readonly="1"/>
-                            <field name="name" readonly=""/>
+                            <field name="name" readonly="1"/>
                         </group>
                         <group>
                             <field name="shopify_order_data_queue_id" string="Order Data Queue" readonly="1"/>
@@ -45,9 +45,9 @@
                     <notebook>
                         <page string="Log Lines">
                             <field name="shopify_order_common_log_lines_ids">
-                                <tree create="false" editable="bottom">
+                                <list create="false">
                                     <field name="message"/>
-                                </tree>
+                                </list>
                             </field>
                         </page>
                         <page string="Order Data">

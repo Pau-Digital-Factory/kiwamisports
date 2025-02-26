@@ -15,8 +15,7 @@
                         <field name="auto_create_credit_note"/>
                     </group>
                 </group>
-                <group string="Refund Info"
-                       attrs="{'invisible':[('auto_create_credit_note','=',False)]}">
+                <group string="Refund Info" invisible="not auto_create_credit_note">
                     <group>
                         <field name="reason"/>
                         <field name="refund_date"/>
@@ -54,13 +53,13 @@
                 <group>
                     <field name="payment_ids" nolabel="1" widget="one2many"
                            invisible="context.get('display_refund_from', True)">
-                        <tree string="Refund multi payment" editable="top" create="0" delete="0">
+                        <list string="Refund multi payment" editable="top" create="0" delete="0">
                             <field name="payment_gateway_id" readonly="1"/>
                             <field name="amount" readonly="1"/>
                             <field name="remaining_refund_amount" readonly="1"/>
                             <field name="refund_amount"/>
                             <field name="is_want_to_refund"/>
-                        </tree>
+                        </list>
                     </field>
                 </group>
                 <footer>

@@ -60,8 +60,8 @@ class ShopifyCronConfigurationEpt(models.TransientModel):
 
     # Auto cron for Import Shipped Order
     shopify_shipped_order_auto_import = fields.Boolean('Import Shipped Order', default=False,
-                                                       help="Check if you want to automatically Import Shipped"
-                                                            " Orders from Shopify to Odoo.")
+                                                       help="Check if you want to automatically "
+                                                            "Import Shipped Orders from Shopify to Odoo.")
     shopify_import_shipped_order_interval_number = fields.Integer('Interval Number for Import Shipped Order',
                                                                   help="Repeat every x.")
     shopify_import_shipped_order_interval_type = fields.Selection([('minutes', 'Minutes'), ('hours', 'Hours'),
@@ -116,9 +116,6 @@ class ShopifyCronConfigurationEpt(models.TransientModel):
     shopify_payout_import_user_id = fields.Many2one('res.users', string="Payout Import User", help='User',
                                                     default=lambda self: self.env.user)
 
-    # Auto Process Bank Statement
-    shopify_auto_process_bank_statement = fields.Boolean(string="Auto Process Bank Statement?")
-
     # Auto cron for Import Product
     shopify_auto_import_product = fields.Boolean('Import Product', default=False,
                                                  help="Check if you want to automatically Import Products from Shopify to"
@@ -134,6 +131,9 @@ class ShopifyCronConfigurationEpt(models.TransientModel):
                                                      help='User for Import Product',
                                                      default=lambda self: self.env.user)
 
+    # Auto Process Bank Statement
+    shopify_auto_process_bank_statement = fields.Boolean(string="Auto Process Bank Statement?")
+
     # Auto cron for Import Buy with Prime Order
     shopify_buy_with_prime_order_auto_import = fields.Boolean('Import Buy with Prime Order', default=False,
                                                               help="Check if you want to automatically "
@@ -144,7 +144,7 @@ class ShopifyCronConfigurationEpt(models.TransientModel):
     shopify_import_buy_with_prime_order_interval_type = fields.Selection([('minutes', 'Minutes'), ('hours', 'Hours'),
                                                                           ('days', 'Days'), ('weeks', 'Weeks'),
                                                                           ('months', 'Months')],
-                                                                         'Interval Unit for Import Shipped Order')
+                                                                         'Interval Unit for Import Buy with Prime Order')
     shopify_import_buy_with_prime_order_next_execution = fields.Datetime(
         'Next Execution for Import Buy with Prime Order',
         help='Next Execution for Import Buy with Prime Order')
@@ -154,7 +154,8 @@ class ShopifyCronConfigurationEpt(models.TransientModel):
                                                                   default=lambda self: self.env.user)
 
     @api.constrains("shopify_inventory_export_interval_number", "shopify_payout_import_interval_number",
-                    "shopify_import_order_interval_number", "shopify_order_status_interval_number")
+                    "shopify_import_order_interval_number", "shopify_order_status_interval_number",
+                    "shopify_product_import_interval_number")
     def check_interval_time(self):
         """
         It does not let set the cron execution time to Zero.
@@ -174,9 +175,9 @@ class ShopifyCronConfigurationEpt(models.TransientModel):
                 is_zero = True
             if record.shopify_auto_import_payout_report and record.shopify_payout_import_interval_number <= 0:
                 is_zero = True
-            if record.shopify_auto_import_product and record.shopify_product_import_interval_number <= 0:
-                is_zero = True
             if record.shopify_buy_with_prime_order_auto_import and record.shopify_import_buy_with_prime_order_interval_number <= 0:
+                is_zero = True                                
+            if record.shopify_auto_import_product and record.shopify_product_import_interval_number <= 0:
                 is_zero = True
             if is_zero:
                 raise ValidationError(_("Cron Execution Time can't be set to 0(Zero). "))
@@ -195,8 +196,8 @@ class ShopifyCronConfigurationEpt(models.TransientModel):
         self.import_cancel_order_cron_field(instance)
         self.update_order_status_cron_field(instance)
         self.update_payout_report_cron_field(instance)
-        self.update_import_product_cron_field(instance)
         self.import_buy_with_prime_order_cron_field(instance)
+        self.update_import_product_cron_field(instance)
 
     def update_export_stock_cron_field(self, instance):
         """
@@ -256,7 +257,7 @@ class ShopifyCronConfigurationEpt(models.TransientModel):
         """
         Set import buy with prime order cron fields value while open the wizard for cron
         configuration from the instance form view.
-        @author: Yagnik Joshi @Emipro Technologies Pvt. Ltd on date 27 Dec 2023.
+        @author: Nilam Kubavat @Emipro Technologies Pvt. Ltd on date 18 Dec 2023.
         """
         try:
             import_buy_with_prime_order_cron_exist = instance and self.env.ref(
@@ -335,9 +336,9 @@ class ShopifyCronConfigurationEpt(models.TransientModel):
 
     def update_import_product_cron_field(self, instance):
         """
-           Set import Product cron fields value while open the wizard for cron configuration from the instance form view.
-           @author: Yagnik Joshi @Emipro Technologies Pvt. Ltd on date 21/11/2023.
-           Task Id : 3790
+        Set import Product cron fields value while open the wizard for cron configuration from the instance form view.
+        @author: Nilam Kubavat @Emipro Technologies Pvt. Ltd on date 19/12/2023.
+        Task Id : 4806
         """
         try:
             import_product_cron_exist = instance and self.env.ref(
@@ -368,13 +369,15 @@ class ShopifyCronConfigurationEpt(models.TransientModel):
             self.setup_shopify_import_cancel_order_cron(instance)
             self.setup_shopify_update_order_status_cron(instance)
             self.setup_shopify_payout_report_cron(instance)
-            self.setup_shopify_import_product_cron(instance)
             self.setup_shopify_import_buy_with_prime_order_cron(instance)
+            self.setup_shopify_import_product_cron(instance)
             # Below code is used for only onboarding panel purpose.
             if self._context.get('is_calling_from_onboarding_panel', False):
                 action = self.env["ir.actions.actions"]._for_xml_id(
                     "shopify_ept.shopify_onboarding_confirmation_wizard_action")
                 action['context'] = {'shopify_instance_id': instance.id}
+                self.env['onboarding.onboarding.step'].sudo().action_validate_step(
+                    "shopify_ept.onboarding_onboarding_step_shopify_cron_configuration_configure")
                 return action
         return {'type': 'ir.actions.client', 'tag': 'reload'}
 
@@ -496,7 +499,7 @@ class ShopifyCronConfigurationEpt(models.TransientModel):
         Cron for auto Import Buy with Prime Orders
         :param instance:
         :return:
-        @author: Yagnik Joshi @Emipro Technologies Pvt. Ltd on date 27/12/2023.
+        @author: Nilam Kubavat @Emipro Technologies Pvt. Ltd on date 18/12/2023.
         """
         try:
             cron_exist = self.env.ref(
@@ -704,8 +707,8 @@ class ShopifyCronConfigurationEpt(models.TransientModel):
         Cron for auto Import Products
         :param instance:
         :return:
-        @author: Yagnik Joshi @Emipro Technologies Pvt. Ltd on date 21/11/2023.
-        Task Id : 3790
+        @author: Nilam Kubavat @Emipro Technologies Pvt. Ltd on date 19/12/2023.
+        Task Id : 4806
         """
         try:
             cron_exist = self.env.ref(

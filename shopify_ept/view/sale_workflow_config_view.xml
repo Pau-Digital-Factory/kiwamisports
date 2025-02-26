@@ -30,9 +30,8 @@
         <field name="name">sale_auto_workflow_configuration_tree_view</field>
         <field name="model">sale.auto.workflow.configuration.ept</field>
         <field eval="16" name="priority"/>
-        <field name="type">tree</field>
         <field name="arch" type="xml">
-            <tree editable="top" sample="1">
+            <list editable="top" sample="1">
                 <field name="shopify_instance_id" required="1" options="{'no_create':True}"
                        domain="[('active','=',True)]"/>
                 <field name="payment_gateway_id" options="{'no_create':True}" required="1"
@@ -41,7 +40,7 @@
                 <field name="auto_workflow_id" required="1"/>
                 <field name="financial_status" required="1"/>
                 <field name="shopify_order_payment_status" required="1"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -69,14 +68,14 @@
             model="ir.actions.act_window">
         <field name="name">Auto Workflow</field>
         <field name="res_model">sale.workflow.process.ept</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
 
     <record id="act_sale_workflow_config_instance_form"
             model="ir.actions.act_window">
         <field name="name">Financial Status</field>
         <field name="res_model">sale.auto.workflow.configuration.ept</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="domain">[('shopify_instance_id','=',active_id)]</field>
     </record>
 
@@ -90,7 +89,7 @@
             model="ir.actions.act_window">
         <field name="name">Financial Status</field>
         <field name="res_model">sale.auto.workflow.configuration.ept</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
 
     <!--Menu of Sale auto workflow -->
