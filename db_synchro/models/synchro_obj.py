@@ -60,7 +60,6 @@ class BaseSynchroObj(models.Model):
         'ir.model',
         string='Object to synchronize',
         ondelete='SET NULL',
-        required=True
     )
     model_name = fields.Char(
         string='Remote Object name',
@@ -614,7 +613,7 @@ class BaseSynchroObjAvoid(models.Model):
         'ir.model.fields',
         ondelete='SET DEFAULT',
         string='local field',
-        required=True,
+       
     )
     synchronize = fields.Boolean('synchronyse')
     check_remote = fields.Boolean('Remote checking')

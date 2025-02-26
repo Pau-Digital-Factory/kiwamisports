@@ -4,14 +4,14 @@
     <field name="name">synchro.server.tree</field>
     <field name="model">synchro.server</field>
     <field name="arch" type="xml">
-      <tree string="Synchronized Server">
+      <list string="Synchronized Server">
         <field name="name"/>
         <field name="server_url"/>
         <field name="server_protocol"/>
         <field name="server_port"/>
         <field name="server_db"/>
         <field name="server_version"/>
-      </tree>
+      </list>
     </field>
   </record>
   <record id="view_synchro_server_form" model="ir.ui.view">

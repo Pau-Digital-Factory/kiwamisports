@@ -23,14 +23,14 @@
     <field name="name">synchro.obj.line.tree</field>
     <field name="model">synchro.obj.line</field>
     <field name="arch" type="xml">
-      <tree string="Transfered IDs Details" decoration-danger="local_id == 0">
+      <list string="Transfered IDs Details" decoration-danger="local_id == 0">
         <field name="name"/>
         <field name="server_id"/>
         <field name="obj_id"/>
         <field name="description"/>
         <field name="remote_id"/>
         <field name="local_id"/>
-      </tree>
+      </list>
     </field>
   </record>
   <record id="ir_filters_transfer_line_form" model="ir.ui.view">
@@ -98,12 +98,12 @@
                 <field name="search_field"/>
               </group>
               <field name="field_ids">
-                <tree string="Fields" editable="top">
+                <list string="Fields" editable="top">
                   <field name="field_id" domain="[('model_id', '=', parent.model_id)]"/>
                   <field name="name"/>
                   <field name="remote_type"/>
                   <button name="button_unsynchronize" string="Do not synchronize" type="object" icon="fa-chain-broken text-danger"/>
-                </tree>
+                </list>
               </field>
             </page>
             <page string="avoid">
@@ -111,14 +111,14 @@
               <button name="update_remote_field" string="Update remote" type="object" class="oe_highlight"/>
               <separator string="All Fields"/>
               <field name="avoid_ids">
-                <tree string="Fields" editable="top">
+                <list string="Fields" editable="top">
                   <field name="field_id" domain="[('model_id', '=', parent.model_id)]"/>
                   <field name="name"/>
                   <field name="check_remote"/>
                   <field name="remote_type"/>
                   <field name="synchronize"/>
                   <button name="button_synchronize" string="Synchronize" type="object" icon="fa-chain text-success"/>
-                </tree>
+                </list>
               </field>
             </page>
 
@@ -145,12 +145,12 @@
 
               <separator string="Mapping id"/>
               <field name="line_id">
-                <tree string="Fields" editable="top" decoration-danger="local_id == 0">
+                <list string="Fields" editable="top" decoration-danger="local_id == 0">
                   <field name="description"/>
                   <field name="remote_id"/>
                   <field name="local_id"/>
                   <field name="resource_ref" widget="reference"/>
-                </tree>
+                </list>
               </field>
               <button name="unlink_mapping" string="Reset mapping" type="object"/>
             </page>
@@ -163,7 +163,7 @@
     <field name="name">synchro.obj.tree</field>
     <field name="model">synchro.obj</field>
     <field name="arch" type="xml">
-      <tree string="Synchronized Objects" decoration-danger="state == 'draft'" decoration-muted="state == 'cancel'">
+      <list string="Synchronized Objects" decoration-danger="state == 'draft'" decoration-muted="state == 'cancel'">
         <field name="sequence" widget="handle"/>
         <field name="name"/>
         <field name="model_id"/>
@@ -174,7 +174,7 @@
 
         <field name="synchronize_date"/>
         <field name="state"/>
-      </tree>
+      </list>
     </field>
   </record>
   <record id="ir_filters_regclass_tree" model="ir.ui.view">
