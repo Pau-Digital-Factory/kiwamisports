@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 # See LICENSE file for full copyright and licensing details.
-from odoo import models, fields, api
+from odoo import models, fields
 
 
 class CommonLogLineEpt(models.Model):
     _name = "common.log.lines.ept"
+    _inherit = ["mail.thread", "mail.activity.mixin"]
     _description = "Common log line"
 
     product_id = fields.Many2one('product.product', 'Product')
@@ -17,51 +18,40 @@ class CommonLogLineEpt(models.Model):
     mismatch_details = fields.Boolean(string='Mismatch Detail', help="Mismatch Detail of process order")
     file_name = fields.Char()
     sale_order_id = fields.Many2one(comodel_name='sale.order', string='Sale Order')
-    log_line_type = fields.Selection(selection=[('success', 'Success'), ('fail', 'Fail')],default='fail')
-
-    @api.model
-    def get_model_id(self, model_name):
-        """ Used to get model id.
-            @param model_name: Name of model, like sale.order
-            @return: It will return record of model.
-            @author: Haresh Mori @Emipro Technologies Pvt. Ltd on date 23 September 2021 .
-            Task_id: 178058
-        """
-        model = self.env['ir.model'].sudo().search([('model', '=', model_name)])
-        if model:
-            return model.id
-        return False
-
-    def create_log_lines(self, message, model_id, res_id, log_book_id, default_code='', order_ref='', product_id=False):
-        """ Used to create a log lines.
-            @param message: Error message
-            @param model_id: Record of model
-            @param res_id: Res Id(Here we can set process record id).
-            @param log_book_id: Record of log book id.
-            @param default_code: Default code of product if product process log
-            @param order_ref: Order reference if order process log
-            @param product_id: Record of product variant.
-            @return: Record of log line.
-            @author: Haresh Mori @Emipro Technologies Pvt. Ltd on date 23 September 2021 .
-            Task_id: 178058
-        """
-        vals = {'message': message,
-                'model_id': model_id,
-                'res_id': res_id.id if res_id else False,
-                'log_book_id': log_book_id.id if log_book_id else False,
-                'default_code': default_code,
-                'order_ref': order_ref,
-                'product_id': product_id
-                }
-        log_line = self.create(vals)
-        return log_line
+    log_line_type = fields.Selection(selection=[('success', 'Success'), ('fail', 'Fail')], default='fail')
+    operation_type = fields.Selection([('import', 'Import'), ('export', 'Export')], string="Operation")
+    module = fields.Selection([('amazon_ept', 'Amazon Connector'),
+                               ('woocommerce_ept', 'Woocommerce Connector'),
+                               ('shopify_ept', 'Shopify Connector'),
+                               ('magento_ept', 'Magento Connector'),
+                               ('bol_ept', 'Bol Connector'),
+                               ('ebay_ept', 'Ebay Connector'),
+                               ('amz_vendor_central', 'Amazon Vendor Central'),
+                               ('tpw_ept', '3PL Connector'),
+                               ('walmart_ept', 'Walmart Connector')])
 
     def create_common_log_line_ept(self, **kwargs):
+        """
+        Define this method for create common.log.lines.ept() model record as
+        per given values.
+        :param: kwargs: dict {}
+        :return: common.log.lines.ept()
+        """
         values = {}
         for key, value in kwargs.items():
             if hasattr(self, key):
                 values.update({key: value})
         if kwargs.get('model_name'):
-            model_id = self.log_book_id._get_model_id(kwargs.get('model_name'))
-            values.update({'model_id': model_id.id})
+            model = self._get_model_id(kwargs.get('model_name'))
+            values.update({'model_id': model.id})
         return self.create(values)
+
+    def _get_model_id(self, model_name):
+        """
+        Define this method for get ir.model() record as per given
+        model name.
+        :param: model_name: model name - str
+        :return: ir.model()
+        """
+        ir_model_obj = self.env['ir.model']
+        return ir_model_obj.sudo().search([('model', '=', model_name)])

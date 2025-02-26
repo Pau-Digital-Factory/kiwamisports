@@ -273,10 +273,17 @@ web_extends.WebClient = class WebClient extends Component {
         });
     }
 }
+// web_extends.WebClient.components = {
+//     ActionContainer,
+//     NavBar,
+//     NotUpdatable,
+//     MainComponentsContainer,
+// };
 web_extends.WebClient.components = {
-    ActionContainer,
-    NavBar,
-    NotUpdatable,
+    ...web_extends.WebClient.components,
     MainComponentsContainer,
+    NotUpdatable,
+    NavBar,
+    ActionContainer,
 };
 web_extends.WebClient.template = "web.WebClient";

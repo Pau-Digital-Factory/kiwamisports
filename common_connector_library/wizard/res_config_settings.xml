@@ -5,7 +5,10 @@
         <field name="model">res.config.settings</field>
         <field name="inherit_id" ref="base.res_config_settings_view_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//div[@data-key='general_settings']/div[@id='user_default_rights']" position="after">
+        <!--<xpath expr="//div[@data-key='general_settings']/div[@id='user_default_rights']" position="after">
+            <xpath expr="//div[@class='o_action_manager']//div[@class='o-settings-form-view o_field_highlight o_form_view o_base_settings_view oe_form_configuration o_view_controller o_action']//div[@class='o_form_view_container']//div[@class='o_content']//div[@class='o_form_renderer o_form_editable d-block']//div[@class='o_setting_container']//div[@class='setting']//div[@data-key='general_settings']//div[@name='user_default_rights']" position="after">-->
+                <xpath expr="//div[@id='invite_users']" position="after">
+   
                 <h2>Emipro App Update Notification</h2>
                 <div class="row mt16 o_settings_container">
                     <div class="col-12 col-lg-6 o_setting_box">

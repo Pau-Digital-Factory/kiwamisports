@@ -3,9 +3,18 @@ import pytz
 
 from odoo import fields, models, tools, _
 from datetime import datetime
+from werkzeug.urls import url_join
 from odoo.exceptions import AccessError
 from dateutil.relativedelta import relativedelta
 from odoo.tools.date_utils import start_of, end_of
+from odoo.tools.sql import SQL
+from psycopg2 import sql
+
+table_name = ["move.", "so.", "sp.", "am.", ""]
+allowed_columns = {'shopify_instance_id', 'updated_in_shopify',
+                   'woo_instance_id', 'updated_in_woo',
+                   'magento_instance_id', 'is_exported_to_magento'}  # Define allowed columns here
+allowed_operators = {'=', '>', '<', '>=', '<=', '!='}
 
 
 class Digest(models.Model):
@@ -45,122 +54,157 @@ class Digest(models.Model):
     def _prepare_domain_based_on_connector(self):
         """
         This method is need to override in all connector for prepare domain based on instance.
-        @author: Meera Sidapara on date 05-July-2022.
         """
         return True
 
     def _prepare_query_domain(self, domain, table_ref):
         """
         This method is used to prepared dynamic domain based on query string and query table reference.
-        @author: Meera Sidapara on Date 05-July-2022.
         @return: domain of query string
         """
-        where_string = ""
-        for d in domain:
-            if d[2]:
-                where_string += f"AND {table_ref + d[0]} {d[1]} {d[2]}  "
-        return where_string
+        where_clause = []
+        param_list = []
+        if table_ref in table_name:
+            for d in domain:
+                if d[2]:
+                    column, operator, value = d[0], d[1], d[2]
+                    # Validate column name
+                    if column not in allowed_columns:
+                        raise ValueError(f"Invalid column name: {column}")
+                    # Validate operator
+                    if operator not in allowed_operators:
+                        raise ValueError(f"Invalid operator: {operator}")
+
+                    # Updating the Query
+                    where_clause.append(
+                        sql.SQL("""AND {table_ref}{coloumn} {operator} %s """).format(table_ref=sql.SQL(table_ref),
+                                                                                      coloumn=sql.SQL(column),
+                                                                                      operator=sql.SQL(operator)
+                                                                                      ))
+                    param_list.append(d[2])
+            where_clause = sql.SQL(' ').join(where_clause)
+            return where_clause, param_list
+        return ""
 
     def get_account_total_revenue(self, domain):
         """
         Use: To get the list of connector's account total revenue.
-        @author: Meera Sidapara on Date 06-July-2022.
         @return: total number of connector's sale orders ids and action for sale orders of current instance.
         """
         for record in self:
             start, end, company = record._get_kpi_compute_parameters()
-            domain = self._prepare_query_domain(domain, 'move.')
-            query = f"""SELECT -SUM(line.balance)
-                FROM account_move_line line
-                JOIN account_move move ON move.id = line.move_id
-                JOIN account_account account ON account.id = line.account_id
-                WHERE line.company_id = {company.id} AND line.date >= '{start}' AND line.date <= '{end}'
-                AND account.internal_group = 'income'
-                AND move.state = 'posted' {domain}"""
-            self._cr.execute(query)
+            domain, params_value = self._prepare_query_domain(domain, 'move.')
+
+            # Commented this query as in odoo 18 account.internal_group is a compute field
+            # query = sql.SQL("""
+            #                 SELECT -SUM(line.balance)
+            #                 FROM account_move_line line
+            #                 JOIN account_move move ON move.id = line.move_id
+            #                 JOIN account_account account ON account.id = line.account_id
+            #                 WHERE line.company_id = %s
+            #                 AND line.date >= %s
+            #                 AND line.date <= %s
+            #                 AND account.internal_group = 'income'
+            #                 AND move.state = 'posted'
+            #                 {domain}
+            #             """).format(domain=domain)
+            # self._cr.execute(query, (company.id, start, end, *params_value))
             query_res = self._cr.fetchone()
             record.kpi_account_total_revenue_value = query_res and query_res[0] or 0
 
     def get_total_orders_count(self, domain):
         """
         Use: To get the list of connector's total orders count.
-        @author: Meera Sidapara on Date 04-July-2022.
         @return: total number of connector's sale orders ids and action for sale orders of current instance.
         """
         for record in self:
             start, end, company = record._get_kpi_compute_parameters()
-            domain = self._prepare_query_domain(domain, 'so.')
-            query = f"""select count(*) from sale_order so where so.company_id ={company.id} 
-                AND so.date_order >= '{start}' AND so.date_order <= '{end}' 
-                and state in ('sale','done') {domain}"""
-            self._cr.execute(query)
+            domain, params_value = self._prepare_query_domain(domain, 'so.')
+            # query = f"""select count(*) from sale_order so where so.company_id =%s
+            #     AND so.date_order >= %s AND so.date_order <= %s
+            #     and state in ('sale','done') """ + domain
+            query = sql.SQL("""select count(*) from sale_order so where so.company_id =%s
+                AND so.date_order >= %s AND so.date_order <= %s
+                and state in ('sale','done') {domain} """).format(domain=domain)
+            self._cr.execute(query, (company.id, start, end, *params_value))
             query_res = self._cr.fetchone()
             record.kpi_orders_value = query_res and query_res[0] or 0
 
     def get_shipped_orders_count(self, domain):
         """
         Use: To get the list of connector's Total shipped orders count.
-        @author: Meera Sidapara on Date 04-July-2022.
         @return: total number of connector's sale orders ids and action for sale orders of current instance.
         """
         for record in self:
             start, end, company = record._get_kpi_compute_parameters()
-            domain = self._prepare_query_domain(domain, 'sp.')
-            query = f"""select count(*) from stock_picking sp
-                 inner join sale_order so on so.procurement_group_id=sp.group_id inner 
-                 join stock_location on stock_location.id=sp.location_dest_id and stock_location.usage='customer' 
-                 where sp.state != 'cancel' and sp.company_id={company.id} 
-                 and sp.date_done >= '{start}' and sp.date_done <= '{end}' {domain}"""
-            self._cr.execute(query)
+            domain, params_value = self._prepare_query_domain(domain, 'sp.')
+            # query = f"""select count(*) from stock_picking sp
+            #      inner join sale_order so on so.procurement_group_id=sp.group_id inner
+            #      join stock_location on stock_location.id=sp.location_dest_id and stock_location.usage='customer'
+            #      where sp.state != 'cancel' and sp.company_id=%s
+            #      and sp.date_done >= %s and sp.date_done <= %s """ + domain
+            query = sql.SQL("""select count(*) from stock_picking sp
+                 inner join sale_order so on so.procurement_group_id=sp.group_id inner
+                 join stock_location on stock_location.id=sp.location_dest_id and stock_location.usage='customer'
+                 where sp.state != 'cancel' and sp.company_id=%s
+                 and sp.date_done >= %s and sp.date_done <= %s {domain}""").format(domain=domain)
+            self._cr.execute(query, (company.id, start, end, *params_value))
             query_res = self._cr.fetchone()
             record.kpi_shipped_orders_value = query_res and query_res[0] or 0
 
     def get_pending_shipment_on_date_count(self, domain):
         """
         Use: To get the list of connector's pending shipment on date count.
-        @author: Meera Sidapara on Date 04-July-2022.
         @return: total number of connector's sale orders ids and action for sale orders of current instance.
         """
         for record in self:
             start, end, company = record._get_kpi_compute_parameters()
-            domain = self._prepare_query_domain(domain, 'sp.')
-            query = f"""select count(*) from stock_picking sp
-                 inner join sale_order so on so.procurement_group_id=sp.group_id inner 
-                 join stock_location on stock_location.id=sp.location_dest_id and stock_location.usage='customer' 
-                 where sp.state != 'cancel' and sp.company_id={company.id} 
-                 and sp.scheduled_date >= '{start}' and sp.scheduled_date <= '{end}' {domain}"""
-            self._cr.execute(query)
+            domain, params_value = self._prepare_query_domain(domain, 'sp.')
+            # query = f"""select count(*) from stock_picking sp
+            #      inner join sale_order so on so.procurement_group_id=sp.group_id inner
+            #      join stock_location on stock_location.id=sp.location_dest_id and stock_location.usage='customer'
+            #      where sp.state != 'cancel' and sp.company_id=%s
+            #      and sp.scheduled_date >= %s and sp.scheduled_date <= %s """ + domain
+            query = sql.SQL("""select count(*) from stock_picking sp
+                 inner join sale_order so on so.procurement_group_id=sp.group_id inner
+                 join stock_location on stock_location.id=sp.location_dest_id and stock_location.usage='customer'
+                 where sp.state != 'cancel' and sp.company_id=%s
+                 and sp.scheduled_date >= %s and sp.scheduled_date <= %s {domain}""").format(domain=domain)
+            self._cr.execute(query, (company.id, start, end, *params_value))
             query_res = self._cr.fetchone()
             record.kpi_pending_shipment_on_date_value = query_res and query_res[0] or 0
 
     def get_cancel_orders_count(self, domain):
         """
         Use: To get the list of connector's Total cancel orders count.
-        @author: Meera Sidapara on Date 04-July-2022.
         @return: total number of connector's sale orders ids and action for sale orders of current instance.
         """
         for record in self:
             start, end, company = record._get_kpi_compute_parameters()
-            domain = self._prepare_query_domain(domain, 'so.')
-            query = f"""select count(*) from sale_order so where so.company_id ={company.id}
-                AND so.date_order >= '{start}' AND so.date_order <= '{end}' and state='cancel' {domain}"""
-            self._cr.execute(query)
+            domain, params_value = self._prepare_query_domain(domain, 'so.')
+            # query = f"""select count(*) from sale_order so where so.company_id =%s
+            #     AND so.date_order >= %s AND so.date_order <= %s and state='cancel' """ + domain
+            query = sql.SQL("""select count(*) from sale_order so where so.company_id =%s
+                AND so.date_order >= %s AND so.date_order <= %s and state='cancel' {domain}""").format(domain=domain)
+            self._cr.execute(query, (company.id, start, end, *params_value))
             query_res = self._cr.fetchone()
             record.kpi_cancel_orders_value = query_res and query_res[0] or 0
 
     def get_orders_average(self, domain):
         """
         Use: To get the list of connector's Total average of orders.
-        @author: Meera Sidapara on Date 04-July-2022.
         @return: total number of connector's sale orders ids and action for sale orders of current instance.
         """
         for record in self:
             start, end, company = record._get_kpi_compute_parameters()
-            domain = self._prepare_query_domain(domain, 'so.')
-            query = f"""select sum(amount_untaxed) from sale_order so
-                        where so.company_id ={company.id} AND so.date_order >= '{start}' AND so.date_order <= '{end}' 
-                        and state in ('sale','done') {domain}"""
-            self._cr.execute(query)
+            domain, params_value = self._prepare_query_domain(domain, 'so.')
+            # query = f"""select sum(amount_untaxed) from sale_order so
+            #             where so.company_id =%s AND so.date_order >= %s AND so.date_order <= %s
+            #             and state in ('sale','done') """ + domain
+            query = sql.SQL("""select sum(amount_untaxed) from sale_order so
+                        where so.company_id =%s AND so.date_order >= %s AND so.date_order <= %s
+                        and state in ('sale','done') {domain}""").format(domain=domain)
+            self._cr.execute(query, (company.id, start, end, *params_value))
             query_res = self._cr.fetchone()
             total_sales = 0.0
             if query_res and query_res[0]:
@@ -171,16 +215,19 @@ class Digest(models.Model):
     def get_refund_orders_count(self, domain):
         """
         Use: To get the list of connector's Total refund orders count.
-        @author: Meera Sidapara on Date 04-July-2022.
         @return: total number of connector's sale orders ids and action for sale orders of current instance.
         """
         for record in self:
             start, end, company = record._get_kpi_compute_parameters()
-            domain = self._prepare_query_domain(domain, 'am.')
-            query = f"""select count(*) from account_move am
-                where am.company_id = {company.id} AND am.invoice_date > '{start}' 
-                AND am.invoice_date <= '{end}' and am.move_type='out_refund' {domain} group by am.id"""
-            self._cr.execute(query)
+            domain, params_value = self._prepare_query_domain(domain, 'am.')
+            # query = f"""select count(*) from account_move am
+            #     where am.company_id = %s AND am.invoice_date > %s
+            #     AND am.invoice_date <= %s and am.move_type='out_refund' """ + domain + """ group by am.id"""
+            query = sql.SQL("""select count(*) from account_move am
+                where am.company_id = %s AND am.invoice_date > %s
+                AND am.invoice_date <= %s and am.move_type='out_refund' {domain} group by am.id""").format(
+                domain=domain)
+            self._cr.execute(query, (company.id, start, end, *params_value))
             query_res = self._cr.fetchone()
             total_refund_orders = []
             if query_res != None:
@@ -190,19 +237,25 @@ class Digest(models.Model):
     def get_late_delivery_orders_count(self, domain):
         """
         Use: To get the list of connector's Total late delivery orders count.
-        @author: Meera Sidapara on Date 11-July-2022.
         @return: total number of connector's sale orders ids and action for sale orders of current instance.
         """
         for record in self:
-            domain = self._prepare_query_domain(domain, '')
-            query = f"""select * from(
-                select count(*) as first from stock_picking where state='done' {domain} and (date(date_done)-date(scheduled_date)) between 1 and 3 
+            domain, params_value = self._prepare_query_domain(domain, '')
+            # query = f"""select * from(
+            #     select count(*) as first from stock_picking where state='done' """ + domain + """ and (date(date_done)-date(scheduled_date)) between 1 and 3
+            #     union all
+            #     select count(*) as second from stock_picking where state='done' """ + domain + """ and (date(date_done)-date(scheduled_date)) between 4 and 7
+            #     union all
+            #     select count(*) as third from stock_picking where state='done' """ + domain + """ and (date(date_done)-date(scheduled_date)) > 7
+            #     )T"""
+            query = sql.SQL("""select * from(
+                select count(*) as first from stock_picking where state='done' {domain} and (date(date_done)-date(scheduled_date)) between 1 and 3
                 union all
-                select count(*) as second from stock_picking where state='done' {domain} and (date(date_done)-date(scheduled_date)) between 4 and 7 
+                select count(*) as second from stock_picking where state='done' {domain} and (date(date_done)-date(scheduled_date)) between 4 and 7
                 union all
                 select count(*) as third from stock_picking where state='done' {domain} and (date(date_done)-date(scheduled_date)) > 7
-                )T"""
-            self._cr.execute(query)
+                )T""").format(domain=domain)
+            self._cr.execute(query, (*params_value, *params_value, *params_value))
             query_res = self._cr.fetchall()
             late_deliveries_bt_one_three = 0
             late_deliveries_bt_four_seven = 0
@@ -220,35 +273,39 @@ class Digest(models.Model):
     def get_on_time_shipping_ratio(self, domain):
         """
         Use: To get the list of connector's On Time shipping ratio.
-        @author: Meera Sidapara on Date 11-July-2022.
         @return: total number of connector's sale orders ids and action for sale orders of current instance.
         """
         for record in self:
-            domain = self._prepare_query_domain(domain, '')
+            domain, params_value = self._prepare_query_domain(domain, '')
             end_date = datetime.today()
             if self._context.get('end_datetime'):
                 end_date = self._context.get('end_datetime')
             on_date = end_date + relativedelta(days=-1)
-            query = f"""select * from (                                                                                        
-                select count(*) as first from stock_picking as sp where sp.state='done' and date(sp.date_done) = date(sp.scheduled_date) and date(sp.scheduled_date) = '{on_date}' {domain}
+            # query = f"""select * from (
+            #     select count(*) as first from stock_picking as sp where sp.state='done' and date(sp.date_done) = date(sp.scheduled_date) and date(sp.scheduled_date) = %s """ + domain + """
+            #     union all
+            #     select count(*) as second from stock_picking as sp2 where sp2.state='done' and  date(sp2.scheduled_date) = %s """ + domain + """
+            #     )T"""
+            query = sql.SQL("""select * from (
+                select count(*) as first from stock_picking as sp where sp.state='done' and date(sp.date_done) = date(sp.scheduled_date) and date(sp.scheduled_date) = %s {domain}
                 union all
-                select count(*) as second from stock_picking as sp2 where sp2.state='done' and  date(sp2.scheduled_date) = '{on_date}' {domain}
-                )T"""
-            self._cr.execute(query)
+                select count(*) as second from stock_picking as sp2 where sp2.state='done' and  date(sp2.scheduled_date) = %s {domain}
+                )T""").format(domain=domain)
+            self._cr.execute(query, (on_date, *params_value, on_date, *params_value))
             query_res = self._cr.fetchall()
             shipping_count = 0
             if query_res and query_res[0][0] and query_res[1][0] != 0:
                 shipping_count = query_res and query_res[0][0] / query_res[1][0] * 100
             record.kpi_on_shipping_orders_value = shipping_count
 
-    def _action_send_to_user(self, user, tips_count=1, consum_tips=True):
+    def _action_send_to_user(self, user, tips_count=1, consume_tips=True):
         """
         This Method is used to set email template of connector.
-        @override by: Meera Sidapara on Date 04-July-2022.
-        @task: 194458 - Digest email development
         """
         if self.is_connector_digest:
-            rendered_body = self.env['mail.render.mixin'].with_context(preserve_comments=True)._render_template(
+            unsubscribe_token = self._get_unsubscribe_token(user.id)
+
+            rendered_body = self.env['mail.render.mixin']._render_template(
                 'common_connector_library.connector_digest_mail_main',
                 'digest.digest',
                 self.ids,
@@ -259,15 +316,18 @@ class Digest(models.Model):
                     'top_button_url': self.get_base_url(),
                     'company': user.company_id,
                     'user': user,
-                    'unsubscribe_token': self._get_unsubscribe_token(user.id),
+                    'unsubscribe_token': unsubscribe_token,
                     'tips_count': tips_count,
                     'formatted_date': datetime.today().strftime('%B %d, %Y'),
                     'display_mobile_banner': True,
                     'kpi_data': self._compute_kpis(user.company_id, user),
-                    'tips': self._compute_tips(user.company_id, user, tips_count=tips_count, consumed=consum_tips),
+                    'tips': self._compute_tips(user.company_id, user, tips_count=tips_count, consumed=consume_tips),
                     'preferences': self._compute_preferences(user.company_id, user),
                 },
-                post_process=True
+                options={
+                    'preserve_comments': True,
+                    'post_process': True,
+                }
             )[self.id]
             full_mail = self.env['mail.render.mixin']._render_encapsulate(
                 'common_connector_library.connector_digest_mail_layout',
@@ -278,29 +338,33 @@ class Digest(models.Model):
                 },
             )
             # create a mail_mail based on values, without attachments
+            unsub_url = url_join(self.get_base_url(),
+                                 f'/digest/{self.id}/unsubscribe?token={unsubscribe_token}&user_id={user.id}&one_click=1')
             mail_values = {
                 'auto_delete': True,
                 'author_id': self.env.user.partner_id.id,
+                'body_html': full_mail,
                 'email_from': (
                         self.company_id.partner_id.email_formatted
                         or self.env.user.email_formatted
                         or self.env.ref('base.user_root').email_formatted
                 ),
                 'email_to': user.email_formatted,
-                'body_html': full_mail,
+                # Add headers that allow the MUA to offer a one click button to unsubscribe (requires DKIM to work)
+                'headers': {
+                    'List-Unsubscribe': f'<{unsub_url}>',
+                    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+                    'X-Auto-Response-Suppress': 'OOF',  # avoid out-of-office replies from MS Exchange
+                },
                 'state': 'outgoing',
                 'subject': '%s: %s' % (user.company_id.name, self.name),
             }
             self.env['mail.mail'].sudo().create(mail_values)
             return True
-        return super(Digest, self)._action_send_to_user(user, tips_count=1, consum_tips=True)
+        return super(Digest, self)._action_send_to_user(user)
 
     def _compute_kpis(self, company, user):
-        """
-        This Method is used to compute kpi data based on Yesterday, Last week, Last month, Last quarter.
-        @override by: Meera Sidapara on Date 04-July-2022.
-        @task: 194458 - Digest email development
-        """
+        """ This Method is used to compute kpi data based on Yesterday, Last week, Last month, Last quarter. """
         if self.is_connector_digest:
             self.ensure_one()
             digest_fields = self._get_kpi_fields()
@@ -331,16 +395,16 @@ class Digest(models.Model):
                     try:
                         compute_value = digest[field_name + '_value']
                         # Context start and end date is different each time so invalidate to recompute.
-                        digest.invalidate_cache([field_name + '_value'])
+                        digest.invalidate_model([field_name + '_value'])
                         previous_value = previous_digest[field_name + '_value']
                         # Context start and end date is different each time so invalidate to recompute.
-                        previous_digest.invalidate_cache([field_name + '_value'])
+                        previous_digest.invalidate_model([field_name + '_value'])
                     except AccessError:  # no access rights -> just skip that digest details from that user's digest email
                         invalid_fields.append(field_name)
                         continue
                     margin = self._get_margin_value(compute_value, previous_value)
                     if self._fields['%s_value' % field_name].type == 'monetary':
-                        converted_amount = tools.format_decimalized_amount(compute_value)
+                        converted_amount = tools.misc.format_decimalized_amount(compute_value)
                         compute_value = self._format_currency_amount(converted_amount, company.currency_id)
                     kpi_values['kpi_col%s' % (col_index + 1)].update({
                         'value': compute_value,
@@ -359,8 +423,6 @@ class Digest(models.Model):
     def _compute_timeframes(self, company):
         """
         This Method is override to compute timeframe based on Yesterday, Last week, Last month, Last quarter.
-        @override by: Meera Sidapara on Date 04-July-2022.
-        @task: 194458 - Digest email development
         """
         if self.is_connector_digest:
             start_datetime = datetime.utcnow()

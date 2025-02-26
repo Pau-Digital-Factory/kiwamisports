@@ -2,7 +2,7 @@
 # See LICENSE file for full copyright and licensing details.
 {
     'name': 'Common Connector Library',
-    'version': '15.0.7.0.3',
+    'version': '18.0.0.7',
     'category': 'Sales',
     'license': 'OPL-1',
     'author': 'Emipro Technologies Pvt. Ltd.',
@@ -10,7 +10,7 @@
     'maintainer': 'Emipro Technologies Pvt. Ltd.',
     'summary': """Develop generalize method to process different operations & auto workflow process to manage
     order process automatically.""",
-    'depends': ['delivery', 'sale_stock', 'sale_management', 'account', 'digest'],
+    'depends': ['stock_delivery', 'sale_management'],
     'data': ['security/ir.model.access.csv',
              'data/ir_sequence.xml',
              'data/ir_cron.xml',
@@ -27,8 +27,8 @@
              'views/common_log_lines_ept.xml',
              'views/digest_views.xml',
              'views/delivery_carrier_view.xml',
-             'views/app_version.xml',
-             'wizard/res_config_settings.xml',
+             'views/res_partner_view.xml',
+             'wizard/stock_return_picking.xml',
              ],
     'installable': True,
     'price': 20.00,
@@ -38,19 +38,8 @@
     'cloc_exclude': ['**/*.xml', ],
     'assets': {
         'web.assets_backend': [
-            '/common_connector_library/static/src/scss/graph_widget_ept.scss',
-            '/common_connector_library/static/src/scss/on_boarding_wizards.css',
-            '/common_connector_library/static/src/scss/queue_line_dashboard.scss',
-            '/common_connector_library/static/src/scss/in_app_notification.scss',
-            '/common_connector_library/static/src/js/in_app_widget.js',
-            '/common_connector_library/static/src/js/community.js',
-            '/common_connector_library/static/src/js/queue_line_dashboard.js',
-            '/common_connector_library/static/src/js/dom_ready.js',
-            '/common_connector_library/static/src/js/graph_widget_ept.js',
-            '/common_connector_library/static/src/js/enterprise.js',
-        ],
-        'web.assets_qweb': [
-            '/common_connector_library/static/src/xml/*.xml',
+            '/common_connector_library/static/src/views/**/*',
         ],
     },
 }
+

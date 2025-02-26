@@ -28,7 +28,6 @@ class ResPartner(models.Model):
         @param extra_domain: This domain for you can pass your own custom domain.
         i.e [('name', '!=', 'test')...]
         @return: partner object or False
-        Migration done by Haresh Mori on September 2021
         """
         if key_list and vals:
             _domain = [] + extra_domain
@@ -45,11 +44,10 @@ class ResPartner(models.Model):
 
     def search_partner_by_email(self, email):
         """
-        Usage : Search Partner by Email if not found then use =ilike operator for ignore case sensitive search
-        and set limit 1 because it may possible to find multiple emails due to =ilike operator
+        Define this method for search Partner by Email if not found then use =ilike operator for
+        ignore case sensitive search and set limit 1 because it may possible to find multiple emails
+        due to =ilike operator
         :param email: Email Id, Type: Char
-        @Task : 166956 - Common connector changes
-        @Updated By : Dipak Gogiya, 21/09/2020
         :return: res.partner()
         """
         partner = self.search([('email', '=ilike', email)], limit=1)
@@ -57,19 +55,23 @@ class ResPartner(models.Model):
 
     def get_country(self, country_name_or_code):
         """
-            Usage : Search Country by name or code if not found then use =ilike operator for ignore case sensitive
-            search and set limit 1 because it may possible to find multiple emails due to =ilike operator
-            :param country_name_or_code: Country Name or Country Code, Type: Char
-            @Task : 166956 - Common connector changes
-            @Updated By : Dipak Gogiya, 21/09/2020
-            :return: res.country()
+        Define this method for search Country by name or code if not found then use =ilike operator for
+        ignore case sensitive search and set limit 1 because it may possible to find multiple emails due
+        to =ilike operator.
+        :param: country_name_or_code: Country Name or Country Code, Type: Char
+        :return: res.country()
         """
         country = self.env['res.country'].search(['|', ('code', '=ilike', country_name_or_code),
                                                   ('name', '=ilike', country_name_or_code)], limit=1)
         return country
 
     def create_or_update_state_ept(self, country_code, state_name_or_code, zip_code, country_obj=False):
-        """ This method is used to search state-based country, state code or zip code.
+        """
+        Define this method for search state-based country, state code or zip code.
+        :param: country_code: country code str
+        :param: state_name_or_code: state name or code str
+        :param: zip_code: zip code str
+        :param: country_obj: res.country()
         """
         res_country_obj = self.env['res.country.state']
         if not country_obj:
@@ -87,12 +89,10 @@ class ResPartner(models.Model):
     def get_state_from_api(self, country_code, zip_code, country):
         """
         This method tries to find state from country and zip code from zippopotam api.
-        @param country_code: Code of country.
-        @param zip_code: Zip code.
-        @param country: Record of Country.
-        @return: Record of state if found, otherwise object.
-        @author: Maulik Barad on Date 22-Oct
-        Migration done by Haresh Mori on September 2021
+        :param: country_code: Code of country.
+        :param: zip_code: Zip code.
+        :param: country: Record of Country.
+        :return: Record of state if found, otherwise object.
         """
         state_obj = state = self.env['res.country.state']
         country_obj = self.env['res.country']
@@ -117,25 +117,25 @@ class ResPartner(models.Model):
             state_name = response.get('places')[0].get('state', '')
             if state_code:
                 state = state_obj.search([('code', '=ilike', state_code), ('country_id', '=', country.id)],
-                                            limit=1)
+                                         limit=1)
             elif state_name:
                 state = state_obj.search([('name', '=ilike', state_name), ('country_id', '=', country.id)],
-                                            limit=1)
+                                         limit=1)
             if not state and state_code:
                 state = state_obj.create({'name': state_name, 'code': state_code,
                                           'country_id': country.id})
         return state
 
-    @api.model
-    def create(self, vals):
+    @api.model_create_multi
+    def create(self, vals_list):
         """
         Inherited for calling onchange method.
         We got issue of not setting the gst_treatment field automatically of Indian accounting and same field is
         required and readonly in Sale order.
-        @author: Maulik Barad on Date 17-Sep-2020.
-        Migration done by Haresh Mori on September 2021
+        :param: vals_list: list of dict
+        :return: res.partner()
         """
-        partner = super(ResPartner, self).create(vals)
+        partner = super(ResPartner, self).create(vals_list)
         partner._onchange_country_id()
         return partner
 

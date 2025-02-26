@@ -13,8 +13,7 @@ class SaleOrder(models.Model):
     def _compute_stock_move(self):
         """
         Find all stock moves associated with the order.
-        @author: Keyur Kanani
-        Migration done by Haresh Mori on September 2021
+        :return:
         """
         self.moves_count = self.env["stock.move"].search_count([("picking_id", "=", False),
                                                                 ("sale_line_id", "in", self.order_line.ids)])
@@ -23,79 +22,20 @@ class SaleOrder(models.Model):
     moves_count = fields.Integer(compute="_compute_stock_move", string="Stock Move", store=False,
                                  help="Stock Move Count for Orders without Picking.")
 
-    def create_sales_order_vals_ept(self, vals):
+    @api.onchange('warehouse_id', 'partner_shipping_id', 'partner_id')
+    def _compute_fiscal_position_id(self):
         """
-        @param vals: Vals of sale order.
-        @return: Vals of sales order after call onchange method.
-        Migration done by Haresh Mori on September 2021
+        Define this method for sets fiscal position, when warehouse, customer and delivery address is changed.
+        :return:
         """
-        sale_order = self.env['sale.order']
-        order_vals = {
-            'company_id': vals.get('company_id', False),
-            'partner_id': vals.get('partner_id', False),
-            'partner_invoice_id': vals.get('partner_invoice_id', False),
-            'partner_shipping_id': vals.get('partner_shipping_id', False),
-            'warehouse_id': vals.get('warehouse_id', False),
-        }
-
-        new_record = sale_order.new(order_vals)
-        # Return Pricelist- Payment terms- Invoice address- Delivery address
-        new_record.onchange_partner_id()
-        order_vals = sale_order._convert_to_write({name: new_record[name] for name in new_record._cache})
-
-        # Return Fiscal Position
-        order_vals.update({'partner_shipping_id': vals.get('partner_shipping_id', False)})
-        new_record = sale_order.new(order_vals)
-        new_record.onchange_partner_shipping_id()
-        order_vals = sale_order._convert_to_write({name: new_record[name] for name in new_record._cache})
-
-        fpos = order_vals.get('fiscal_position_id') or vals.get('fiscal_position_id', False)
-        new_vals = self.prepare_order_vals_after_onchange_ept(vals, fpos)
-        order_vals.update(new_vals)
-        return order_vals
-
-    def prepare_order_vals_after_onchange_ept(self, vals, fpos):
-        """ This method is used to prepare order vals after onchange methods call..
-            @author: Haresh Mori @Emipro Technologies Pvt. Ltd on date 21 September 2021 .
-        """
-        order_vals = {
-            'company_id': vals.get('company_id', False),
-            'picking_policy': vals.get('picking_policy'),
-            'partner_invoice_id': vals.get('partner_invoice_id', False),
-            'partner_id': vals.get('partner_id', False),
-            'partner_shipping_id': vals.get('partner_shipping_id', False),
-            'date_order': vals.get('date_order', False),
-            'state': 'draft',
-            'pricelist_id': vals.get('pricelist_id', False),
-            'fiscal_position_id': fpos,
-            'payment_term_id': vals.get('payment_term_id', False),
-            'team_id': vals.get('team_id', False),
-            'client_order_ref': vals.get('client_order_ref', ''),
-            'carrier_id': vals.get('carrier_id', False)
-        }
-        return order_vals
-
-    @api.onchange('partner_shipping_id', 'partner_id')
-    def onchange_partner_shipping_id(self):
-        """
-        Inherited method for setting fiscal position by warehouse.
-        """
-        res = super(SaleOrder, self).onchange_partner_shipping_id()
-        fiscal_position = self.get_fiscal_position_by_warehouse()
-        self.fiscal_position_id = fiscal_position
-        return res
-
-    @api.onchange('warehouse_id')
-    def onchange_warehouse_id(self):
-        """
-        This method for sets fiscal position, when warehouse is changed.
-        """
+        super(SaleOrder, self)._compute_fiscal_position_id()
         fiscal_position = self.get_fiscal_position_by_warehouse()
         self.fiscal_position_id = fiscal_position
 
     def get_fiscal_position_by_warehouse(self):
         """
         This method will give fiscal position from warehouse.
+        :return: account.fiscal.position()
         """
         fiscal_position = self.fiscal_position_id
         warehouse = self.warehouse_id
@@ -109,23 +49,22 @@ class SaleOrder(models.Model):
             is_bol_customer = getattr(self.partner_id, 'is_bol_customer', False)
             fiscal_position = self.env['account.fiscal.position'].with_context(
                 origin_country_ept=origin_country_id, is_amazon_fpos=is_amz_customer,
-                is_bol_fpos=is_bol_customer).with_company(
-                warehouse.company_id.id).get_fiscal_position(self.partner_id.id, self.partner_shipping_id.id)
+                is_bol_fpos=is_bol_customer).with_company(warehouse.company_id.id)._get_fiscal_position(
+                self.partner_id, self.partner_shipping_id)
 
         return fiscal_position
 
     def action_view_stock_move_ept(self):
         """
         List all stock moves which is associated with the Order.
-        @author: Keyur Kanani
-        Migration done by Haresh Mori on September 2021
+        :return: ir.actions.act_window()
         """
         stock_move_obj = self.env['stock.move']
         move_ids = stock_move_obj.search([('picking_id', '=', False), ('sale_line_id', 'in', self.order_line.ids)]).ids
         action = {
             'domain': "[('id', 'in', " + str(move_ids) + " )]",
             'name': 'Order Stock Move',
-            'view_mode': 'tree,form',
+            'view_mode': 'list,form',
             'res_model': 'stock.move',
             'type': 'ir.actions.act_window',
         }
@@ -133,8 +72,9 @@ class SaleOrder(models.Model):
 
     def _prepare_invoice(self):
         """
-        This method would let the invoice date will be the same as the order date and also set the sale journal.
-        Migration done by Haresh Mori on September 2021
+        This method would let the invoice date will be the same as the order date and also set the sale journal as
+        selected in the auto invoice workflow configuration.
+        :return: dict {}
         """
         invoice_vals = super(SaleOrder, self)._prepare_invoice()
         if self.auto_workflow_process_id:
@@ -142,85 +82,86 @@ class SaleOrder(models.Model):
                 invoice_vals.update({'journal_id': self.auto_workflow_process_id.sale_journal_id.id})
             if self.auto_workflow_process_id.invoice_date_is_order_date:
                 invoice_vals.update({"date": self.date_order.date(), "invoice_date": fields.Date.context_today(self)})
+        elif self._context.get('journal_ept'):
+            invoice_vals.update({'journal_id': self._context.get('journal_ept').id})
         return invoice_vals
+
+    def process_orders_and_invoices_ept(self):
+        """
+        This method will confirm sale orders, create and paid related invoices.
+        :return: True
+        """
+        for order in self:
+            work_flow_process_record = order.auto_workflow_process_id
+            if order.invoice_status == 'invoiced':
+                continue
+            if work_flow_process_record.validate_order:
+                order.validate_order_ept()
+            order_lines = order.mapped('order_line').filtered(lambda l: l.product_id.invoice_policy == 'order')
+            if not order_lines.filtered(lambda l: l.product_id.type == 'consu' and l.product_id.is_storable) and len(
+                    order.order_line) != len(order_lines.filtered(
+                lambda l: l.product_id.type in ['service', 'consu'] and not l.product_id.is_storable)):
+                continue
+            order.validate_and_paid_invoices_ept(work_flow_process_record)
+        return True
 
     def validate_order_ept(self):
         """
         This function validate sales order and write date_order same as previous date because Odoo changes date_order
         to current date in action confirm process.
-        @author: Dipesh Tanna
-        Added invalidate_cache line to resolve the issue of PO line description while product route has dropship and
-        multi language active in Odoo.T-07778 Added line by Haresh Mori @Emipro Technologies Pvt. Ltd on date 19 July
-        2021
-        Migration done by Haresh Mori on September 2021
+        Added invalidate_model line to resolve the issue of PO line description while product route has dropship and
+        multi language active in Odoo.
+        :return: True
         """
         self.ensure_one()
         date_order = self.date_order
-        self.env['product.product'].invalidate_cache(fnames=['display_name'])
+        # invalidate_cache will be deprecated so used invalidate_model().
+        self.env['product.product'].invalidate_model(fnames=['display_name'])
         self.action_confirm()
         self.write({'date_order': date_order})
         return True
 
-    def process_orders_and_invoices_ept(self):
-        """
-        This method will confirm sale orders, create and paid related invoices.
-        Migration done by Haresh Mori on September 2021
-        """
-        for order in self:
-            work_flow_process_record = order.auto_workflow_process_id
-
-            if order.invoice_status and order.invoice_status == 'invoiced':
-                continue
-            if work_flow_process_record.validate_order:
-                order.validate_order_ept()
-
-            order_lines = order.mapped('order_line').filtered(lambda l: l.product_id.invoice_policy == 'order')
-            if not order_lines.filtered(lambda l: l.product_id.type == 'product') and len(
-                    order.order_line) != len(order_lines.filtered(lambda l: l.product_id.type in ['service', 'consu'])):
-                continue
-
-            order.validate_and_paid_invoices_ept(work_flow_process_record)
-        return True
-
     def validate_and_paid_invoices_ept(self, work_flow_process_record):
         """
-        This method will create invoices, validate it and register payment it, according to the configuration in
-        workflow sets in quotation.
-        :param work_flow_process_record:
-        :return: It will return boolean.
-        Migration done by Haresh Mori on September 2021
+        According to the workflow configuration, It will create invoices, validate them and register payment.
+        :param : work_flow_process_record: sale.workflow.process.ept()
+        :return: True
         """
         self.ensure_one()
         if work_flow_process_record.create_invoice:
             if work_flow_process_record.invoice_date_is_order_date:
-                fiscalyear_lock_date = self.company_id._get_user_fiscal_lock_date()
-                if self.date_order.date() <= fiscalyear_lock_date:
-                    log_book_id = self._context.get('log_book_id')
-                    if log_book_id:
-                        message = "You cannot create invoice for order (%s) " \
-                                  "prior to and inclusive of the lock date %s. " \
-                                  "So, order is created but invoice is not created." % (self.name, format_date(
-                            self.env, fiscalyear_lock_date))
-                        self.env['common.log.lines.ept'].create({
-                            'message': message,
-                            'order_ref': self.name,
-                            'log_book_id': log_book_id
-                        })
-                        _logger.info(message)
+                if self.check_fiscal_year_lock_date_ept():
                     return True
-            ctx = self._context.copy()
             if work_flow_process_record.sale_journal_id:
-                ctx.update({'journal_ept': work_flow_process_record.sale_journal_id})
-            invoices = self._create_invoices()
+                invoices = self.with_context(journal_ept=work_flow_process_record.sale_journal_id)._create_invoices()
+            else:
+                invoices = self._create_invoices()
             self.validate_invoice_ept(invoices)
             if work_flow_process_record.register_payment:
                 self.paid_invoice_ept(invoices)
+        return True
+
+    def check_fiscal_year_lock_date_ept(self):
+        """
+        The invoice will not create if order date as lower to fiscalyear date.
+        :return: True/False
+        """
+        fiscalyear_lock_date = self.company_id._get_user_fiscal_lock_date(self.auto_workflow_process_id.sale_journal_id)
+        if self.date_order.date() <= fiscalyear_lock_date:
+            message = "You cannot create invoice for order (%s) " \
+                      "prior to and inclusive of the lock date %s. " \
+                      "So, order is created but invoice is not created." % (
+                          self.name, format_date(self.env, fiscalyear_lock_date))
+            self.env['common.log.lines.ept'].create({'message': message, 'order_ref': self.name})
+            _logger.info(message)
+            return True
+        return False
 
     def validate_invoice_ept(self, invoices):
         """
-        This method will validate and paid invoices.
-        @param invoices: Recordset of Invoice.
-        Migration done by Haresh Mori on September 2021
+        This method will validate invoice.
+        :param: invoices: account.move()
+        :return: True
         """
         self.ensure_one()
         for invoice in invoices:
@@ -229,50 +170,58 @@ class SaleOrder(models.Model):
 
     def paid_invoice_ept(self, invoices):
         """
-        This method auto paid invoice based on auto workflow method.
-        @author: Dipesh Tanna
-        @param invoices: Recordset of Invoice.
-        Migration done by Haresh Mori on September 2021
+        Based on the auto invoice workflow configuration, it will paid and reconcile invoice.
+        :param : invoices: account.move()
+        :return: True
         """
         self.ensure_one()
         account_payment_obj = self.env['account.payment']
         for invoice in invoices:
-            if invoice.amount_residual:
-                vals = invoice.prepare_payment_dict(self.auto_workflow_process_id)
-                payment_id = account_payment_obj.create(vals)
-                payment_id.action_post()
-                self.reconcile_payment_ept(payment_id, invoice)
+            total_payment_sum = sum(
+                invoice.matched_payment_ids.filtered(lambda P: P.state in ['in_process', 'paid']).mapped('amount'))
+            invoice_amount = invoice.amount_residual
+            if (invoice_amount - total_payment_sum) > 0:
+                if invoice.amount_residual:
+                    vals = invoice.prepare_payment_dict(self.auto_workflow_process_id)
+                    vals.update({'amount': invoice_amount - total_payment_sum})
+                    payment_id = account_payment_obj.create(vals)
+                    payment_id.action_post()
+                    self.reconcile_payment_ept(payment_id, invoice)
         return True
 
     def reconcile_payment_ept(self, payment_id, invoice):
-        """ This method is use to reconcile payment.
-            @author: twinkalc.
-            Migration done by Haresh Mori on September 2021
+        """
+        Define this method for reconcile account payment.
+        :param: payment_id: account.payment()
+        :param: invoice: account.move()
+        :return:
         """
         move_line_obj = self.env['account.move.line']
-        domain = [('account_internal_type', 'in', ('receivable', 'payable')),
+        domain = [('account_type', 'in', ('asset_receivable', 'liability_payable')), ('parent_state', '=', 'posted'),
                   ('reconciled', '=', False)]
         line_ids = move_line_obj.search([('move_id', '=', invoice.id)])
-        to_reconcile = [line_ids.filtered( \
-            lambda line: line.account_internal_type == 'receivable')]
+        to_reconcile = [line_ids.filtered(lambda line: line.account_type == 'asset_receivable')]
 
         for payment, lines in zip([payment_id], to_reconcile):
-            payment_lines = payment.line_ids.filtered_domain(domain)
+            payment_lines = line_ids.filtered_domain(domain)
             for account in payment_lines.account_id:
                 (payment_lines + lines).filtered_domain([('account_id', '=', account.id),
+                                                         ('parent_state', '=', 'posted'),
                                                          ('reconciled', '=', False)]).reconcile()
+                invoice.matched_payment_ids += payment
 
     def auto_shipped_order_ept(self, customers_location, is_mrp_installed=False):
         """
         This method is used to create a stock move of shipped orders.
-        :param customers_location: It is customer location object.
-        :param is_mrp_installed: It is a boolean for mrp installed or not.
-        Migration done by Haresh Mori on September 2021
+        :param : customers_location: stock.location()
+        :param : is_mrp_installed: True or False, based on mrp module installation.
+        :return: True
         """
+        location_obj = self.env['stock.location']
         order_lines = self.order_line.filtered(lambda l: l.product_id.type != 'service')
-        vendor_location = self.env['stock.location'].search(['|', ('company_id', '=', self.company_id.id),
-                                                             ('company_id', '=', False), ('usage', '=', 'supplier')],
-                                                            limit=1)
+        vendor_location = location_obj.search(
+            ['|', ('company_id', '=', self.company_id.id), ('company_id', '=', False), ('usage', '=', 'supplier')],
+            limit=1)
         for order_line in order_lines:
             bom_lines = []
             if is_mrp_installed:
@@ -289,9 +238,8 @@ class SaleOrder(models.Model):
         """
         Find BOM for phantom type only if Bill of Material type is Make to Order then for shipment report there are
         no logic to create Manufacturer Order.
-        Author: Twinkalc
-        :param product: Record of Product.
-        Migration done by Haresh Mori on September 2021
+        :param : product: product.product()
+        :return: dict {}
         """
         try:
             bom_obj = self.env['mrp.bom']
@@ -305,15 +253,17 @@ class SaleOrder(models.Model):
                 bom, lines = bom_point.explode(product, factor, picking_type=bom_point.picking_type_id)
                 return lines
         except Exception as error:
-            _logger.info("Error when BOM product exlode: %s", error)
+            _logger.info("Error when BOM product explode: %s", error)
         return {}
 
     def create_and_done_stock_move_ept(self, order_line, customers_location, bom_line=False, vendor_location=False):
         """
-        It will create and done stock move as per the data in order line.
-        @param customers_location: Customer type location.
-        @param order_line: Record of sale order line.
-        Migration done by Haresh Mori on September 2021
+        Based on the order line, it will create a stock move and done it.
+        :param : order_line: sale.order.line()
+        :param : customers_location: stock.location()
+        :param : bom_line: If mrp is install and product has kit type then pass the bom lines of it.
+        :param : vendor_location: stock.location() - vendor location
+        :return: True
         """
         if bom_line:
             product = bom_line[0].product_id
@@ -328,16 +278,24 @@ class SaleOrder(models.Model):
             vals = self.prepare_val_for_stock_move_ept(product, product_qty, product_uom, vendor_location,
                                                        customers_location, order_line, bom_line)
             stock_move = self.env['stock.move'].create(vals)
-            stock_move._action_assign()
-            stock_move._set_quantity_done(product_qty)
-            stock_move._action_done()
+            stock_move.sudo()._action_assign()
+            stock_move.sudo()._set_quantity_done(product_qty)
+            stock_move.sudo().picked = True
+            stock_move.with_context(is_connector=True)._action_done()
         return True
 
     def prepare_val_for_stock_move_ept(self, product, product_qty, product_uom, vendor_location, customers_location,
                                        order_line, bom_line):
-        """ This method is used to prepare vals for the stock move.
-            @author: Haresh Mori @Emipro Technologies Pvt. Ltd on date 21 September 2021 .
-            Task_id: 178058
+        """
+        This method is used to prepare vals for the stock move
+        :param: product: product.product()
+        :param: product_qty: product qty
+        :param: product_uom: uom.uom()
+        :param: vendor_location: stock.location() - vendor location
+        :param: customers_location: stock.location() - customer location
+        :param: order_line: sale.order.line()
+        :param: bom_line: bom line
+        :return: dict {}
         """
         location_id = vendor_location.id if vendor_location else self.warehouse_id.lot_stock_id.id
         if order_line.warehouse_id_ept:
@@ -351,7 +309,8 @@ class SaleOrder(models.Model):
             'location_id': location_id,
             'location_dest_id': customers_location.id,
             'state': 'confirmed',
-            'sale_line_id': order_line.id
+            'sale_line_id': order_line.id,
+            'origin': self.name,
         }
         if bom_line:
             vals.update({'bom_line_id': bom_line[0].id})
@@ -359,12 +318,11 @@ class SaleOrder(models.Model):
 
     def prepare_order_note_with_customer_note(self, vals):
         """
-        This method use for concate customer note and odoo default set note.
-        :param vals:
-        :return: vals
-        @author: Nilam Kubavat on Date 03-July-2023 for Task_id:233459
+        This method use for concat customer note and odoo default set note.
+        :param vals: dict {}
+        :return: dict {}
         """
-        note_value = vals.get('note', '') if vals.get('note', False) else ''  # Get the current note value, default to an empty string if it's None
+        note_value = vals.get('note', '')  # Get the current note value, default to an empty string if it's None
         invoice_terms = self.env.company.invoice_terms or ''  # Get invoice terms, default to an empty string if it's None
         if note_value and invoice_terms:  # Only add a space if both values are non-empty
             vals['note'] = f'{note_value} {invoice_terms}'.strip()

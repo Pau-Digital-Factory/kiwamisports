@@ -17,7 +17,9 @@ class CommonLogBookEpt(models.Model):
                                ('magento_ept', 'Magento Connector'),
                                ('bol_ept', 'Bol Connector'),
                                ('ebay_ept', 'Ebay Connector'),
-                               ('amz_vendor_central', 'Amazon Vendor Central')])
+                               ('amz_vendor_central', 'Amazon Vendor Central'),
+                               ('tpw_ept', '3PL Connector'),
+                               ('walmart_ept', 'Walmart Connector')])
     active = fields.Boolean(default=True)
     log_lines = fields.One2many('common.log.lines.ept', 'log_book_id')
     message = fields.Text()
@@ -27,36 +29,25 @@ class CommonLogBookEpt(models.Model):
     file_name = fields.Char()
     sale_order_id = fields.Many2one(comodel_name='sale.order', string='Sale Order')
 
-    @api.model
-    def create(self, vals):
-        """ To generate a sequence for a common logbook.
-            @author: Haresh Mori @Emipro Technologies Pvt. Ltd on date 23 September 2021 .
-            Task_id: 178058
+    @api.model_create_multi
+    def create(self, vals_list):
         """
-        seq = self.env['ir.sequence'].next_by_code('common.log.book.ept') or '/'
-        vals['name'] = seq
-        return super(CommonLogBookEpt, self).create(vals)
-
-    def create_common_log_book(self, process_type, instance_field, instance, model_id, module):
-        """ This method used to create a log book record.
-            @param process_type: Generally, the process type value is 'import' or 'export'.
-            @param : Name of the field which relates to the instance field for different apps.
-            @param instance: Record of instance.
-            @param model_id: Model related to log, like create a sales order related log then pass the sales order
-            model.
-            @param module: For which App this log book is belongs to.
-            @return: Record of log book.
-            @author: Haresh Mori @Emipro Technologies Pvt. Ltd on date 23 September 2021 .
-            Task_id:
+        Inherited this method for generate a sequence for a common logbook.
+        :param: vals_list: list of dict{}
+        :return: common.log.book.ept()
         """
-        log_book_id = self.create({"type": process_type,
-                                   "module": module,
-                                   instance_field: instance.id,
-                                   "model_id": model_id,
-                                   "active": True})
-        return log_book_id
+        for vals in vals_list:
+            seq = self.env['ir.sequence'].next_by_code('common.log.book.ept') or '/'
+            vals['name'] = seq
+        return super(CommonLogBookEpt, self).create(vals_list)
 
     def create_common_log_book_ept(self, **kwargs):
+        """
+        Define this method for create a log book as per given log book
+        record values.
+        :param: kwargs: dict {}
+        :return: common.log.book.ept()
+        """
         values = {}
         for key, value in kwargs.items():
             if hasattr(self, key):
@@ -67,5 +58,10 @@ class CommonLogBookEpt(models.Model):
         return self.create(values)
 
     def _get_model_id(self, model_name):
+        """
+        Define this method for get ir.model() record by using model name.
+        :param: model_name: model name - str
+        :return: ir.model()
+        """
         model_id = self.env['ir.model']
         return model_id.sudo().search([('model', '=', model_name)])

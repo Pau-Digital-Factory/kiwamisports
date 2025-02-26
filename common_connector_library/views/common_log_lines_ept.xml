@@ -9,13 +9,8 @@
                 <field name="order_ref"/>
                 <field name="default_code"/>
                 <field name="model_id"/>
-                <field name="log_book_id"/>
-
                 <filter name="filter_write_date" date="write_date" string="Update Date"/>
-
                 <group expand="0" string="Group By...">
-                    <filter name="groupby_log_book" string="Log Book" icon="terp-personal"
-                            context="{'group_by': 'log_book_id'}"/>
                     <filter name="groupby_model" string="Model" icon="terp-personal"
                             context="{'group_by': 'model_id'}"/>
                     <filter name="groupby_write_date" string="Update Date"
@@ -30,14 +25,13 @@
         <field name="name">common.log.line.tree.view</field>
         <field name="model">common.log.lines.ept</field>
         <field name="arch" type="xml">
-            <tree create="false" default_order="write_date desc" sample="1">
-                <field name="log_book_id"/>
+            <list create="false" default_order="write_date desc" sample="1">
                 <field name="order_ref"/>
                 <field name="default_code"/>
                 <field name="message"/>
                 <field name="model_id"/>
                 <field name="write_date"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -47,14 +41,11 @@
         <field name="arch" type="xml">
             <form create="false" edit="false">
                 <sheet>
-                    <group>
-                        <h3>
-                            <field name="message" readonly="1"/>
-                        </h3>
-                    </group>
+                    <h3>
+                        <field name="message" readonly="1"/>
+                    </h3>
                     <group>
                         <group>
-                            <field name="log_book_id" readonly="1"/>
                             <field name="model_id" readonly="1"/>
                             <field name="write_date"/>
                         </group>
@@ -64,6 +55,7 @@
                         </group>
                     </group>
                 </sheet>
+                <chatter/>
             </form>
         </field>
     </record>

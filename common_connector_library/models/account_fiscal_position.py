@@ -14,7 +14,11 @@ class AccountFiscalPosition(models.Model):
     def _get_fpos_by_region(self, country_id=False, state_id=False, zipcode=False, vat_required=False):
         """
         Inherited this method for selecting fiscal position based on warehouse (origin country).
-        Migration done by Haresh Mori on September 2021
+        :param: res.country() id
+        :param: res.state() id
+        :param: zip code
+        :param: True/False
+        :return: account.fiscal.position()
         """
         origin_country_id = self._context.get('origin_country_ept', False)
         if not origin_country_id:
@@ -28,7 +32,6 @@ class AccountFiscalPosition(models.Model):
                                                        vat_required):
         """
         Search fiscal position based on origin country
-        Updated by twinkalc on 11 sep 2020 - [changes related to the pass domain of company and is_amazon_fpos]
         [UPD] Check all base conditions for search fiscal position as per base and with origin country.
         :param origin_country_id: Warehouse-partner-country_id OR Warehouse-company-partner-country_id or False
         :param country_id: delivery country id
@@ -36,7 +39,6 @@ class AccountFiscalPosition(models.Model):
         :param zipcode: delivery zip code
         :param vat_required: True / False
         :return: fpos object
-        Migration done by Haresh Mori on September 2021
         """
         if not country_id:
             return False

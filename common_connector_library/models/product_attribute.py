@@ -14,7 +14,6 @@ class ProductAttribute(models.Model):
         :param create_variant: when variant create
         :param auto_create: True or False
         :return: attributes
-        Migration done by Haresh Mori on September 2021
         """
         attributes = self.search([('name', '=ilike', attribute_string),
                                   ('create_variant', '=', create_variant)], limit=1)

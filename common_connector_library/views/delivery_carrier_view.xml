@@ -6,7 +6,8 @@
         <field name="inherit_id" ref="delivery.view_delivery_carrier_form"/>
         <field name="arch" type="xml">
             <field name="amount" position="after">
-                <field name="on_time_shipping" class="oe_inline"/>
+                <field name="on_time_shipping" class="oe_inline" style="vertical-align:baseline"/>
+                days
             </field>
         </field>
     </record>

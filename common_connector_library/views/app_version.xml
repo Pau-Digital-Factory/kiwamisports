@@ -4,13 +4,13 @@
         <field name="name">customer.app.version.detail.tree.view</field>
         <field name="model">emipro.app.version.details</field>
         <field name="arch" type="xml">
-            <tree string="Version Details" create="0" edit="0" default_order="id desc">
+            <list string="Version Details" create="0" edit="0" default_order="id desc">
                 <field name="module_id"/>
                 <field name="version"/>
                 <field name="is_latest"/>
                 <field name="upgrade_require"/>
                 <field name="is_notify"/>
-            </tree>
+            </list>
         </field>
     </record>
 

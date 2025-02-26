@@ -3,7 +3,6 @@
 from . import res_partner
 from . import sale_workflow_process
 from . import sale_order
-from . import sale_order_line
 from . import product_product
 from . import stock_quant
 from . import stock_quant_package
@@ -23,4 +22,4 @@ from . import account_bank_statement_line
 from . import queue_line_dashboard
 from . import digest
 from . import delivery_carrier
-from . import app_version
+from . import sale_order_line
