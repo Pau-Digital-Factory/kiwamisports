@@ -24,14 +24,9 @@ class SaleReportv(models.Model):
     tagg = fields.Char('Etiquettes', readonly=True)
     
 
-    def _query(self, with_clause='', fields=None, groupby='', from_clause=''):
-        if fields is None:
-            fields = {}
-    
-        fields['tagg'] = ", s.tagg as tagg"
-        groupby += ', s.tagg'
-        
-        return super()._query(with_clause, fields, groupby, from_clause)
+    def _query(self):
+        query = super()._query()
+        return query.replace("SELECT", "SELECT s.tagg AS tagg,")
 
 
 
