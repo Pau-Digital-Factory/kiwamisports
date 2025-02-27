@@ -28,9 +28,7 @@ class ShopifyProductDataQueue(models.Model):
     product_data_queue_lines = fields.One2many("shopify.product.data.queue.line.ept",
                                                "product_data_queue_id",
                                                string="Product Queue Lines")
-    common_log_book_id = fields.Many2one("common.log.book.ept",
-                                         help="""Related Log book which has all logs for current queue.""")
-    common_log_lines_ids = fields.One2many(related="common_log_book_id.log_lines")
+    common_log_lines_ids = fields.One2many("common.log.lines.ept", compute="_compute_log_lines")
     queue_line_total_records = fields.Integer(string="Total Records",
                                               compute="_compute_queue_line_record")
     queue_line_draft_records = fields.Integer(string="Draft Records",
@@ -50,6 +48,11 @@ class ShopifyProductDataQueue(models.Model):
     queue_process_count = fields.Integer(string="Queue Process Times",
                                          help="it is used know queue how many time processed")
     skip_existing_product = fields.Boolean(string="Do Not Update Existing Products")
+
+    @api.depends('product_data_queue_lines.common_log_lines_ids')
+    def _compute_log_lines(self):
+        for line in self:
+            line.common_log_lines_ids = line.product_data_queue_lines.common_log_lines_ids
 
     @api.depends("product_data_queue_lines.state")
     def _compute_queue_line_record(self):
@@ -81,17 +84,18 @@ class ShopifyProductDataQueue(models.Model):
             else:
                 record.state = "partially_completed"
 
-    @api.model
+    @api.model_create_multi
     def create(self, vals):
         """This method used to create a sequence for product queue.
             @author: Haresh Mori @Emipro Technologies Pvt. Ltd on date 05/10/2019.
         """
-        sequence_id = self.env.ref("shopify_ept.seq_product_queue_data").ids
-        if sequence_id:
-            record_name = self.env["ir.sequence"].browse(sequence_id).next_by_id()
-        else:
-            record_name = "/"
-        vals.update({"name": record_name or ""})
+        for val in vals:
+            sequence_id = self.env.ref("shopify_ept.seq_product_queue_data").ids
+            if sequence_id:
+                record_name = self.env["ir.sequence"].browse(sequence_id).next_by_id()
+            else:
+                record_name = "/"
+            val.update({"name": record_name or ""})
         return super(ShopifyProductDataQueue, self).create(vals)
 
     def create_product_queues(self, instance, results, skip_existing_product, template_ids=""):
@@ -104,13 +108,13 @@ class ShopifyProductDataQueue(models.Model):
         @author: Maulik Barad on Date 28-Aug-2020.
         """
         product_queue_list = []
-        product_queue = False
         order_data_queue_line = self.env['shopify.order.data.queue.line.ept']
         count = 125
+        product_queue = False
         for result in results:
             if count == 125:
                 product_queue = self.shopify_create_product_queue(instance, skip_existing_product=skip_existing_product)
-                message = "Product Queue Created", product_queue.name
+                message = "Product Queue Created %s" % ', '.join(product_queue.mapped('name'))
                 if self.env.context.get('queue_created_by'):
                     order_data_queue_line.generate_simple_notification(message)
                 self._cr.commit()
@@ -150,7 +154,7 @@ class ShopifyProductDataQueue(models.Model):
             if product_queue_list:
                 results = True
         else:
-            results = self.find_shopify_draft_prodcut_for_import('active', import_based_on, from_date, to_date)
+            results = self.api_call_to_get_product_ept('active', import_based_on, from_date, to_date)
             product_queue_list += self.create_product_queues(instance, results, skip_existing_product)
 
             if len(results) >= 250:
@@ -159,7 +163,7 @@ class ShopifyProductDataQueue(models.Model):
                 instance.shopify_last_date_product_import = datetime.now()
 
             if is_import_draft_product:
-                results = self.find_shopify_draft_prodcut_for_import('draft', import_based_on, from_date, to_date)
+                results = self.api_call_to_get_product_ept('draft', import_based_on, from_date, to_date)
                 product_queue_list += self.create_product_queues(instance, results, skip_existing_product)
 
                 if len(results) >= 250:
@@ -167,19 +171,20 @@ class ShopifyProductDataQueue(models.Model):
         if not results:
             _logger.info("No Products found to be imported from Shopify.")
             return False
-
+        if product_queue_list:
+            product_queue_cron = self.env.ref("shopify_ept.process_shopify_product_queue")
+            if not product_queue_cron.active:
+                _logger.info("Active the Order data process queue cron job")
+                product_queue_cron.write(
+                    {'active': True, 'nextcall': datetime.now() + timedelta(seconds=120)})
         return product_queue_list
 
-    def find_shopify_draft_prodcut_for_import(self, product_status, import_based_on, from_date, to_date):
-        """
-        This method used to find product in shopify store which is in draft state.
-        @author: Yagnik Joshi on Date 29-November-2020.
-        """
+    def api_call_to_get_product_ept(self, status, import_based_on, from_date, to_date):
         if import_based_on == "create_date":
-            results = shopify.Product().find(status=product_status, created_at_min=from_date, created_at_max=to_date,
+            results = shopify.Product().find(status=status, created_at_min=from_date, created_at_max=to_date,
                                              limit=250)
         else:
-            results = shopify.Product().find(status=product_status, updated_at_min=from_date, updated_at_max=to_date,
+            results = shopify.Product().find(status=status, updated_at_min=from_date, updated_at_max=to_date,
                                              limit=250)
         return results
 
@@ -274,10 +279,11 @@ class ShopifyProductDataQueue(models.Model):
         image_import_state = 'done'
         if instance.sync_product_with_images:
             image_import_state = 'pending'
-        existing_product_data_queue = product_data_queue_line_obj.search(
+
+        existing_product_data = product_data_queue_line_obj.search(
             [('product_data_id', '=', result.get('id')), ('shopify_instance_id', '=', instance.id),
              ('state', 'in', ['draft', 'failed']), ('product_data_queue_id.is_action_require', '=', False)])
-        existing_product_queue = existing_product_data_queue.product_data_queue_id
+        existing_product_queue = existing_product_data.product_data_queue_id
         product_queue_line_vals = {"product_data_id": result.get("id"),
                                    "shopify_instance_id": instance and instance.id or False,
                                    "name": result.get("title"),
@@ -285,10 +291,12 @@ class ShopifyProductDataQueue(models.Model):
                                    "product_data_queue_id": product_data_queue and product_data_queue.id or False,
                                    "shopify_image_import_state": image_import_state,
                                    }
-        if not existing_product_data_queue:
+        if not existing_product_data:
             product_data_queue_line_obj.create(product_queue_line_vals)
         else:
-            existing_product_data_queue.write({"synced_product_data": data, 'state': 'draft'})
+            existing_product_data.write({"synced_product_data": data})
+            if existing_product_queue.state == 'failed':
+                existing_product_queue.update({'state': 'draft'})
             if not existing_product_queue.product_data_queue_lines:
                 existing_product_queue.unlink()
         return True
@@ -301,7 +309,7 @@ class ShopifyProductDataQueue(models.Model):
         @author:Bhavesh Jadav 13/12/2019
         """
         mail_activity_obj = self.env['mail.activity']
-        common_log_book_obj = self.env['common.log.book.ept']
+        common_log_line_obj = self.env['common.log.lines.ept']
         queue_id, model_id, data_ref, note = self.assign_queue_model_date_ref_note(from_sale, queue_line)
         activity_type_id = queue_id and queue_id.shopify_instance_id.shopify_activity_type_id.id
         date_deadline = datetime.strftime(
@@ -315,7 +323,7 @@ class ShopifyProductDataQueue(models.Model):
                      ('activity_type_id', '=', activity_type_id)])
                 duplicate_note = mail_activity.filtered(lambda x: x.note == note_2)
                 if not mail_activity or not duplicate_note:
-                    vals = common_log_book_obj.prepare_vals_for_schedule_activity(activity_type_id, note, queue_id,
+                    vals = common_log_line_obj.prepare_vals_for_schedule_activity(activity_type_id, note, queue_id,
                                                                                   user_id, model_id.id, date_deadline)
                     try:
                         mail_activity_obj.create(vals)
@@ -357,7 +365,7 @@ class ShopifyProductDataQueue(models.Model):
         product_data_queue = self.search([("created_by", "=", "webhook"), ("state", "=", "draft"),
                                           ("shopify_instance_id", "=", instance.id), ('is_action_require', '=', False)])
         if product_data_queue:
-            message = "Product %s added into Queue %s." % (product_data.get("id"), product_data_queue.name)
+            message = "Product added into Queue %s." % (product_data_queue.name)
         else:
             product_data_queue = self.shopify_create_product_queue(instance, "webhook")
             message = "Product Queue %s created." % product_data_queue.name
@@ -368,12 +376,15 @@ class ShopifyProductDataQueue(models.Model):
         if len(self.product_data_queue_lines) == 50:
             product_data_queue.product_data_queue_lines.process_product_queue_line_data()
             _logger.info("Processed product %s of %s via Webhook Successfully.", product_data.get("id"), instance.name)
-        if not product_data_queue.product_data_queue_lines:
-            product_data_queue.unlink()
         return True
 
     @api.model
     def retrieve_dashboard(self, *args, **kwargs):
+        """
+        :param args:
+        :param kwargs:
+        :return:
+        """
         dashboard = self.env['queue.line.dashboard']
         return dashboard.get_data(table='shopify.product.data.queue.line.ept', )
 
@@ -392,4 +403,4 @@ class ShopifyProductDataQueue(models.Model):
                 from_date = to_date - timedelta(30)
             self.shopify_create_product_data_queue(instance, import_products_based_on_date, from_date, to_date,
                                                    skip_existing_product)
-            return True
+        return True

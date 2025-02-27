@@ -4,14 +4,14 @@
     <record id="action_common_log_book_ept_tree" model="ir.ui.view">
         <field name="name">common.log.book.ept.view.tree</field>
         <field name="model">common.log.book.ept</field>
-        <field name="type">tree</field>
+        <field name="type">list</field>
         <field name="arch" type="xml">
-            <tree string="Common Log Book" create="false">
+            <list string="Common Log Book" create="false">
                 <field name="name"/>
                 <field name="type"/>
                 <field name="module"/>
                 <field name="create_date"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -42,7 +42,7 @@
                     <notebook>
                         <page string="Common Logs">
                             <field name="log_lines" readonly="True">
-                                <tree create="false" editable="bottom" decoration-danger="log_line_type=='fail'"
+                                <list create="false" editable="bottom" decoration-danger="log_line_type=='fail'"
                                       decoration-success="log_line_type=='success'">
                                     <field name="product_id"/>
                                     <field name="order_ref"/>
@@ -50,18 +50,13 @@
                                     <field name="message"/>
                                     <field name="model_id"/>
                                     <field name="res_id"/>
-                                    <field name="log_line_type" invisible="1"/>
-                                </tree>
+                                    <field name="log_line_type" column_invisible="True"/><!-- Reason for making this field invisible beacuse this field is used in other view field as reference or condition.-->
+                                </list>
                             </field>
                         </page>
                     </notebook>
                 </sheet>
-                <div class="oe_chatter">
-                    <field name="message_follower_ids" widget="mail_followers"
-                           groups="base.group_user"/>
-                    <field name="message_ids" widget="mail_thread"/>
-                    <field name="activity_ids"/>
-                </div>
+                <chatter/>
             </form>
         </field>
     </record>
@@ -77,9 +72,9 @@
         </field>
     </record>
 
-    <menuitem id="menu_log_book_ept" name="Log Book" parent="sale.menu_sale_config"/>
+<!--    <menuitem id="menu_log_book_ept" name="Log Book" parent="sale.menu_sale_config"/>-->
 
-    <menuitem id="mainmenu_common_log_book" name="Common Logs" action="action_common_log_book_ept"
-              parent="menu_log_book_ept" sequence="21"/>
+<!--    <menuitem id="mainmenu_common_log_book" name="Common Logs" action="action_common_log_book_ept"-->
+<!--              parent="menu_log_book_ept" sequence="21"/>-->
 
 </odoo>

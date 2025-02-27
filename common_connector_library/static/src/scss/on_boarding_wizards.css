@@ -2,7 +2,7 @@
     border-radius: 8px !important;
 }
 .on_board_custom_form .o_input, .on_board_custom_form .on_board_field {
-    color: #000;
+    /*color: #000;*/
     border: 1px solid #dadada;
     border-radius: 3px;
     padding: 5px 10px;
@@ -10,7 +10,7 @@
     text-overflow: ellipsis;
     overflow-x: hidden;
 }
-.on_board_custom_form .o_form_view .o_group .o_group_col_6 {
+.on_board_custom_form .o_form_nosheet .o_group .o_group_col_6 {
     /*width: 48%;
     margin: 5px !important;*/
     width: 46%;
@@ -56,7 +56,7 @@ a.o_onboard_doc_link a:hover {
     position: absolute;
 }
 label.o_onboard_label {
-    color: #383838;
+    /*color: #383838;*/
     vertical-align: middle;
 }
 select.o_field_widget.o_onboard_select {
@@ -166,7 +166,7 @@ div.o_onboard_boolean_toggle.custom-control.custom-checkbox > label.custom-contr
     margin-bottom: 5px !important;
     margin-top: 5px !important;
 }
-div.on_board_custom_form > main > div.o_action > div.o_content > div.o_form_view.o_xxl_form_view {
+div.on_board_custom_form > main > div.o_action > div.o_content > div.o_form_nosheet.o_xxl_form_view {
     padding: 0px !important;
 }
 div.o_onboard_input > button.btn-secondary, .o_onboard_cron_user > button.btn-secondary{
@@ -308,7 +308,7 @@ div.o_onboard_m_p {
     -webkit-text-security: disc;
     color: black;
     line-height: 24px;
-    height: 34px;
+    height: 36px;
     font-size: 20px;
     font-weight: 700;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
@@ -325,4 +325,8 @@ div.o_onboard_m_p {
 /*Hide the close button form only magento onboarding, shopify and woo onboarding panel*/
 .magento_onboarding_ept .common_close_button_hide_ept,.woo_onboarding_ept .common_close_button_hide_ept,.shopify_onboarding_ept .common_close_button_hide_ept {
     display: none;
+}
+
+.o_custom_notebook_headers {
+    background-color: #e8eeef !important;
 }

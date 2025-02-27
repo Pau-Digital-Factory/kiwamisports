@@ -80,20 +80,22 @@ class ShopifyWebhookEpt(models.Model):
                 instance.write({'create_shopify_orders_webhook': False})
                 _logger.info("Inactive create_shopify_orders_webhook from the %s instance", instance.name)
 
-    @api.model
+    @api.model_create_multi
     def create(self, values):
         """
         This method is used to create a webhook.
         @author: Angel Patel@Emipro Technologies Pvt. Ltd.
         """
-        available_webhook = self.search(
-            [('instance_id', '=', values.get('instance_id')), ('webhook_action', '=', values.get('webhook_action'))],
-            limit=1)
-        if available_webhook:
-            raise UserError(_('Webhook is already created with the same action.'))
+        result = self.env['shopify.webhook.ept']
+        for val in values:
+            available_webhook = self.search(
+                [('instance_id', '=', val.get('instance_id')), ('webhook_action', '=', val.get('webhook_action'))],
+                limit=1)
+            if available_webhook:
+                raise UserError(_('Webhook is already created with the same action.'))
 
-        result = super(ShopifyWebhookEpt, self).create(values)
-        result.get_webhook()
+            result = super(ShopifyWebhookEpt, self).create(val)
+            result.get_webhook()
         return result
 
     def get_route(self):

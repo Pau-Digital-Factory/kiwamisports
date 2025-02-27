@@ -41,12 +41,15 @@ class ShopifyProductDataQueueLineEpt(models.Model):
         product_data_queue_ids = []
         product_data_queue_obj = self.env["shopify.product.data.queue.ept"]
 
-        query = """select queue.id
-                from shopify_product_data_queue_line_ept as queue_line
-                inner join shopify_product_data_queue_ept as queue on queue_line.product_data_queue_id = queue.id
-                where queue_line.state='draft' and queue.is_action_require = 'False'
-                ORDER BY queue_line.create_date ASC"""
-        self._cr.execute(query)
+        query = """
+            SELECT queue.id
+            FROM shopify_product_data_queue_line_ept AS queue_line
+            INNER JOIN shopify_product_data_queue_ept AS queue ON queue_line.product_data_queue_id = queue.id
+            WHERE queue_line.state = %s AND queue.is_action_require = %s
+            ORDER BY queue_line.create_date ASC
+        """
+        params = ('draft', 'False')
+        self._cr.execute(query, params)
         product_data_queue_list = self._cr.fetchall()
         if product_data_queue_list:
             for result in product_data_queue_list:
@@ -65,8 +68,7 @@ class ShopifyProductDataQueueLineEpt(models.Model):
         @author: Haresh Mori @Emipro Technologies Pvt. Ltd on date 19 October 2020 .
         Task_id: 167537
         """
-        ir_model_obj = self.env["ir.model"]
-        common_log_book_obj = self.env["common.log.book.ept"]
+        common_log_line_obj = self.env["common.log.lines.ept"]
         start = time.time()
         product_queue_process_cron_time = queues.shopify_instance_id.get_shopify_cron_execution_time(
             "shopify_ept.process_shopify_product_queue")
@@ -76,14 +78,15 @@ class ShopifyProductDataQueueLineEpt(models.Model):
 
             # For counting the queue crashes and creating schedule activity for the queue.
             queue.queue_process_count += 1
+            #queue.queue_process_count = 4
             if queue.queue_process_count > 3:
                 queue.is_action_require = True
                 note = "<p>Need to process this product queue manually.There are 3 attempts been made by " \
                        "automated action to process this queue,<br/>- Ignore, if this queue is already processed.</p>"
                 queue.message_post(body=note)
                 if queue.shopify_instance_id.is_shopify_create_schedule:
-                    model_id = ir_model_obj.search([("model", "=", "shopify.product.data.queue.ept")]).id
-                    common_log_book_obj.create_crash_queue_schedule_activity(queue, model_id, note)
+                    common_log_line_obj.create_crash_queue_schedule_activity(queue, "shopify.product.data.queue.ept",
+                                                                             note)
                 return True
 
             self._cr.commit()
@@ -98,19 +101,13 @@ class ShopifyProductDataQueueLineEpt(models.Model):
         @author: Maulik Barad on Date 31-Aug-2020.
         """
         shopify_product_template_obj = self.env["shopify.product.template.ept"]
-        common_log_book_obj = self.env["common.log.book.ept"]
-        model_id = common_log_book_obj.log_lines.get_model_id("shopify.product.template.ept")
 
         queue_id = self.product_data_queue_id if len(self.product_data_queue_id) == 1 else False
 
         if queue_id:
             shopify_instance = queue_id.shopify_instance_id
             if shopify_instance.active:
-                if queue_id.common_log_book_id:
-                    log_book_id = queue_id.common_log_book_id
-                else:
-                    log_book_id = common_log_book_obj.shopify_create_common_log_book("import", shopify_instance,
-                                                                                     model_id)
+                _logger.info("Instance %s is not active.", shopify_instance.name)
 
                 self.env.cr.execute(
                     """update shopify_product_data_queue_ept set is_process_queue = False where is_process_queue = True""")
@@ -118,13 +115,9 @@ class ShopifyProductDataQueueLineEpt(models.Model):
                 for product_queue_line in self:
                     shopify_product_template_obj.shopify_sync_products(product_queue_line,
                                                                        False,
-                                                                       shopify_instance,
-                                                                       log_book_id)
+                                                                       shopify_instance)
                     queue_id.is_process_queue = True
                     self._cr.commit()
-                queue_id.common_log_book_id = log_book_id
-                if queue_id.common_log_book_id and not queue_id.common_log_book_id.log_lines:
-                    queue_id.common_log_book_id.unlink()
         return True
 
     def replace_product_response(self):
@@ -135,6 +128,7 @@ class ShopifyProductDataQueueLineEpt(models.Model):
         """
         instance = self.shopify_instance_id
         if instance.active:
+            _logger.info("Instance %s is not active.", instance.name)
             instance.connect_in_shopify()
             if self.product_data_id:
                 result = shopify.Product().find(self.product_data_id)
@@ -179,9 +173,13 @@ class ShopifyProductDataQueueLineEpt(models.Model):
             @author: Haresh Mori @Emipro Technologies Pvt. Ltd on date 7 December 2020 .
             Task_id: 167684 - Changes for image import explicitly.
         """
-        query = """select id from shopify_product_data_queue_line_ept
-                    where state='done' and shopify_image_import_state = 'pending'
-                    ORDER BY create_date ASC"""
-        self._cr.execute(query)
+        query = """
+            SELECT id
+            FROM shopify_product_data_queue_line_ept
+            WHERE state = %s AND shopify_image_import_state = %s
+            ORDER BY create_date ASC
+        """
+        params = ('done', 'pending')
+        self._cr.execute(query, params)
         product_queue_lines = self._cr.fetchall()
         return product_queue_lines

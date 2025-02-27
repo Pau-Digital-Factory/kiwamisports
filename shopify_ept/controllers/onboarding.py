@@ -31,12 +31,13 @@ class ShopifyOnboarding(http.Controller):
         if request.env.uid not in shopify_manager_group.users.ids:
             return {}
         return {
-            'html': request.env.ref('shopify_ept.shopify_instances_onboarding_panel_ept')._render({
-                'company': company,
-                'toggle_company_id': company.id,
-                'hide_panel': hide_panel,
-                'btn_value': btn_value,
-                'state': company.get_and_update_shopify_instances_onboarding_state(),
-                'is_button_active': company.is_create_shopify_more_instance
-            })
+                # 'html': request.env['ir.qweb']._render(
+                #     'shopify_ept.shopify_instances_onboarding_panel_ept', {
+                #         'company': company,
+                #         'toggle_company_id': company.id,
+                #         'hide_panel': hide_panel,
+                #         'btn_value': btn_value,
+                #         'state': company.get_and_update_shopify_instances_onboarding_state(),
+                #         'is_button_active': company.is_create_shopify_more_instance
+                #     })
         }

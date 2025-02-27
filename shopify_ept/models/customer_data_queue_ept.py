@@ -22,14 +22,17 @@ class ShopifyCustomerDataQueueEpt(models.Model):
     fail_state_count = fields.Integer(compute="_compute_total_record_count")
     done_state_count = fields.Integer(compute="_compute_total_record_count")
     cancel_state_count = fields.Integer(compute="_compute_total_record_count")
-    common_log_book_id = fields.Many2one("common.log.book.ept", string="Log Book",
-                                         help="""Related Log book which has all logs for current queue.""")
-    common_log_lines_ids = fields.One2many(related="common_log_book_id.log_lines")
+    common_log_lines_ids = fields.One2many("common.log.lines.ept", compute="_compute_log_lines")
     record_created_from = fields.Selection([("webhook", "From Webhook"), ("import_process", "From Import Process")])
     is_process_queue = fields.Boolean("Is Processing Queue", default=False)
     running_status = fields.Char(default="Running...")
     is_action_require = fields.Boolean(default=False)
     queue_process_count = fields.Integer(help="It is used for know, how many time queue is processed.")
+
+    @api.depends('synced_customer_queue_line_ids.common_log_lines_ids')
+    def _compute_log_lines(self):
+        for line in self:
+            line.common_log_lines_ids = line.synced_customer_queue_line_ids.common_log_lines_ids
 
     @api.depends("synced_customer_queue_line_ids.state")
     def _compute_total_record_count(self):
@@ -63,15 +66,16 @@ class ShopifyCustomerDataQueueEpt(models.Model):
             else:
                 record.state = "partially_completed"
 
-    @api.model
+    @api.model_create_multi
     def create(self, vals):
         """
         This method used to create a sequence of customer queue.
         @author: Angel Patel @Emipro Technologies Pvt. Ltd on date 25/10/2019.
         :Task ID: 157065
         """
-        seq = self.env["ir.sequence"].next_by_code("shopify.customer.data.queue.ept") or "/"
-        vals.update({"name": seq or ""})
+        for val in vals:
+            seq = self.env["ir.sequence"].next_by_code("shopify.customer.data.queue.ept") or "/"
+            val.update({"name": seq or ""})
         return super(ShopifyCustomerDataQueueEpt, self).create(vals)
 
     @api.model
@@ -91,10 +95,5 @@ class ShopifyCustomerDataQueueEpt(models.Model):
 
     @api.model
     def retrieve_dashboard(self, *args, **kwargs):
-        """
-        :param args:
-        :param kwargs:
-        :return:
-        """
         dashboard = self.env['queue.line.dashboard']
         return dashboard.get_data(table='shopify.customer.data.queue.line.ept')

@@ -49,7 +49,7 @@ class ShopifyOrderDataQueueLineEpt(models.Model):
         # get transaction data call api
         result = []
         transactions = []
-        if len(order_dict.get('payment_gateway_names')) > 1:
+        if len(order_dict.get('payment_gateway_names')) >= 1:
             try:
                 transactions = shopify.Transaction().find(order_id=order_dict.get('id'))
             except ClientError as error:
@@ -57,7 +57,6 @@ class ShopifyOrderDataQueueLineEpt(models.Model):
                            "response") and error.response.code == 429 and error.response.msg == "Too Many Requests":
                     time.sleep(int(float(error.response.headers.get('Retry-After', 5))))
                     transactions = shopify.Transaction().find(order_id=order_dict.get('id'))
-
             for transaction in transactions:
                 transaction_dict = transaction.to_dict()
                 result.append(transaction_dict)
@@ -69,11 +68,10 @@ class ShopifyOrderDataQueueLineEpt(models.Model):
         # new_order_data.update({'fulfillment_data': fulfillment_data})
 
         order_data = json.dumps(order_data)
-
-        existing_order_data = order_data_queue_line_obj.search(
-            [('shopify_order_id', '=', order_dict.get("id")), ('shopify_instance_id', '=', instance.id),
+        existing_data = order_data_queue_line_obj.search(
+            [('shopify_order_id', '=', order_dict.get('id')), ('shopify_instance_id', '=', instance.id),
              ('state', 'in', ['draft', 'failed']), ('shopify_order_data_queue_id.is_action_require', '=', False)])
-        existing_queue = existing_order_data.shopify_order_data_queue_id
+        existing_queue = existing_data.shopify_order_data_queue_id
         order_queue_line_vals = {"shopify_order_id": order_dict.get("id", False),
                                  "shopify_instance_id": instance.id,
                                  "order_data": order_data,
@@ -81,12 +79,13 @@ class ShopifyOrderDataQueueLineEpt(models.Model):
                                  "customer_name": customer_name,
                                  "customer_email": customer_email,
                                  "shopify_order_data_queue_id": order_queue_id.id}
-        if not existing_order_data:
+        if not existing_data:
             self.create(order_queue_line_vals)
         else:
-            existing_order_data.write({"order_data": order_data,
-                                       "state": 'draft',
-                                       'shopify_order_data_queue_id': existing_queue.id})
+            order_queue_line_vals.update({'shopify_order_data_queue_id':existing_queue.id})
+            if existing_data.state == 'failed':
+                order_queue_line_vals.update({'state':'draft'})
+            existing_data.write(order_queue_line_vals)
             if not existing_queue.order_data_queue_line_ids:
                 existing_queue.unlink()
         return True
@@ -98,6 +97,7 @@ class ShopifyOrderDataQueueLineEpt(models.Model):
         Task Id : 157350
         """
         count = 0
+        order_queue = False
         need_to_create_queue = True
         orders_data.reverse()
         order_queue_list = []
@@ -122,7 +122,7 @@ class ShopifyOrderDataQueueLineEpt(models.Model):
             if need_to_create_queue:
                 order_queue = self.shopify_create_order_queue(instance, queue_type, created_by)
                 order_queue_list.append(order_queue.id)
-                message = "Order Queue %s created." % order_queue.name
+                message = "Order Queue Created %s" % ', '.join(order_queue.mapped('name'))
                 if self.env.context.get('queue_created_by'):
                     self.generate_simple_notification(message)
                 self._cr.commit()
@@ -131,10 +131,10 @@ class ShopifyOrderDataQueueLineEpt(models.Model):
 
             data = json.loads(json.dumps(order))
             if instance.import_buy_with_prime_shopify_order:
-                queue_type_is_buy_with_prime = any(buy_with_prime_tag.name in data.get("tags") for buy_with_prime_tag in
-                                                   instance.buy_with_prime_tag_ids)
+                queue_type_is_buy_with_prime = any(
+                    buy_with_prime_tag.name in data.get("tags") for buy_with_prime_tag in
+                    instance.buy_with_prime_tag_ids)
             data.update({'fulfillment_data': fulfillment_data, "buy_with_prime": queue_type_is_buy_with_prime})
-
             customer_name, customer_email = self.get_customer_name_and_email(order)
             self.create_order_queue_line(order, instance, data, customer_name, customer_email, order_queue)
             if created_by == "webhook" and len(order_queue.order_data_queue_line_ids) >= 50:
@@ -144,7 +144,7 @@ class ShopifyOrderDataQueueLineEpt(models.Model):
             if count == 50:
                 count = 0
                 need_to_create_queue = True
-        if not order_queue.order_data_queue_line_ids:
+        if order_queue and not order_queue.order_data_queue_line_ids:
             order_queue.unlink()
             order_queue_list.remove(order_queue.id)
 
@@ -220,26 +220,28 @@ class ShopifyOrderDataQueueLineEpt(models.Model):
         shopify_order_queue_obj = self.env["shopify.order.data.queue.ept"]
         order_queue_ids = []
 
-        self.env.cr.execute(
-            """update shopify_order_data_queue_ept set is_process_queue = False where is_process_queue = True""")
+        update_query = """
+            UPDATE shopify_order_data_queue_ept
+            SET is_process_queue = %s
+            WHERE is_process_queue = %s
+        """
+        self.env.cr.execute(update_query, (False, True))
         self._cr.commit()
 
-        query = """select queue.id
-                from shopify_order_data_queue_line_ept as queue_line
-                inner join shopify_order_data_queue_ept as queue on queue_line.shopify_order_data_queue_id = queue.id
-                where queue_line.state='draft' and queue.is_action_require = 'False'
-                ORDER BY queue_line.create_date ASC"""
-        self._cr.execute(query)
-        order_queue_list = self._cr.fetchall()
-        if not order_queue_list:
-            return True
-
-        for result in order_queue_list:
-            if result[0] not in order_queue_ids:
-                order_queue_ids.append(result[0])
-
-        queues = shopify_order_queue_obj.browse(order_queue_ids)
-        self.filter_order_queue_lines_and_post_message(queues)
+        select_query = """
+            SELECT DISTINCT queue.id, queue_line.create_date
+            FROM shopify_order_data_queue_line_ept AS queue_line
+            INNER JOIN shopify_order_data_queue_ept AS queue ON queue_line.shopify_order_data_queue_id = queue.id
+            WHERE queue_line.state = %s AND queue.is_action_require = %s
+            ORDER BY queue_line.create_date ASC
+        """
+        params = ('draft', 'False')
+        self._cr.execute(select_query, params)
+        order_data_queue_list = self._cr.dictfetchall()
+        order_queue_list = [queue_data.get('id') for queue_data in order_data_queue_list]
+        if order_queue_list:
+            queues = shopify_order_queue_obj.browse(order_queue_list)
+            self.filter_order_queue_lines_and_post_message(queues)
 
     def filter_order_queue_lines_and_post_message(self, queues):
         """
@@ -248,8 +250,7 @@ class ShopifyOrderDataQueueLineEpt(models.Model):
         :param queues: Record of the order queues.
         @author: Haresh Mori @Emipro Technologies Pvt. Ltd on date 16 October 2020 .
         """
-        ir_model_obj = self.env["ir.model"]
-        common_log_book_obj = self.env["common.log.book.ept"]
+        common_log_line_obj = self.env["common.log.lines.ept"]
         start = time.time()
         order_queue_process_cron_time = queues.shopify_instance_id.get_shopify_cron_execution_time(
             "shopify_ept.process_shopify_order_queue")
@@ -265,8 +266,8 @@ class ShopifyOrderDataQueueLineEpt(models.Model):
                        "automated action to process this queue,<br/>- Ignore, if this queue is already processed.</p>"
                 queue.message_post(body=note)
                 if queue.shopify_instance_id.is_shopify_create_schedule:
-                    model_id = ir_model_obj.search([("model", "=", "shopify.order.data.queue.ept")]).id
-                    common_log_book_obj.create_crash_queue_schedule_activity(queue, model_id, note)
+                    common_log_line_obj.create_crash_queue_schedule_activity(queue, "shopify.order.data.queue.ept",
+                                                                             note)
                 continue
 
             self._cr.commit()
@@ -284,7 +285,6 @@ class ShopifyOrderDataQueueLineEpt(models.Model):
             Task Id : 157350
         """
         sale_order_obj = self.env["sale.order"]
-        common_log_obj = self.env["common.log.book.ept"]
 
         queue_id = self.shopify_order_data_queue_id if len(self.shopify_order_data_queue_id) == 1 else False
         if queue_id:
@@ -293,22 +293,14 @@ class ShopifyOrderDataQueueLineEpt(models.Model):
                 _logger.info("Instance %s is not active.", instance.name)
                 return True
 
-            if queue_id.shopify_order_common_log_book_id:
-                log_book_id = queue_id.shopify_order_common_log_book_id
-            else:
-                model_id = common_log_obj.log_lines.get_model_id("sale.order")
-                log_book_id = common_log_obj.shopify_create_common_log_book("import", instance, model_id)
-
             queue_id.is_process_queue = True
             # Below two line used for When the update order webhook calls.
             if update_order or queue_id.created_by == "webhook":
                 created_by = 'Webhook'
-                sale_order_obj.update_shopify_order(self, log_book_id, created_by)
+                sale_order_obj.update_shopify_order(self, created_by, instance)
             else:
-                sale_order_obj.import_shopify_orders(self, log_book_id)
-            queue_id.write({'is_process_queue': False, 'shopify_order_common_log_book_id': log_book_id})
-            if log_book_id and not log_book_id.log_lines:
-                log_book_id.unlink()
+                sale_order_obj.import_shopify_orders(self, instance)
+            queue_id.write({'is_process_queue': False})
 
             if instance.is_shopify_create_schedule:
                 queue_id.create_schedule_activity(queue_id)

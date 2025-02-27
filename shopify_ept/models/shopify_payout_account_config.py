@@ -12,8 +12,9 @@ class ShopifyPaymentReportEpt(models.Model):
     account_id = fields.Many2one('account.account', string="Account",
                                  help="The account used for this invoice.")
     transaction_type = fields.Selection(
-        [('charge', 'Charge'), ('refund', 'Refund'), ('dispute', 'Dispute'),
+        [('dispute', 'Dispute'),
          ('reserve', 'Reserve'), ('adjustment', 'Adjustment'), ('credit', 'Credit'),
          ('debit', 'Debit'), ('payout', 'Payout'), ('payout_failure', 'Payout Failure'),
-         ('payout_cancellation', 'Payout Cancellation'), ('fees', 'Fees'), ('payment_refund', 'Payment Refund')],
+         ('payout_cancellation', 'Payout Cancellation'), ('fees', 'Fees'),
+         ('shopify_collective_debit_reversal', 'Shopify Collective Debit Reversal')],
         help="The type of the balance transaction", string="Balance Transaction Type")

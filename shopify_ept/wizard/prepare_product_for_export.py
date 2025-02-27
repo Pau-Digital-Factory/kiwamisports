@@ -41,7 +41,8 @@ class PrepareProductForExport(models.TransientModel):
 
         active_template_ids = self._context.get("active_ids", [])
         templates = self.env["product.template"].browse(active_template_ids)
-        product_templates = templates.filtered(lambda template: template.detailed_type == "product")
+        product_templates = templates.filtered(
+            lambda template: template.type == "consu" and template.is_storable == True)
         if not product_templates:
             raise UserError(_("It seems like selected products are not Storable products."))
 
@@ -59,16 +60,17 @@ class PrepareProductForExport(models.TransientModel):
         """
         shopify_template_id = False
         sequence = 0
-        variants = product_templates.product_variant_ids
+        variants = product_templates.filtered(lambda template: len(template.attribute_line_ids.filtered(
+            lambda x: x.attribute_id.create_variant == "always")) <= 3).product_variant_ids
         shopify_instance = self.shopify_instance_id
 
         for variant in variants:
             if not variant.default_code:
                 continue
             product_template = variant.product_tmpl_id
-            if product_template.attribute_line_ids and len(product_template.attribute_line_ids.filtered(
-                    lambda x: x.attribute_id.create_variant == "always")) > 3:
-                continue
+            # if product_template.attribute_line_ids and len(product_template.attribute_line_ids.filtered(
+            #         lambda x: x.attribute_id.create_variant == "always")) > 3:
+            #     continue
             shopify_template, sequence, shopify_template_id = self.create_or_update_shopify_layer_template(
                 shopify_instance, product_template, variant, shopify_template_id, sequence)
 
@@ -323,7 +325,7 @@ class PrepareProductForExport(models.TransientModel):
         common_product_images = common_product_image_obj.search(
             [('product_id', '=', shopify_variant.product_id.id)])
         images = common_product_images.filtered(lambda img: img.image == shopify_variant.product_id.image_1920)
-        if not images and shopify_template.product_tmpl_id.image_1920:
+        if not images and shopify_variant.product_id.image_1920:
             common_product_image_obj.create({
                 "name": shopify_template.name,
                 "template_id": shopify_template.product_tmpl_id.id,

@@ -30,7 +30,7 @@
             <search string="Payment Gateway">
                 <field name="name"/>
                 <field name="code"/>
-                <field name="active" invisible="1"/>
+                <field name="active" invisible="1"/><!-- Reason for making this field invisible beacuse this field is used in other view field as reference or condition.-->
                 <field name="shopify_instance_id"/>
                 <separator/>
                 <filter name="archived" string="Archived" domain="[('active','=',False)]"/>
@@ -46,13 +46,12 @@
     <record id="shopify_payment_gateway_tree" model="ir.ui.view">
         <field name="name">Shopify Payment Gateway Tree</field>
         <field name="model">shopify.payment.gateway.ept</field>
-        <field name="type">tree</field>
         <field name="arch" type="xml">
-            <tree sample="1">
+            <list sample="1">
                 <field name="shopify_instance_id"/>
                 <field name="name"/>
                 <field name="code"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -60,7 +59,7 @@
     <record id="action_shopify_payment_gateway" model="ir.actions.act_window">
         <field name="name">Payment Gateway</field>
         <field name="res_model">shopify.payment.gateway.ept</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
 
     <menuitem id="shopify_payment_gateway_menu_item" name="Payment Gateway"

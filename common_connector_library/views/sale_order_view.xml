@@ -5,20 +5,26 @@
         <field name="model">sale.order</field>
         <field name="inherit_id" ref="sale.view_order_form"/>
         <field name="arch" type="xml">
-            <field name="fiscal_position_id" options="{'no_create': True}" position="after">
+            <xpath expr="//group[@name='sale_info']" position="inside">
                 <field name="auto_workflow_process_id"/>
-            </field>
+            </xpath>
             <xpath expr="//button[@name='action_view_invoice']" position="before">
                 <button type="object" name="action_view_stock_move_ept" class="oe_stat_button"
                         icon="fa-truck"
-                        attrs="{'invisible': [('moves_count', '=', 0)]}"
+                        invisible="moves_count == 0"
                         groups="base.group_user">
                     <field name="moves_count" widget="statinfo" string="Stock Move"/>
                 </button>
             </xpath>
-            <xpath expr="//page[@name='order_lines']/field[@name='order_line']/tree/field[@name='price_subtotal']"
+            <button name="action_cancel" position="before">
+                <button type="action" name="%(stock.act_stock_return_picking)d"
+                        context="{'default_sale_order_ept_id':id}"
+                        string="Return" invisible="moves_count == 0" groups="base.group_user">
+                </button>
+            </button>
+            <xpath expr="//page[@name='order_lines']/field[@name='order_line']/list/field[@name='price_subtotal']"
                    position="after">
-                <field name="warehouse_id_ept" string="Warehouse" invisible="1"/>
+                <field name="warehouse_id_ept" string="Warehouse" column_invisible="True"/><!-- Reason for making this field invisible beacuse this field is used in other view field as reference or condition.-->
             </xpath>
         </field>
     </record>

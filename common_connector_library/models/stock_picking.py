@@ -11,7 +11,7 @@ class StockPicking(models.Model):
         """
         Create and paid invoice on the basis of auto invoice work flow
         when invoicing policy is 'delivery'.
-        Migration done by Haresh Mori on September 2021
+        :return: True/False
         """
         result = super(StockPicking, self)._action_done()
         for picking in self:
@@ -27,16 +27,20 @@ class StockPicking(models.Model):
                 order.validate_and_paid_invoices_ept(work_flow_process_record)
         return result
 
-    @api.depends('move_lines.state', 'move_lines.date', 'move_type')
+    @api.depends('move_ids.state', 'move_ids.date', 'move_type')
     def _compute_scheduled_date(self):
+        """
+        Define this method for compute scheduled date for the pickings.
+        :return:
+        """
         for picking in self:
             carrier_id = picking.carrier_id
-            order = picking.sale_id
-            if order and carrier_id and carrier_id.on_time_shipping > 0.0:
+            if carrier_id and carrier_id.on_time_shipping:
+                order = picking.sale_id
                 order_date = fields.Datetime.from_string(order.date_order)
                 picking.scheduled_date = order_date + timedelta(days=carrier_id.on_time_shipping or 0.0)
             else:
-                moves_dates = picking.move_lines.filtered(lambda move: move.state not in ('done', 'cancel')).mapped(
+                moves_dates = picking.move_ids.filtered(lambda move: move.state not in ('done', 'cancel')).mapped(
                     'date')
                 if picking.move_type == 'direct':
                     picking.scheduled_date = min(moves_dates, default=picking.scheduled_date or fields.Datetime.now())

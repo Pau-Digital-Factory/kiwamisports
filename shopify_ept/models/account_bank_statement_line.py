@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # See LICENSE file for full copyright and licensing details.
 
-from odoo import models, fields
+from odoo import models, fields, api
 
 
 class AccountBankStatementLine(models.Model):
@@ -18,6 +18,20 @@ class AccountBankStatementLine(models.Model):
                                                  ('debit', 'Debit'), ('payout', 'Payout'),
                                                  ('payout_failure', 'Payout Failure'),
                                                  ('payout_cancellation', 'Payout Cancellation'), ('fees', 'Fees'),
-                                                 ('payment_refund', 'Payment Refund')],
+                                                 ('payment_refund', 'Payment Refund'),
+                                                 ('shopify_collective_debit_reversal', 'Shopify Collective Debit Reversal')],
                                                 help="The type of the balance transaction",
                                                 string="Balance Transaction Type")
+    payout_id = fields.Many2one('shopify.payout.report.ept', string="Payout ID", ondelete="cascade")
+    payout_line_id = fields.Many2one('shopify.payout.report.line.ept', string="Payout line ID", ondelete="cascade")
+
+    def write(self, vals):
+        # OVERRIDE
+        if self.shopify_instance_id:
+            if 'to_check' in vals and not vals.get('to_check'):
+                payout_transaction = self.env['shopify.payout.report.line.ept'].search(
+                    [('transaction_id', '=', self.shopify_transaction_id)], limit=1)
+                if payout_transaction and payout_transaction.payout_id.state == "validated":
+                    payout_transaction.payout_id.state = "partially_processed"
+        res = super(AccountBankStatementLine, self).write(vals)
+        return res

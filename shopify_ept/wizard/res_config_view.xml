@@ -38,8 +38,8 @@
         <field name="name">Configure Instance</field>
         <field name="model">res.config.shopify.instance</field>
         <field name="arch" type="xml">
-            <form string="Configure Instance" class="o_shopify_ept oe_form_configuration">
-                <group>
+            <form string="Configure Instance" class="o_shopify_ept">
+                <group class="o_onboard_padding">
                     <group>
                         <field name="name" required="1"
                                readonly="context.get('is_already_instance_created', False)"/>
@@ -49,8 +49,6 @@
                         <field name="shopify_company_id" required="1" string="Company"
                                options="{'no_create':True,'no_create':True,'no_create_edit':True}"
                                readonly="context.get('is_already_instance_created', False)"/>
-                        <field name="update_notification"
-                               readonly="context.get('is_already_instance_created', False)" widget="boolean_toggle"/>
                     </group>
                     <group>
                         <field name='shopify_api_key' required="1"
@@ -59,26 +57,31 @@
                                readonly="context.get('is_already_instance_created', False)"/>
                         <field name='shopify_shared_secret' required="1"
                                readonly="context.get('is_already_instance_created', False)"/>
-                        <field name="customer_so_number" readonly="context.get('is_already_instance_created', False)"/>
                     </group>
                 </group>
-                <div name="row" style="display: flex;">
+                <group class="o_onboard_padding">
                     <style>
                         .embed-responsive-item {
-                        width: 423px;
-                        height: 200px !important;
+                        width: 25rem !important;
+                        min-height: 15rem !important;
                         }
                     </style>
-                    <div class="col-md-6">
-                        <field name="shopify_api_video_url" string="Shopify API Video URL" invisible="1"/>
-                        <field name="shopify_api_video_embed_code" string="Shopify API Video" nolable="1"/>
+                    <div name="row" style="display: flex;">
+                        <div class='col-md-6' style="display: contents;">
+                            <field name="shopify_api_video_url" invisible="1"/><!-- Reason for making this field invisible beacuse this field is used in other view field as reference or condition.-->
+                            <div class="p-2">
+                                <field name="shopify_api_video_embed_code" class="mt-2"/>
+                            </div>
+                        </div>
+                        <div class='col-md-6' style="display: contents;">
+                            <field name="shopify_instance_video_url" invisible="1"/><!-- Reason for making this field invisible beacuse this field is used in other view field as reference or condition.-->
+                            <div class="p-2">
+                                <field name="shopify_instance_video_embed_code" class="mt-2"/>
+                            </div>
+                        </div>
                     </div>
-                    <div class="col-md-6">
-                        <field name="shopify_instance_video_url" string="Shopify Instance Video URL" invisible="1"/>
-                        <field name="shopify_instance_video_embed_code" string="Shopify Instance Video" nolable="1"/>
-                    </div>
-                </div>
-                <group invisible="context.get('is_calling_from_onboarding_panel', False)">
+                </group>
+                <group invisible="context.get('is_calling_from_onboarding_panel', False)" class="o_onboard_padding">
                     <p colspan="2" class="alert alert-warning" role="alert">
                         <div style="color:#ff0000; font-size:15px;">
                             <b>Important Note:</b>
@@ -97,18 +100,6 @@
                                         </li>
                                         <li>
                                             Shopify =&gt; Configurations =&gt; Settings
-                                        </li>
-                                        <li>
-                                            If you choose to activate <b>Get Update Notification</b>, Emipro Server will
-                                            ask for details about your Odoo, including Company name, Company email,
-                                            Database UUID, and List of Emipro apps. Therefore, Emipro can inform you of
-                                            any app-related updates and fixes. You can disable this configuration at any
-                                            time.
-                                            Please check our privacy policy for more detail.
-                                            <a href='https://www.emiprotechnologies.com/iap-privacy-policy'
-                                               target="_blank">
-                                                Click Here
-                                            </a>
                                         </li>
                                     </ul>
                                 </div>
@@ -130,7 +121,7 @@
     <!--Action for new instance creation-->
     <record id="res_config_action_shopify_instance"
             model="ir.actions.act_window">
-        <field name="name">Shopify Instance</field>
+        <field name="name">Instance</field>
         <field name="res_model">res.config.shopify.instance</field>
         <field name="view_mode">form</field>
         <field name="target">new</field>
@@ -145,17 +136,17 @@
         <field name="inherit_id"
                ref="base.res_config_settings_view_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//div[hasclass('settings')]" position="inside">
-                <div class="app_settings_block" data-string="Shopify" data-key="shopify_ept">
+            <xpath expr="//form" position="inside">
+                <app data-string="Shopify" string="Shopify" name="shopify_ept"
+                     groups="shopify_ept.group_shopify_manager_ept">
                     <div name="description_config">
-                        <h2 style="font-size:25px;background-color:#e9ecef;">
+                        <h2 style="font-size:25px;">
                             Odoo Product Configuration
                         </h2>
                         <div class="row mt16 o_settings_container">
                             <div class="col-12 o_setting_box o_setting_box">
                                 <div class="o_setting_left_pane">
-                                    <field name="shopify_set_sales_description_in_product" widget="boolean_toggle"
-                                           style="padding-left:25px;"/>
+                                    <field name="shopify_set_sales_description_in_product"/>
                                 </div>
                                 <div class="o_setting_right_pane">
                                     <label for="shopify_set_sales_description_in_product"
@@ -183,10 +174,11 @@
                             </div>
                             <div class="col-12 o_setting_box" id="show_shopify_net_profit_report">
                                 <div class="o_setting_left_pane">
-                                    <field name="show_net_profit_report" widget="upgrade_boolean"/>
+                                    <field name="show_net_profit_report" widget="upgrade_boolean"
+                                           string="Shopify Net Profit Report"/>
                                 </div>
                                 <div class="o_setting_right_pane" name="show_net_profit_report_right_pane">
-                                    <label for="show_net_profit_report"/>
+                                    <label for="show_net_profit_report" string="Net Profit Report"/>
                                     <div class="text-muted">
                                         - If you enable this configuration, it will add net profit report for all
                                         instances
@@ -197,14 +189,14 @@
                                         - You can find Shopify net profit report from Shopify > Reporting > Net profit
                                         <br/>
                                         - The Shopify net profit report calculate based on instance level sets,
-                                        analytics accounts &amp; analytics tags
+                                        analytics accounts
                                         <br/>
                                     </div>
                                     <button name="download_shopify_net_profit_report_module"
                                             type="object"
                                             string="Download Shopify Net Profit Report Module"
                                             class="oe_link"
-                                            attrs="{'invisible':[('show_net_profit_report','=',False)]}"
+                                            invisible="not show_net_profit_report"
                                             help="Install this module if you are See Net profit report for all Instances."/>
                                 </div>
                             </div>
@@ -225,27 +217,25 @@
 
 
                     </div>
-                    <h2 style="font-size:25px;background-color:#e9ecef;">Shopify Instances</h2>
+                    <h2 style="font-size:25px;">Instances</h2>
 
                     <div class="row mt16 o_settings_container">
                         <div class="col-xs-12 col-md-6 o_setting_box">
                             <div class="o_setting_right_pane">
                                 <label for="shopify_instance_id" string="Select Instance"/>
-                                <field name="shopify_instance_id"
-                                       attrs="{'required':[('shopify_instance_id','!=',False)]}"
+                                <field name="shopify_instance_id" required="shopify_instance_id"
                                        options="{'no_create': True, 'no_create_edit' : True}"/>
                                 <button name="%(res_config_action_shopify_instance)d" icon="fa-arrow-right"
                                         type="action" string="Create More Instance" class="oe_link"/>
                             </div>
                         </div>
                     </div>
-                    <h2 style="font-size:25px;background-color:#e9ecef;"
-                        attrs="{'invisible': [('shopify_instance_id', '=', False)]}">
+                    <h2 style="font-size:25px;"
+                        invisible="not shopify_instance_id">
                         General Configuration
                     </h2>
-                    <div class="row mt16 o_settings_container"
-                         attrs="{'invisible': [('shopify_instance_id', '=', False)]}">
-                        <field name="shopify_company_id" invisible="1"/>
+                    <div class="row mt16 o_settings_container" invisible="not shopify_instance_id">
+                        <field name="shopify_company_id" invisible="1"/><!-- Reason for making this field invisible beacuse this field is used in other view field as reference or condition.-->
                         <div class="col-xs-12 col-md-6 o_setting_box">
                             <div class="o_setting_right_pane">
                                 <label for="shopify_warehouse_id" string="Warehouse"/>
@@ -256,14 +246,14 @@
                                     <div class="mt16">
                                         <field name="shopify_warehouse_id"
                                                class="o_light_label" widget="selection"
-                                               attrs="{'required':[('shopify_instance_id','!=',False)]}"/>
+                                               required="shopify_instance_id"/>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div class="col-12 col-lg-6 o_setting_box">
                             <div class="o_setting_right_pane">
-                                <label for="shopify_lang_id" string="Shopify Instance Language"/>
+                                <label for="shopify_lang_id" string="Instance Language"/>
                                 <div class="text-muted">
                                     Select language based on your Shopify instance
                                 </div>
@@ -271,26 +261,24 @@
                                     <div class="mt16">
                                         <field name="shopify_lang_id" class="oe_inline"
                                                options="{'no_open':True,'no_create':True,'no_create_edit':True}"
-                                               attrs="{'required':[('shopify_instance_id','!=',False)]}"/>
+                                               required="shopify_instance_id"/>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div name="shopify_webhook_header"
-                         attrs="{'invisible': [('shopify_instance_id', '=', False)]}">
-                        <h2 style="font-size:25px;background-color:#e9ecef;">Webhook
-                            Configuration
-                        </h2>
+                    <div name="shopify_webhook_header" invisible="not shopify_instance_id">
+                        <h2 style="font-size:25px;">Webhook Configuration</h2>
                     </div>
                     <div class="row mt16 o_settings_container"
-                         attrs="{'invisible': [('shopify_instance_id', '=', False)]}">
+                         invisible="not shopify_instance_id">
                         <div class="col-12 col-lg-12 o_setting_box">
                             <div class="alert alert-warning" role="alert">
-                                <h3 style="font-weight:bold;color:#7d5a29">
-                                    <u>Note :</u>
-                                </h3>
+
                                 <b>
+                                    <h3 style="font-weight:bold;color:#7d5a29;padding: 0 !important;">
+                                        <u>Note :</u>
+                                    </h3>
                                     <ul>
                                         <li>Webhooks can be managed using below options.</li>
                                         <li>
@@ -317,47 +305,43 @@
                         </div>
                         <div class="col-12 col-lg-6 o_setting_box">
                             <div class="o_setting_left_pane">
-                                <field name="create_shopify_products_webhook" widget="boolean_toggle"
-                                       style="padding-left:25px;"/>
+                                <field name="create_shopify_products_webhook"
+                                       style="margin-left: -0.5em"/>
                             </div>
                             <div class="o_setting_right_pane">
                                 <label for="create_shopify_products_webhook"
-                                       string="Manage Products via Webhooks"/>
+                                       string="Would you like to manage products via webhook from Shopify to Odoo?"/>
                             </div>
                         </div>
                         <div class="col-12 col-lg-6 o_setting_box">
                             <div class="o_setting_left_pane">
-                                <field name="create_shopify_customers_webhook"
-                                       widget="boolean_toggle"
-                                       style="padding-left:25px;"/>
+                                <field name="create_shopify_customers_webhook" style="margin-left: -0.5em"/>
                             </div>
                             <div class="o_setting_right_pane">
                                 <label for="create_shopify_customers_webhook"
-                                       string="Manage Customers via Webhooks"/>
+                                       string="Would you like to manage Customer via webhook from Shopify to Odoo?"/>
                             </div>
                         </div>
                         <div class="col-12 col-lg-6 o_setting_box">
                             <div class="o_setting_left_pane">
-                                <field name="create_shopify_orders_webhook" widget="boolean_toggle"
-                                       style="padding-left:25px;"/>
+                                <field name="create_shopify_orders_webhook"
+                                       style="margin-left: -0.5em"/>
                             </div>
                             <div class="o_setting_right_pane">
                                 <label for="create_shopify_orders_webhook"
-                                       string="Manage Orders via Webhooks"/>
+                                       string="Would you like to manage Orders via webhook from Shopify to Odoo?"/>
                             </div>
                         </div>
                     </div>
-
                     <div name="shopify_webhook_header"
-                         attrs="{'invisible': [('create_shopify_orders_webhook','=',False)]}">
-                        <h2 style="font-size:25px;background-color:#e9ecef;">Orders Webhook
+                         invisible="not shopify_instance_id or not create_shopify_orders_webhook">
+                        <h2 style="font-size:25px;">Order Webhook
                             Configuration
                         </h2>
                     </div>
                     <div class="row mt16 o_settings_container"
-                         attrs="{'invisible': ['|',('shopify_instance_id','=',False),('create_shopify_orders_webhook','=',False)]}">
-                        <div class="col-12 col-lg-6 o_setting_box"
-                             attrs="{'invisible': ['|',('shopify_instance_id','=',False),('create_shopify_orders_webhook','=',False)]}">
+                         invisible="not shopify_instance_id or not create_shopify_orders_webhook">
+                        <div class="col-12 col-lg-6 o_setting_box" invisible="not create_shopify_orders_webhook">
                             <div class="o_setting_left_pane">
                                 <field name="ship_order_webhook"
                                        style="margin-left: -0.5em"/>
@@ -372,7 +356,7 @@
                             </div>
                         </div>
                         <div class="col-12 col-lg-6 o_setting_box"
-                             attrs="{'invisible': ['|', ('ship_order_webhook', '=', False),('create_shopify_orders_webhook','=',False)]}">
+                             invisible="not ship_order_webhook or not create_shopify_orders_webhook">
                             <div class="o_setting_left_pane">
                                 <field name="forcefully_reserve_stock_webhook"
                                        style="margin-left: -0.5em"/>
@@ -388,8 +372,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-12 col-lg-6 o_setting_box"
-                             attrs="{'invisible': [('create_shopify_orders_webhook', '=', False)]}">
+                        <div class="col-12 col-lg-6 o_setting_box" invisible="not create_shopify_orders_webhook">
                             <div class="o_setting_left_pane">
                                 <field name="refund_order_webhook"
                                        style="margin-left: -0.5em"/>
@@ -403,8 +386,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-12 col-lg-6 o_setting_box"
-                             attrs="{'invisible': [('refund_order_webhook', '=', False)]}">
+                        <div class="col-12 col-lg-6 o_setting_box" invisible="not refund_order_webhook">
                             <div class="o_setting_left_pane">
                                 <field name="return_picking_order"
                                        style="margin-left: -0.5em"/>
@@ -418,8 +400,41 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-12 col-lg-6 o_setting_box"
-                             attrs="{'invisible': [('return_picking_order', '=', False)]}">
+                        <!-- Credit Note Register Payment configuration -->
+                        <div class="col-12 col-lg-6 o_setting_box" invisible="not refund_order_webhook">
+                            <div class="o_setting_left_pane">
+                                <field name="credit_note_register_payment"
+                                       style="margin-left: -0.5em"/>
+                            </div>
+                            <div class="o_setting_right_pane">
+                                <label for="credit_note_register_payment"
+                                       string="Would you like to register payment for credit note?"/>
+                                <div class="text-muted">
+                                    If this feature is enabled, the system will automatically register payment for
+                                    credit note.
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Credit Note Register Payment configuration -->
+                        <!-- Payment Journal configuration -->
+                        <div class="col-xs-12 col-md-6 o_setting_box" invisible="not credit_note_register_payment">
+                            <div class="o_setting_right_pane">
+                                <label for="credit_note_payment_journal" string="Payment Journal for Credit note"/>
+                                <div class="text-muted">
+                                    Selected Journal will be set in Credit note Payment journal.
+                                </div>
+                                <div class="content-group">
+                                    <div class="mt16">
+                                        <field name="credit_note_payment_journal" class="o_light_label"
+                                               widget="selection"
+                                               domain="[('type','in',['cash','bank']),('company_id','=',shopify_company_id)]"
+                                               options="{'no_create':True,'no_open':True}"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Payment Journal configuration -->
+                        <div class="col-12 col-lg-6 o_setting_box" invisible="not return_picking_order">
                             <div class="o_setting_left_pane">
                                 <field name="stock_validate_for_return"
                                        style="margin-left: -0.5em"/>
@@ -432,23 +447,21 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-xs-12 col-md-6 o_setting_box"
-                             attrs="{'invisible': [('return_picking_order', '=', False)]}">
-                            <div class="o_setting_right_pane">
-                                <label for="return_location_id" string="Location Id for Return"/>
-                                <div class="text-muted">
-                                    Selected Location will be set in return of picking.
-                                </div>
-                                <div class="content-group">
-                                    <div class="mt16">
-                                        <field name="return_location_id"
-                                               class="o_light_label" widget="selection"/>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-12 col-lg-6 o_setting_box"
-                             attrs="{'invisible': [('create_shopify_orders_webhook', '=', False)]}">
+<!--                        <div class="col-xs-12 col-md-6 o_setting_box" invisible="not return_picking_order">-->
+<!--                            <div class="o_setting_right_pane">-->
+<!--                                <label for="return_location_id" string="Location Id for Return"/>-->
+<!--                                <div class="text-muted">-->
+<!--                                    Selected Location will be set in return of picking.-->
+<!--                                </div>-->
+<!--                                <div class="content-group">-->
+<!--                                    <div class="mt16">-->
+<!--                                        <field name="return_location_id"-->
+<!--                                               class="o_light_label" widget="selection"/>-->
+<!--                                    </div>-->
+<!--                                </div>-->
+<!--                            </div>-->
+<!--                        </div>-->
+                        <div class="col-12 col-lg-6 o_setting_box" invisible="not create_shopify_orders_webhook">
                             <div class="o_setting_left_pane">
                                 <field name="customer_order_webhook"
                                        style="margin-left: -0.5em"/>
@@ -464,8 +477,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-12 col-lg-6 o_setting_box"
-                             attrs="{'invisible': [('create_shopify_orders_webhook', '=', False)]}">
+                        <div class="col-12 col-lg-6 o_setting_box" invisible="not create_shopify_orders_webhook">
                             <div class="o_setting_left_pane">
                                 <field name="update_qty_order_webhook"
                                        style="margin-left: -0.5em"/>
@@ -480,8 +492,21 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-12 col-lg-6 o_setting_box"
-                             attrs="{'invisible': [('create_shopify_orders_webhook', '=', False)]}">
+                        <div class="col-12 col-lg-6 o_setting_box" invisible="not update_qty_order_webhook">
+                            <div class="o_setting_left_pane">
+                                <field name="update_qty_to_invoice_order_webhook"
+                                       style="margin-left: -0.5em"/>
+                            </div>
+                            <div class="o_setting_right_pane">
+                                <label for="update_qty_to_invoice_order_webhook"
+                                       string="Would you like to update quantities to invoice?"/>
+                                <div class="text-muted">
+                                    If this feature is enabled, the system will automatically create invoice/credit note
+                                    base on changed quantity from shopify.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box" invisible="not create_shopify_orders_webhook">
                             <div class="o_setting_left_pane">
                                 <field name="add_new_product_order_webhook"
                                        style="margin-left: -0.5em"/>
@@ -497,16 +522,17 @@
                         </div>
                     </div>
 
-                    <h2 style="font-size:25px;background-color:#e9ecef;"
-                        attrs="{'invisible': [('shopify_instance_id', '=', False)]}">
+
+                    <h2 style="font-size:25px;"
+                        invisible="not shopify_instance_id">
                         Product Configuration
                     </h2>
                     <div class="row mt16 o_settings_container"
-                         attrs="{'invisible': [('shopify_instance_id', '=', False)]}">
+                         invisible="not shopify_instance_id">
                         <div class="col-xs-12 col-md-6 o_setting_box">
                             <div class="o_setting_left_pane">
-                                <field name="auto_import_product" widget="boolean_toggle"
-                                       style="padding-left:25px;"/>
+                                <field name="auto_import_product"
+                                       style="margin-left: -0.5em"/>
                             </div>
                             <div class="o_setting_right_pane">
                                 <label for="auto_import_product"/>
@@ -531,9 +557,7 @@
                         </div>
                         <div class="col-xs-12 col-md-6 o_setting_box">
                             <div class="o_setting_left_pane">
-                                <field name="shopify_sync_product_with_images"
-                                       widget="boolean_toggle"
-                                       style="padding-left:25px;"/>
+                                <field name="shopify_sync_product_with_images" style="margin-left: -0.5em"/>
                             </div>
                             <div class="o_setting_right_pane">
                                 <label for="shopify_sync_product_with_images"/>
@@ -555,7 +579,7 @@
                                     <div class="mt16">
                                         <field name="shopify_sync_product_with"
                                                class="o_light_label" widget="selection"
-                                               attrs="{'required':[('shopify_instance_id','!=',False)]}"/>
+                                               required="shopify_instance_id"/>
                                     </div>
                                 </div>
                             </div>
@@ -577,7 +601,7 @@
                                     <div class="mt16">
                                         <field name="shopify_pricelist_id"
                                                class="o_light_label"
-                                               attrs="{'required':[('shopify_instance_id','!=',False)]}"/>
+                                               required="shopify_instance_id"/>
                                     </div>
                                 </div>
                             </div>
@@ -591,19 +615,58 @@
                                 <div class="content-group">
                                     <div class="mt16">
                                         <field name="shopify_product_uom_id" class="oe_inline"
-                                               options="{'no_open':True,'no_create':True,'no_create_edit':True}"
-                                        />
+                                               options="{'no_open':True,'no_create':True,'no_create_edit':True}"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label for="shopify_compare_pricelist_id" string="Compare At Pricelist"/>
+                                <div class="text-muted">
+                                    During product sync, Import and Export operation, prices will be Imported/Exported
+                                    using this Pricelist.
+                                </div>
+                                <div class="content-group">
+                                    <div class="mt16">
+                                        <field name="shopify_compare_pricelist_id" class="o_light_label"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-6 o_setting_box">
+                            <div class="o_setting_left_pane">
+                                <field name="auto_create_product_category"
+                                       style="margin-left: -0.5em"/>
+                            </div>
+                            <div class="o_setting_right_pane">
+                                <label for="auto_create_product_category"/>
+                                <div class="text-muted">
+                                    - If checked, it will automatically create product category while product import
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-6 o_setting_box" invisible="auto_create_product_category">
+                            <div class="o_setting_right_pane">
+                                <label for="shopify_instance_product_category" string="Default product category"/>
+                                <div class="text-muted">
+                                    During product sync, Import and Export operation, If product category set here will
+                                    be set in shopify product layer.
+                                </div>
+                                <div class="content-group">
+                                    <div class="mt16">
+                                        <field name="shopify_instance_product_category" class="o_light_label"/>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <h2 style="font-size:25px;background-color:#e9ecef;"
-                        attrs="{'invisible': [('shopify_instance_id', '=', False)]}">
+                    <h2 style="font-size:25px;"
+                        invisible="not shopify_instance_id">
                         Order Configuration
                     </h2>
                     <div class="row mt16 o_settings_container"
-                         attrs="{'invisible': [('shopify_instance_id', '=', False)]}">
+                         invisible="not shopify_instance_id">
                         <div class="col-xs-12 col-md-6 o_setting_box">
                             <div class="o_setting_right_pane">
                                 <label for="shopify_order_status_ids" string="Import Order Status"/>
@@ -614,18 +677,19 @@
                                     <div class="mt16">
                                         <field name="shopify_order_status_ids"
                                                widget="many2many_tags"
-                                               attrs="{'required':[('shopify_instance_id','!=',False)]}"
+                                               required="shopify_instance_id"
                                                options="{'no_create':True,'no_create_edit': True}"
                                                class="oe_inline"
-                                               domain="[('status', '!=', 'fulfilled')]"/>
+                                               domain="[('status', '!=', 'fulfilled')]"
+                                        />
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div class="col-xs-12 col-md-6 o_setting_box" style="display:none;">
                             <div class="o_setting_left_pane">
-                                <field name="auto_fulfill_gift_card_order" widget="boolean_toggle"
-                                       style="padding-left:25px;"/>
+                                <field name="auto_fulfill_gift_card_order"
+                                       style="margin-left: -0.5em"/>
                             </div>
                             <div class="o_setting_right_pane">
                                 <label for="auto_fulfill_gift_card_order"/>
@@ -639,7 +703,6 @@
                                 </div>
                             </div>
                         </div>
-
                         <div class="col-xs-12 col-md-6 o_setting_box">
                             <div class="o_setting_right_pane">
                                 <label for="shopify_section_id" string="Sales Team"/>
@@ -653,7 +716,6 @@
                                 </div>
                             </div>
                         </div>
-
                         <div class="col-xs-12 col-md-6 o_setting_box">
                             <div class="o_setting_right_pane">
                                 <label for="shopify_default_pos_customer_id"/>
@@ -668,53 +730,75 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-xs-12 col-md-6 o_setting_box" groups="analytic.group_analytic_accounting">
-                            <div class="o_setting_right_pane">
-                                <label for="shopify_analytic_account_id" string="Analytic Account"/>
-                                <div class="text-muted">
-                                    Set the Analytic account for shopify orders.
-                                    <li>
-                                        Note : The configuration of the analytic account for this instance will be
-                                        applied to all sales orders created by the connector. With this configuration,
-                                        the Analytic Default Rule configured in Odoo will not apply to Shopify orders
-                                        invoices. If you wish to use Odoo Analytic Default Rule, you will not have to
-                                        configure any analytic account here.
-                                    </li>
+                        <div class="row mt16 o_settings_container" groups="analytic.group_analytic_accounting"
+                         invisible="not shopify_instance_id" style="padding: 0px 1px 10px 0px;">
+                            <div class="col-xs-12 col-md-6 o_setting_box">
+                                <div class="o_setting_left_pane">
+                                    <field name="shopify_is_use_analytic_account"
+                                           style="margin-left: -0.5em"/>
                                 </div>
-                                <div class="content-group">
-                                    <div class="mt16">
-                                        <field name="shopify_analytic_account_id" class="o_light_label"
-                                               options="{'no_create':True,'no_create_edit': True}"/>
+                                <div class="o_setting_right_pane">
+                                    <label for="shopify_is_use_analytic_account"
+                                           string="Enable Analytic Accounting?"/>
+                                    <div class="text-muted">
+                                        Enable this configuration, if you want to use Analytic Account.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-xs-12 col-md-6 o_setting_box" groups="analytic.group_analytic_accounting"
+                                 invisible="not shopify_is_use_analytic_account">
+                                <div class="o_setting_right_pane">
+                                    <label for="shopify_analytic_account_id" string="Analytic Account"/>
+                                    <div class="text-muted">
+                                        Set the Analytic account for shopify orders.
+                                        <li>
+                                            Note : The configuration of the analytic account for this instance will be
+                                            applied to all sales orders created by the connector. With this
+                                            configuration,
+                                            the Analytic Default Rule configured in Odoo will not apply to Shopify
+                                            orders
+                                            invoices. If you wish to use Odoo Analytic Default Rule, you will not have
+                                            to
+                                            configure any analytic account here.
+                                        </li>
+                                    </div>
+                                    <div class="content-group">
+                                        <div class="mt16">
+                                            <field name="shopify_analytic_account_id" class="o_light_label"
+                                                   options="{'no_create':True,'no_create_edit': True}"
+                                                   required="shopify_is_use_analytic_account"/>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-xs-12 col-md-6 o_setting_box" groups="analytic.group_analytic_tags">
-                            <div class="o_setting_right_pane">
-                                <label for="shopify_analytic_tag_ids" string="Analytic Tags"/>
-                                <div class="text-muted">
-                                    Set the Analytic tags for shopify orders.
-                                    <li>
-                                        Note : The configuration of the analytic tags for this instance will be applied
-                                        to all sales orders created by the connector. With this configuration, the
-                                        Analytic Default Rule configured in Odoo will not apply to Shopify orders
-                                        invoices. If you wish to use Odoo Analytic Default Rule, you will not have to
-                                        configure any analytic tags here.
-                                    </li>
-                                </div>
-                                <div class="content-group">
-                                    <div class="mt16">
-                                        <field name="shopify_analytic_tag_ids" class="o_light_label"
-                                               widget="many2many_tags"
-                                               options="{'no_create':True,'no_create_edit': True}"/>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <!--                        <div class="col-xs-12 col-md-6 o_setting_box" groups="analytic.group_analytic_tags">-->
+                        <!--                            <div class="o_setting_right_pane">-->
+                        <!--                                <label for="shopify_analytic_tag_ids" string="Analytic Tags"/>-->
+                        <!--                                <div class="text-muted">-->
+                        <!--                                    Set the Analytic tags for shopify orders.-->
+                        <!--                                    <li>-->
+                        <!--                                        Note : The configuration of the analytic tags for this instance will be applied-->
+                        <!--                                        to all sales orders created by the connector. With this configuration, the-->
+                        <!--                                        Analytic Default Rule configured in Odoo will not apply to Shopify orders-->
+                        <!--                                        invoices. If you wish to use Odoo Analytic Default Rule, you will not have to-->
+                        <!--                                        configure any analytic tags here.-->
+                        <!--                                    </li>-->
+                        <!--                                </div>-->
+                        <!--                                <div class="content-group">-->
+                        <!--                                    <div class="mt16">-->
+                        <!--                                        <field name="shopify_analytic_tag_ids" class="o_light_label"-->
+                        <!--                                               widget="many2many_tags"-->
+                        <!--                                               options="{'no_create':True,'no_create_edit': True}"/>-->
+                        <!--                                    </div>-->
+                        <!--                                </div>-->
+                        <!--                            </div>-->
+                        <!--                        </div>-->
                         <div class="col-xs-12 col-md-6 o_setting_box">
                             <div class="o_setting_left_pane">
-                                <field name="shopify_is_use_default_sequence" widget="boolean_toggle"
-                                       style="padding-left:25px;"/>
+                                <field name="shopify_is_use_default_sequence"
+                                       style="margin-left: -0.5em"/>
                             </div>
                             <div class="o_setting_right_pane">
                                 <label for="shopify_is_use_default_sequence"
@@ -725,9 +809,8 @@
                                 </div>
                             </div>
                         </div>
-
                         <div class="col-xs-12 col-md-6 o_setting_box"
-                             attrs="{'invisible':[('shopify_is_use_default_sequence','=',True)]}">
+                             invisible="shopify_is_use_default_sequence">
                             <div class="o_setting_right_pane">
                                 <label for="shopify_order_prefix"/>
                                 <div class="text-muted">
@@ -740,7 +823,6 @@
                                 </div>
                             </div>
                         </div>
-
                         <div class="col-xs-12 col-md-6 o_setting_box">
                             <div class="o_setting_right_pane">
                                 <label for="shopify_import_order_after_date" string="Import Order After Date"/>
@@ -751,17 +833,16 @@
                                 <div class="content-group">
                                     <div class="mt16">
                                         <field name="shopify_import_order_after_date"
-                                               attrs="{'required':[('shopify_instance_id','!=',False)]}"/>
+                                               required="shopify_instance_id"/>
                                     </div>
                                 </div>
 
                             </div>
                         </div>
-
                         <div class="col-xs-12 col-md-6 o_setting_box">
                             <div class="o_setting_left_pane">
-                                <field name="order_visible_currency" widget="boolean_toggle"
-                                       style="padding-left:25px;"/>
+                                <field name="order_visible_currency"
+                                       style="margin-left: -0.5em"/>
                             </div>
                             <div class="o_setting_right_pane">
                                 <label for="order_visible_currency"/>
@@ -773,8 +854,8 @@
                         </div>
                         <div class="col-xs-12 col-md-6 o_setting_box">
                             <div class="o_setting_left_pane">
-                                <field name="is_delivery_fee" widget="boolean_toggle"
-                                       style="padding-left:25px;"/>
+                                <field name="is_delivery_fee"
+                                       style="margin-left: -0.5em"/>
                             </div>
                             <div class="o_setting_right_pane">
                                 <label for="is_delivery_fee"
@@ -792,7 +873,7 @@
                                     </a>
                                 </div>
                                 <br/>
-                                <div attrs="{'invisible':[('is_delivery_fee','=',False)]}">
+                                <div invisible="not is_delivery_fee">
                                     <label for="delivery_fee_name"/>
                                     <div class="text-muted">
                                         The name you enter here must match the label on the Shopify order that shows the
@@ -801,7 +882,7 @@
                                     <div class="content-group">
                                         <div class="mt16">
                                             <field name="delivery_fee_name"
-                                                   attrs="{'required':[('is_delivery_fee','=',True)]}"
+                                                   required="is_delivery_fee"
                                                    class="o_light_label"/>
                                         </div>
                                     </div>
@@ -810,8 +891,8 @@
                         </div>
                         <div class="col-xs-12 col-md-6 o_setting_box">
                             <div class="o_setting_left_pane">
-                                <field name="is_delivery_multi_warehouse" widget="boolean_toggle"
-                                       style="padding-left:25px;"/>
+                                <field name="is_delivery_multi_warehouse"
+                                       style="margin-left: -0.5em"/>
                             </div>
                             <div class="o_setting_right_pane">
                                 <label for="is_delivery_multi_warehouse" string="Is Delivery from Multiple warehouse?"/>
@@ -823,8 +904,21 @@
                         </div>
                         <div class="col-xs-12 col-md-6 o_setting_box">
                             <div class="o_setting_left_pane">
-                                <field name="import_buy_with_prime_shopify_order" widget="boolean_toggle"
-                                       style="padding-left:25px;"/>
+                                <field name="import_customer_as_company"
+                                       style="margin-left: -0.5em"/>
+                            </div>
+                            <div class="o_setting_right_pane">
+                                <label for="import_customer_as_company" string="Import Customer as Company?"/>
+                                <div class="text-muted">
+                                    If checked, it will create an individual Company type partner from the Company
+                                    name and customer will be created as a child partner of Company.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-6 o_setting_box">
+                            <div class="o_setting_left_pane">
+                                <field name="import_buy_with_prime_shopify_order"
+                                       style="margin-left: -0.5em"/>
                             </div>
                             <div class="o_setting_right_pane">
                                 <label for="import_buy_with_prime_shopify_order" string="Buy with Prime"/>
@@ -833,8 +927,9 @@
                                 </div>
                             </div>
                         </div>
+
                         <div class="col-xs-12 col-md-6 o_setting_box"
-                             attrs="{'invisible': [('import_buy_with_prime_shopify_order', '=', False)]}">
+                             invisible="not import_buy_with_prime_shopify_order">
                             <div class="o_setting_right_pane">
                                 <label for="buy_with_prime_warehouse_id" string="Warehouse"/>
                                 <div class="text-muted">
@@ -843,36 +938,36 @@
                                 <div class="content-group">
                                     <div class="mt16">
                                         <field name="buy_with_prime_warehouse_id"
-                                               class="o_light_label"
-                                               attrs="{'required':[('import_buy_with_prime_shopify_order','!=',False)]}"/>
+                                               class="o_light_label" widget="selection"
+                                               required='import_buy_with_prime_shopify_order'/>
                                     </div>
                                 </div>
                             </div>
                         </div>
+
                         <div class="col-xs-12 col-md-6 o_setting_box"
-                             attrs="{'invisible': [('import_buy_with_prime_shopify_order', '=', False)]}">
+                             invisible="not import_buy_with_prime_shopify_order">
                             <div class="o_setting_right_pane">
                                 <label for="buy_with_prime_tag_ids"/>
                                 <div class="text-muted">
                                     Select Tags for import buy with prime orders
-                                </div>
-                                <div class="content-group">
-                                    <div class="mt16">
+                                    <div>
                                         <field name="buy_with_prime_tag_ids" widget="many2many_tags"
-                                               class="o_light_label"
-                                               attrs="{'required':[('import_buy_with_prime_shopify_order','!=',False)]}"/>
+                                               class="oe_inline"
+                                               required='import_buy_with_prime_shopify_order'/>
                                     </div>
                                 </div>
                             </div>
                         </div>
+
                         <div class="col-xs-12 col-md-6 o_setting_box"
-                             attrs="{'invisible': [('import_buy_with_prime_shopify_order', '=', False)]}">
+                             invisible="not import_buy_with_prime_shopify_order">
                             <div class="o_setting_left_pane">
-                                <field name="force_transfer_move_of_buy_with_prime_orders"
+                                <field name="Force_transfer_move_of_buy_with_prime_orders"
                                        style="margin-left: -0.5em"/>
                             </div>
                             <div class="o_setting_right_pane">
-                                <label for="force_transfer_move_of_buy_with_prime_orders" string="Force Transfer"/>
+                                <label for="Force_transfer_move_of_buy_with_prime_orders" string="Force Transfer"/>
                                 <div class="text-muted">
                                     If checked, it will forcefully done the stock move while stock also not there.
                                 </div>
@@ -880,16 +975,15 @@
                         </div>
                     </div>
 
-                    <h2 style="font-size:25px;background-color:#e9ecef;"
-                        attrs="{'invisible': [('shopify_instance_id', '=', False)]}">Tax
+                    <h2 style="font-size:25px;" invisible="not shopify_instance_id">Tax
                         Configuration
                     </h2>
                     <div class="row mt16 o_settings_container"
-                         attrs="{'invisible': [('shopify_instance_id', '=', False)]}">
+                         invisible="not shopify_instance_id">
                         <div class="col-xs-12 col-md-6 o_setting_box">
                             <div class="o_setting_right_pane">
                                 <label for="shopify_apply_tax_in_order"
-                                       string="Shopify Apply Tax"/>
+                                       string="Apply Tax"/>
                                 <div class="text-muted">
                                     1) Odoo Default Tax Behaviour - The Taxes will be set based on
                                     Odoo's default
@@ -906,14 +1000,14 @@
                                     <div class="mt16">
                                         <field name="shopify_apply_tax_in_order"
                                                class="o_light_label"
-                                               attrs="{'required':[('shopify_instance_id','!=',False)]}"/>
+                                               required="shopify_instance_id"/>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <div class="col-xs-12 col-md-6 o_setting_box"
-                             attrs="{'invisible': [('shopify_apply_tax_in_order', '=', 'odoo_tax')]}">
+                             invisible="shopify_apply_tax_in_order == 'odoo_tax'">
                             <div class="o_setting_right_pane">
                                 <label for="shopify_credit_tax_account_id"
                                        string="Credit Note Tax Account"/>
@@ -925,14 +1019,14 @@
                                 <div class="content-group">
                                     <div class="mt16">
                                         <field name="shopify_credit_tax_account_id"
-                                               attrs="{'required' : [('shopify_apply_tax_in_order','=','create_shopify_tax'),('shopify_instance_id','!=',False)]}"
+                                               required="shopify_apply_tax_in_order == 'create_shopify_tax' and shopify_instance_id"
                                                class="o_light_label"/>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div class="col-xs-12 col-md-6 o_setting_box"
-                             attrs="{'invisible': [('shopify_apply_tax_in_order', '=', 'odoo_tax')]}">
+                             invisible="shopify_apply_tax_in_order == 'odoo_tax'">
                             <div class="o_setting_right_pane">
                                 <label for="shopify_invoice_tax_account_id"
                                        string="Invoice Tax Account"/>
@@ -944,7 +1038,7 @@
                                 <div class="content-group">
                                     <div class="mt16">
                                         <field name="shopify_invoice_tax_account_id"
-                                               attrs="{'required' : [('shopify_apply_tax_in_order','=','create_shopify_tax'),('shopify_instance_id','!=',False)]}"
+                                               required="shopify_apply_tax_in_order == 'create_shopify_tax' and shopify_instance_id"
                                                class="o_light_label"/>
                                     </div>
                                 </div>
@@ -952,16 +1046,15 @@
                         </div>
                     </div>
 
-                    <h2 style="font-size:25px;background-color:#e9ecef;"
-                        attrs="{'invisible': [('shopify_instance_id', '=', False)]}">Notify By
+                    <h2 style="font-size:25px;" invisible="not shopify_instance_id">Notify By
                         Email
                     </h2>
                     <div class="row mt16 o_settings_container"
-                         attrs="{'invisible': [('shopify_instance_id', '=', False)]}">
+                         invisible="not shopify_instance_id">
                         <div class="col-xs-12 col-md-6 o_setting_box">
                             <div class="o_setting_left_pane">
-                                <field name="shopify_notify_customer" widget="boolean_toggle"
-                                       style="padding-left:25px;"/>
+                                <field name="shopify_notify_customer"
+                                       style="margin-left: -0.5em"/>
                             </div>
 
                             <div class="o_setting_right_pane">
@@ -974,12 +1067,12 @@
                             </div>
                         </div>
                     </div>
-                    <h2 style="font-size:25px;background-color:#e9ecef;"
-                        attrs="{'invisible': [('shopify_instance_id', '=', False)]}">Stock
+                    <h2 style="font-size:25px;"
+                        invisible="not shopify_instance_id">Stock
                         Information
                     </h2>
                     <div class="row mt16 o_settings_container"
-                         attrs="{'invisible': [('shopify_instance_id', '=', False)]}">
+                         invisible="not shopify_instance_id">
                         <div class="col-xs-12 col-md-6 o_setting_box">
                             <div class="o_setting_right_pane">
                                 <label for="shopify_stock_field"/>
@@ -994,135 +1087,24 @@
                                     <div class="mt16">
                                         <field name="shopify_stock_field" class="o_light_label"
                                                widget="selection"
-                                               domain="[('model_id.model','=','product.product'),('name','in',['free_qty','virtual_available'])]"
-                                               attrs="{'required':[('shopify_instance_id','!=',False)]}"/>
+                                               domain="[('model_id.model','=','product.product'),('name','in',['free_qty','virtual_available','qty_available'])]"
+                                               required="shopify_instance_id"/>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <h2 style="font-size:25px;background-color:#e9ecef;"
-                        attrs="{'invisible': [('shopify_instance_id', '=', False)]}">
-                        Last Date Of Import Process
-                    </h2>
-                    <div class="row mt16 o_settings_container"
-                         attrs="{'invisible': [('shopify_instance_id', '=', False)]}">
-                        <div class="col-xs-12 col-md-6 o_setting_box">
-                            <div class="o_setting_right_pane">
-                                <label for="last_date_order_import"/>
-                                <div class="text-muted">
-                                    Date and time, when the unshipped orders are
-                                    imported last
-                                    time.
-                                </div>
-                                <div class="content-group">
-                                    <div class="mt16">
-                                        <field name="last_date_order_import"
-                                               class="o_light_label"/>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-xs-12 col-md-6 o_setting_box">
-                            <div class="o_setting_right_pane">
-                                <label for="last_shipped_order_import_date"/>
-                                <div class="text-muted">
-                                    Date and time, when the shipped orders are
-                                    imported last time.
-                                </div>
-                                <div class="content-group">
-                                    <div class="mt16">
-                                        <field name="last_shipped_order_import_date"/>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-xs-12 col-md-6 o_setting_box">
-                            <div class="o_setting_right_pane">
-                                <label for="last_cancel_order_import_date"/>
-                                <div class="text-muted">
-                                    Date and time, when the cancel orders are
-                                    imported last time.
-                                </div>
-                                <div class="content-group">
-                                    <div class="mt16">
-                                        <field name="last_cancel_order_import_date"/>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-xs-12 col-md-6 o_setting_box">
-                            <div class="o_setting_right_pane">
-                                <label for="shopify_last_date_update_stock"/>
-                                <div class="text-muted">
-                                    Date and time, when the products stock are
-                                    updated last time.
-                                </div>
-                                <div class="content-group">
-                                    <div class="mt16">
-                                        <field name="shopify_last_date_update_stock"
-                                               class="o_light_label"/>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-xs-12 col-md-6 o_setting_box">
-                            <div class="o_setting_right_pane">
-                                <label for="shopify_last_date_product_import"/>
-                                <div class="text-muted">
-                                    Date and time, when the products are
-                                    imported last time.
-                                </div>
-                                <div class="content-group">
-                                    <div class="mt16">
-                                        <field name="shopify_last_date_product_import"/>
-                                    </div>
-                                </div>
-
-                            </div>
-                        </div>
-                        <div class="col-xs-12 col-md-6 o_setting_box">
-                            <div class="o_setting_right_pane">
-                                <label for="shopify_last_date_customer_import"/>
-                                <div class="text-muted">
-                                    Date and time, when the customers are
-                                    imported last time.
-                                </div>
-                                <div class="content-group">
-                                    <div class="mt16">
-                                        <field name="shopify_last_date_customer_import"/>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-xs-12 col-md-6 o_setting_box">
-                            <div class="o_setting_right_pane">
-                                <label for="shopify_payout_last_date_import"/>
-                                <div class="text-muted">
-                                    Date and time, when the payout reports are
-                                    imported last time.
-                                </div>
-                                <div class="content-group">
-                                    <div class="mt16">
-                                        <field name="shopify_payout_last_date_import"
-                                               class="o_light_label"/>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <h2 style="font-size:25px;background-color:#e9ecef;"
-                        attrs="{'invisible': [('shopify_instance_id', '=', False)]}">
+                    <h2 style="font-size:25px;"
+                        invisible="not shopify_instance_id">
                         Schedule Activity Information
                     </h2>
                     <div class="row mt16 o_settings_container"
-                         attrs="{'invisible': [('shopify_instance_id', '=', False)]}">
+                         invisible="not shopify_instance_id">
                         <div class="col-xs-12 col-md-6 o_setting_box">
                             <div class="o_setting_left_pane">
-                                <field name="is_shopify_create_schedule" widget="boolean_toggle"
-                                       style="padding-left:25px;"/>
+                                <field name="is_shopify_create_schedule"
+                                       style="margin-left: -0.5em"/>
                             </div>
 
                             <div class="o_setting_right_pane">
@@ -1133,7 +1115,7 @@
                             </div>
                         </div>
                         <div class="col-xs-12 col-md-6 o_setting_box"
-                             attrs="{'invisible': [('is_shopify_create_schedule', '=', False)]}">
+                             invisible="not is_shopify_create_schedule">
                             <div class="o_setting_right_pane">
                                 <label for="shopify_activity_type_id" string="Activity Type"/>
                                 <div class="text-muted">
@@ -1141,13 +1123,13 @@
                                     <div>
                                         <field name="shopify_activity_type_id"
                                                class="oe_inline"
-                                               attrs="{'required': [('is_shopify_create_schedule', '=', True)]}"/>
+                                               required="is_shopify_create_schedule"/>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div class="col-xs-12 col-md-6 o_setting_box"
-                             attrs="{'invisible': [('is_shopify_create_schedule', '=', False)]}">
+                             invisible="not is_shopify_create_schedule">
                             <div class="o_setting_right_pane">
                                 <label for="shopify_user_ids"/>
                                 <div class="text-muted">
@@ -1155,13 +1137,13 @@
                                     <div>
                                         <field name="shopify_user_ids" widget="many2many_tags"
                                                class="oe_inline"
-                                               attrs="{'required': [('is_shopify_create_schedule', '=', True)]}"/>
+                                               required="is_shopify_create_schedule"/>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div class="col-xs-12 col-md-6 o_setting_box"
-                             attrs="{'invisible': [('is_shopify_create_schedule', '=', False)]}">
+                             invisible="not is_shopify_create_schedule">
                             <div class="o_setting_left_pane"/>
                             <div class="o_setting_right_pane">
                                 <label for="shopify_date_deadline" string="Deadline Lead Days"/>
@@ -1173,35 +1155,18 @@
                                     <div class="mt16">
                                         <field name="shopify_date_deadline"
                                                class="o_light_label"
-                                               attrs="{'required': [('is_shopify_create_schedule', '=', True)]}"/>
+                                               required="is_shopify_create_schedule"/>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="row mt16 o_settings_container"
-                         attrs="{'invisible': [('is_shopify_create_schedule','=',False)]}">
-                        <div class="col-xs-12 col-md-6 o_setting_box"
-                             attrs="{'invisible': [('is_shopify_create_schedule', '=', False)]}">
-                            <div class="o_setting_right_pane">
-                                <label for="shopify_payout_user_ids"/>
-                                <div class="text-muted">
-                                    Select Responsible User for Payout Report
-                                    <div>
-                                        <field name="shopify_payout_user_ids" widget="many2many_tags"
-                                               class="oe_inline"
-                                               attrs="{'required': [('is_shopify_create_schedule', '=', True)]}"/>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <h2 style="font-size:25px;background-color:#e9ecef;"
-                        attrs="{'invisible': [('shopify_instance_id', '=', False)]}">
+                    <h2 style="font-size:25px;"
+                        invisible="not shopify_instance_id">
                         Payout Report Information
                     </h2>
                     <div class="row mt16 o_settings_container"
-                         attrs="{'invisible': [('shopify_instance_id', '=', False)]}">
+                         invisible="not shopify_instance_id">
                         <div class="col-xs-12 col-md-6 o_setting_box">
                             <div class="o_setting_right_pane">
                                 <label for="shopify_settlement_report_journal_id"/>
@@ -1219,16 +1184,15 @@
                             </div>
                         </div>
                     </div>
-                    <h2 style="font-size:25px;background-color:#e9ecef;"
-                        attrs="{'invisible': [('shopify_instance_id', '=', False)]}">
-                        Shopify Digest
+                    <h2 style="font-size:25px;" invisible="not shopify_instance_id">
+                        Digest
                     </h2>
                     <div class="row mt16 o_settings_container"
-                         attrs="{'invisible': [('shopify_instance_id', '=', False)]}">
+                         invisible="not shopify_instance_id">
                         <div class="col-xs-12 col-md-6 o_setting_box">
                             <div class="o_setting_left_pane">
-                                <field name="is_shopify_digest" widget="boolean_toggle"
-                                       style="padding-left:25px;"/>
+                                <field name="is_shopify_digest" string="Send Periodic Digest?"
+                                       style="margin-left: -0.5em"/>
                             </div>
 
                             <div class="o_setting_right_pane">
@@ -1239,7 +1203,7 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                </app>
             </xpath>
         </field>
     </record>

@@ -1,117 +1,69 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <data>
 
-        <!-- ONBOARDING STEPS -->
-        <template id="onboarding_shopify_instance_configuration">
-            <t t-call="base.onboarding_step">
-                <t t-set="title">Create Instance</t>
-                <t t-set="description">Create the new Shopify instance here.</t>
-                <t t-set="done_icon" t-value="'fa-star'"/>
-                <t t-set="done_text">Looks great!</t>
-                <t t-set="btn_text">Create Instance</t>
-                <t t-set="model" t-value="'res.config.shopify.instance'"/>
-                <t t-set="method" t-value="'action_shopify_open_shopify_instance_wizard'"/>
-                <t t-set="state" t-value="state.get('shopify_instance_onboarding_state')"/>
-            </t>
-        </template>
+    <data noupdate="1">
 
-        <template id="onboarding_shopify_basic_configuration">
-            <t t-call="base.onboarding_step">
-                <t t-set="title">Manage Configuration</t>
-                <t t-set="description">Manage the configuration for your instance.</t>
-                <t t-set="btn_text">Configure</t>
-                <t t-set="done_icon" t-value="'fa-magic'"/>
-                <t t-set="done_text">Nice!</t>
-                <t t-set="model" t-value="'res.config.settings'"/>
-                <t t-set="method" t-value="'action_shopify_open_basic_configuration_wizard'"/>
-                <t t-set="state" t-value="state.get('shopify_basic_configuration_onboarding_state')"/>
-            </t>
-        </template>
-        <template id="onboarding_shopify_financial_status_configuration">
-            <t t-call="base.onboarding_step">
-                <t t-set="title">Financial Status</t>
-                <t t-set="description">Configure the Shopify Financial Status here.</t>
-                <t t-set="btn_text">Configure</t>
-                <t t-set="done_icon" t-value="'fa-magic'"/>
-                <t t-set="done_text">Nice!</t>
-                <t t-set="model" t-value="'res.config.settings'"/>
-                <t t-set="method" t-value="'action_shopify_open_financial_status_configuration_wizard'"/>
-                <t t-set="state" t-value="state.get('shopify_financial_status_onboarding_state')"/>
-            </t>
-        </template>
-        <template id="onboarding_shopify_cron_configuration">
-            <t t-call="base.onboarding_step">
-                <t t-set="title">Scheduler Configurations</t>
-                <t t-set="description">Configure the schedule actions for automation.</t>
-                <t t-set="btn_text">Configure</t>
-                <t t-set="method" t-value="'action_shopify_open_cron_configuration_wizard'"/>
-                <t t-set="model" t-value="'shopify.cron.configuration.ept'"/>
-                <t t-set="state" t-value="state.get('shopify_cron_configuration_onboarding_state')"/>
-            </t>
-        </template>
+        <!-- Shopify - ONBOARDING STEPS -->
+        <record id="onboarding_onboarding_step_shopify" model="onboarding.onboarding.step">
+            <field name="title">Create Instance</field>
+            <field name="description">Create the new Shopify instance here.</field>
+            <field name="button_text">Create Instance</field>
+            <field name="done_text">Looks great!</field>
+            <field name="panel_step_open_action_name">action_shopify_open_shopify_instance_wizard</field>
+            <field name="step_image" type="base64" file="base/static/img/onboarding_default.png"/>
+            <field name="step_image_filename">onboarding_default.png</field>
+            <field name="step_image_alt">Onboarding Shopify Confirmation</field>
+            <field name="sequence">6</field>
+        </record>
 
-        <!-- ONBOARDING PANEL-->
-        <template id="shopify_instances_onboarding_panel_ept" name="shopify.instances.onboarding.panel.ept">
-            <t t-call="base.onboarding_container">
-                <t t-set="is_shopify_panel" t-value="'is_shopify_panel'"/>
-                <t t-set="classes" t-value="'o_onboarding_violet hide_in_mobile_device shopify_onboarding_ept'"/>
-                <t t-set="bg_image" t-value="'/sale/static/src/img/sale_quotation_onboarding_bg.jpg'"/>
-                <t t-set="close_method" t-value="'action_close_shopify_instances_onboarding_panel'"/>
-                <t t-set="close_model" t-value="'res.company'"/>
-                <t t-call="shopify_ept.onboarding_shopify_instance_configuration" name="shopify_instance_step"/>
-                <t t-call="shopify_ept.onboarding_shopify_basic_configuration"
-                   name="shopify_basic_configuration_step"/>
-                <t t-call="shopify_ept.onboarding_shopify_financial_status_configuration"
-                   name="shopify_financial_status_step"/>
-                <t t-call="shopify_ept.onboarding_shopify_cron_configuration"
-                   name="shopify_cron_configurations_step"/>
-            </t>
-        </template>
+        <record id="onboarding_onboarding_step_shopify_configure" model="onboarding.onboarding.step">
+            <field name="title">Manage Configuration</field>
+            <field name="description">Manage the configuration for your instance.</field>
+            <field name="button_text">Configure</field>
+            <field name="done_text">Looks great!</field>
+            <field name="panel_step_open_action_name">action_shopify_open_basic_configuration_wizard</field>
+            <field name="step_image" type="base64" file="base/static/img/onboarding_default.png"/>
+            <field name="step_image_filename">onboarding_default.png</field>
+            <field name="step_image_alt">Configure Shopify</field>
+            <field name="sequence">6</field>
+        </record>
 
-        <!--
-            Inherited main onboarding view in order to add collapse button
-            @param {is_shopify_panel(to add button in specified view )}
-            Added by: Preet Bhatti @Emipro Technologies
-            Added on: 29/09/2020
-        -->
-        <template id="inherit_onboarding_container" inherit_id="base.onboarding_container">
+        <record id="onboarding_onboarding_step_financial_status_configure" model="onboarding.onboarding.step">
+            <field name="title">Financial Status</field>
+            <field name="description">Configure the Shopify Financial Status here.</field>
+            <field name="button_text">Configure</field>
+            <field name="done_text">Looks great!</field>
+            <field name="panel_step_open_action_name">action_shopify_open_financial_status_configuration_wizard</field>
+            <field name="step_image" type="base64" file="base/static/img/onboarding_default.png"/>
+            <field name="step_image_filename">onboarding_default.png</field>
+            <field name="step_image_alt">Configure Financial Details</field>
+            <field name="sequence">6</field>
+        </record>
 
-            <xpath expr="div[hasclass('o_onboarding_container')]" position="before">
-                <t t-if="is_shopify_panel">
-                    <button id="shopify_button_toggle" t-att-data-company-id="toggle_company_id"
-                            type="button" t-att-class="'d-none btn btn-link' if is_button_active else 'btn btn-link'"
-                            t-att-style="'background-color:#ececec;border:1px solid #ccc' if hide_panel else ''">
-                        <t t-esc="btn_value"/>
-                    </button>
-                </t>
-            </xpath>
+        <record id="onboarding_onboarding_step_shopify_cron_configuration_configure" model="onboarding.onboarding.step">
+            <field name="title">Scheduler Configurations</field>
+            <field name="description">Configure the schedule actions for automation.</field>
+            <field name="button_text">Configure</field>
+            <field name="done_text">Looks great!</field>
+            <field name="panel_step_open_action_name">action_shopify_open_cron_configuration_wizard</field>
+            <field name="step_image" type="base64" file="base/static/img/onboarding_default.png"/>
+            <field name="step_image_filename">onboarding_default.png</field>
+            <field name="step_image_alt">Configure Schedular</field>
+            <field name="sequence">6</field>
+        </record>
 
-            <!-- Changes to class to toogle the onBoadring panel-->
-            <xpath expr="div[hasclass('o_onboarding_container')]" position="attributes">
-                <attribute name="t-att-class">'o_onboarding_container collapse' if hide_panel else 'o_onboarding_container collapse show'</attribute>
-            </xpath>
+        <record id="onboarding_onboarding_shopify_dashboard" model="onboarding.onboarding">
+            <field name="name">Shopify Onboarding</field>
+            <field name="step_ids" eval="[
+                Command.link(ref('shopify_ept.onboarding_onboarding_step_shopify')),
+                Command.link(ref('shopify_ept.onboarding_onboarding_step_shopify_configure')),
+                Command.link(ref('shopify_ept.onboarding_onboarding_step_financial_status_configure')),
+                Command.link(ref('shopify_ept.onboarding_onboarding_step_shopify_cron_configuration_configure')),
+            ]"/>
+            <field name="route_name">shopify_dashboard</field>
+            <field name="panel_close_action_name">action_close_panel_shopify_dashboard</field>
+        </record>
 
-            <!--            <xpath expr="//a[hasclass('float-right') and hasclass('o_onboarding_btn_close')]" position="replace">-->
-            <!--                <t t-if="is_shopify_panel">-->
-            <!--                    <a href="#" data-toggle="modal" data-target=".o_onboarding_modal"-->
-            <!--                       class="d-none float-right o_onboarding_btn_close">-->
-            <!--                        <i class="fa fa-times" title="Close the onboarding panel"/>-->
-            <!--                    </a>-->
-            <!--                </t>-->
-            <!--                <t t-else="">-->
-            <!--                    <a href="#" data-toggle="modal" data-target=".o_onboarding_modal"-->
-            <!--                       class="float-right o_onboarding_btn_close">-->
-            <!--                        <i class="fa fa-times" title="Close the onboarding panel"/>-->
-            <!--                    </a>-->
-            <!--                </t>-->
-            <!--            </xpath>-->
-
-            <!-- Remove close button from onboarding panel-->
-        <xpath expr="//div[hasclass('o_onboarding_container')]//a" position="attributes">
-                <attribute name="class">float-right o_onboarding_btn_close common_close_button_hide_ept</attribute>
-        </xpath>
-
-        </template>
     </data>
+
 </odoo>

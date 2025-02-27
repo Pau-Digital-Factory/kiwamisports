@@ -3,11 +3,11 @@ odoo.define('shopify_ept.shopify_collapse_button', function (require) {
     var core = require('web.core');
     var KanbanController = require('web.KanbanController');
     var KanbanView = require('web.KanbanView');
-    var UploadBillMixin = require('account.upload.bill.mixin');
+//    var UploadDocumentMixin = require('account.upload.document');
     var viewRegistry = require('web.view_registry');
     var _t = core._t;
 
-    var collapseButtonKanbanController = KanbanController.extend(UploadBillMixin, {
+    var collapseButtonKanbanController = KanbanController.extend({_dropZone: '.o_kanban_record'},{
         events: _.extend({}, KanbanController.prototype.events, {
             'click #shopify_button_toggle': '_toggleBtn',
         }),

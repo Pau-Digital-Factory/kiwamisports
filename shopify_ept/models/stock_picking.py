@@ -15,8 +15,8 @@ class StockPicking(models.Model):
                                              help="Use this field to identify shipped in Odoo but cancelled in Shopify")
     is_manually_action_shopify_fulfillment = fields.Boolean("Is Manually Action Required ?", default=False, copy=False,
                                                             help="Those orders which we may fail update fulfillment "
-                                                                 "status, we force set True and use will manually "
-                                                                 "take necessary actions")
+                                                                 "status, we force set True and use will manually take "
+                                                                 "necessary actions")
     shopify_fulfillment_id = fields.Char(string='Shopify Fulfillment Id')
 
     def manually_update_shipment(self):
@@ -26,8 +26,6 @@ class StockPicking(models.Model):
         Task_id: 179263 - Analysis : Export order status
         """
         picking = self
-        order_id = picking.sale_id if picking.sale_id else False
-
-        self.env['sale.order'].with_context(order_id=order_id).update_order_status_in_shopify(self.shopify_instance_id,
-                                                                                              picking_ids=picking)
+        self.env['sale.order'].update_order_status_in_shopify(self.shopify_instance_id, picking_ids=picking)
         return True
+

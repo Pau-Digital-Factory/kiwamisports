@@ -15,7 +15,6 @@ class ProductAttributeValue(models.Model):
         :param attribute_id:id of attribute
         :param auto_create: True or False
         :return: attribute values
-        Migration done by Haresh Mori on September 2021
         """
         attribute_values = self.search([('name', '=', name), ('attribute_id', '=', attribute_id)], limit=1)
 

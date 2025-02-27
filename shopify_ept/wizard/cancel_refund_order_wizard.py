@@ -111,7 +111,7 @@ class ShopifyCancelRefundOrderWizard(models.TransientModel):
                 'invoice_date': move.is_invoice(include_receipts=True) and date or False,
                 'journal_id': self.journal_id and self.journal_id.id or move.journal_id.id,
                 'invoice_payment_term_id': None,
-                'auto_post': True if date > fields.Date.context_today(self) else False,
+                'auto_post': 'at_date' if date >= fields.Date.context_today(self) else 'no',
             })
         moves._reverse_moves(default_values_list)
         return True
@@ -121,12 +121,10 @@ class ShopifyCancelRefundOrderWizard(models.TransientModel):
             @author: Haresh Mori @Emipro Technologies Pvt. Ltd on date 20/11/2019.
             Task Id : 157911
         """
-        common_log_book_obj = self.env["common.log.book.ept"]
         active_id = self._context.get('active_id')
         credit_note_ids = self.env['account.move'].browse(active_id)
         self.check_validation_of_multi_payment()
         model = "account.move"
-        model_id = self.env["common.log.lines.ept"].get_model_id(model)
         for credit_note_id in credit_note_ids:
             if not credit_note_id.shopify_instance_id:
                 continue
@@ -136,14 +134,12 @@ class ShopifyCancelRefundOrderWizard(models.TransientModel):
             shopify_order_data = shopify.Order.find(orders.shopify_order_id)
             order_data = shopify_order_data.to_dict()
             refund_lines_list, do_not_order_process_ids, mismatch_log_lines = self.prepare_refund_line_list(
-                    credit_note_id, model_id,order_data)
+                credit_note_id, model, order_data)
             log_lines = self.create_refund_in_shopify(orders, credit_note_id, refund_lines_list,
-                                                      model_id, do_not_order_process_ids)
+                                                      model, do_not_order_process_ids,
+                                                      credit_note_id.shopify_instance_id)
         if mismatch_log_lines or log_lines:
             total_log_lines = mismatch_log_lines + log_lines
-            instance = credit_note_ids[0].shopify_instance_id if credit_note_ids else False
-            log_book_id = common_log_book_obj.shopify_create_common_log_book("export", instance, model_id)
-            log_book_id.write({'log_lines': [(6, 0, total_log_lines)]})
         return True
 
     def check_validation_of_multi_payment(self):
@@ -168,18 +164,18 @@ class ShopifyCancelRefundOrderWizard(models.TransientModel):
         refund_lines_list = []
         do_not_order_process_ids = []
         mismatch_log_lines = []
+        shopify_instance = credit_note_id.shopify_instance_id
         shopify_location_obj = self.env["shopify.location.ept"]
         refunded_qty_dict = {}
 
         # get refunded qty
         for refund_data in order_data.get('refunds'):
             for refund_data_line in refund_data.get('refund_line_items'):
-                refund_qty = refund_data_line.get('quantity')
                 line_item_id = refund_data_line.get('line_item_id')
+                refund_qty = refund_data_line.get('quantity')
                 if line_item_id in refunded_qty_dict and refund_qty:
                     refund_qty += refunded_qty_dict.get(line_item_id)
                 refunded_qty_dict.update({line_item_id: refund_qty})
-
 
         for invoice_line_id in credit_note_id.invoice_line_ids:
             if invoice_line_id.product_id.type == 'service':
@@ -210,9 +206,10 @@ class ShopifyCancelRefundOrderWizard(models.TransientModel):
                     else:
                         log_message = "Location is not set in order (%s).Unable to refund in shopify.\n You can see " \
                                       "order location here: Order => Shopify Info => Shopify Location " % order_id.name
-                    log_line = self.env["common.log.lines.ept"].shopify_create_order_log_line(log_message, model_id,
-                                                                                              False, False,
-                                                                                              order_ref=order_id.name)
+                    log_line = self.env["common.log.lines.ept"].create_common_log_line_ept(
+                        shopify_instance_id=shopify_instance.id, module="shopify_ept", message=log_message,
+                        model_name='sale.order',
+                        order_ref=order_id.name)
                     mismatch_log_lines.append(log_line.id)
                     do_not_order_process_ids.append(order_id.id)
                     continue
@@ -222,9 +219,8 @@ class ShopifyCancelRefundOrderWizard(models.TransientModel):
 
         return refund_lines_list, do_not_order_process_ids, mismatch_log_lines
 
-
-    def create_refund_in_shopify(self, orders, credit_note_id, refund_lines_list, model_id,
-                                 do_not_order_process_ids):
+    def create_refund_in_shopify(self, orders, credit_note_id, refund_lines_list, model,
+                                 do_not_order_process_ids, instance):
         """This method used to create a refund in Shopify.
             @param : self
             @return:
@@ -244,10 +240,10 @@ class ShopifyCancelRefundOrderWizard(models.TransientModel):
                 lambda picking: picking.picking_type_id.code == 'incoming' and picking.state == 'done')
             if incoming_picking_ids:
                 in_picking_total_qty = sum(
-                    incoming_picking_ids.mapped('move_lines').mapped('quantity_done'))
+                    incoming_picking_ids.mapped('move_ids').mapped('quantity'))
             if outgoing_picking_ids:
                 out_picking_total_qty = sum(
-                    outgoing_picking_ids.mapped('move_lines').mapped('quantity_done'))
+                    outgoing_picking_ids.mapped('move_ids').mapped('quantity'))
 
             if in_picking_total_qty == out_picking_total_qty:
                 shipping.update({"full_refund": True})
@@ -257,32 +253,97 @@ class ShopifyCancelRefundOrderWizard(models.TransientModel):
             if self.payment_ids:
                 refund_amount = float(sum(self.payment_ids.mapped('refund_amount')))
             # This used for amount validation.
-            parent_id, gateway = self.refund_amount_validation(order, refund_amount)
-            # This method is used to prepare a refund vals for refund order in shopify.
-            if gateway == 'gift_card':
-                refund_lines_list = []
-            vals = self.prepare_shopify_refund_vals(parent_id, gateway, refund_amount, order, shipping,
-                                                    refund_lines_list)
-            refund_in_shopify = shopify.Refund()
-            try:
-                result = refund_in_shopify.create(vals)
-            except Exception as error:
-                log_message = "When creating refund in Shopify for order (%s), issue arrive in " \
-                              "request (%s)" % (order.name, error)
-                log_line = self.env["common.log.lines.ept"].shopify_create_order_log_line(
-                    log_message, model_id, False, False)
+            parent_id, gateway, transactions = self.refund_amount_validation(order, refund_amount)
+            if transactions:
+                # This method is used to prepare a refund vals for refund order in shopify.
+                if gateway == 'gift_card':
+                    refund_lines_list = []
+                order_payment_dict, refund_payment_dict = self.prepare_payment_data(transactions)
+                final_payment_data = self.prepare_final_payment_data(order_payment_dict, refund_payment_dict)
+                parent_id, payment_gateway = self.find_feasible_payment_gateway(final_payment_data, refund_amount,
+                                                                                transactions)
+                if parent_id:
+                    vals = self.prepare_shopify_refund_vals(parent_id, gateway, refund_amount, order, shipping,
+                                                            refund_lines_list)
+                    refund_in_shopify = shopify.Refund()
+                    try:
+                        result = refund_in_shopify.create(vals)
+                    except Exception as error:
+                        log_message = "When creating refund in Shopify for order (%s), issue arrive in " \
+                                      "request (%s)" % (order.name, error)
+                        log_line = self.env["common.log.lines.ept"].create_common_log_line_ept(
+                            shopify_instance_id=instance.id, module="shopify_ept", message=log_message,
+                            model_name=model,
+                            order_ref=order.name)
+                        mismatch_logline.append(log_line.id)
+                        continue
+                    if not bool(result.id):
+                        log_message = "When creating refund in Shopify for order (%s), issue arrive in " \
+                                      "request (%s)" % (order.name, result.errors.errors.get('base'))
+                        log_line = self.env["common.log.lines.ept"].create_common_log_line_ept(
+                            shopify_instance_id=instance.id, module="shopify_ept", message=log_message,
+                            model_name=model,
+                            order_ref=order.name)
+                        mismatch_logline.append(log_line.id)
+                        continue
+                    credit_note_id.write({'is_refund_in_shopify': True, 'shopify_refund_id': result.id if result else False})
+                else:
+                    log_message = "You cannot refund an amount greater than the Shopify order total. Please verify the order total in both Odoo and the Shopify store."
+                    log_line = self.env["common.log.lines.ept"].create_common_log_line_ept(
+                        shopify_instance_id=instance.id, module="shopify_ept", message=log_message,
+                        model_name=model,
+                        order_ref=order.name)
+                    mismatch_logline.append(log_line.id)
+            else:
+                log_message = "When creating refund in Shopify for order (%s) There is No Payment found so Refund can not be generated in shopify." % (order.name)
+                log_line = self.env["common.log.lines.ept"].create_common_log_line_ept(
+                    shopify_instance_id=instance.id, module="shopify_ept", message=log_message,
+                    model_name=model,
+                    order_ref=order.name)
                 mismatch_logline.append(log_line.id)
-                continue
-            if not bool(result.id):
-                log_message = "When creating refund in Shopify for order (%s), issue arrive in " \
-                              "request (%s)" % (order.name, result.errors.errors.get('base'))
-                log_line = self.env["common.log.lines.ept"].shopify_create_order_log_line(
-                    log_message, model_id, False, False)
-                mismatch_logline.append(log_line.id)
-                continue
-            credit_note_id.write({'is_refund_in_shopify': True, 'shopify_refund_id': result.id if result else False})
-
         return mismatch_logline
+
+    def prepare_payment_data(self, transactions):
+        """
+        This method will use to prepare data for order and refund payment against payment gateway.
+        :param transactions:
+        :return: order_payment, refund_paymenty
+        """
+        order_payment = {}
+        refund_payment = {}
+        for transaction in transactions:
+            result = transaction.to_dict()
+            gateway = result.get('gateway')
+            amount = float(result.get('amount'))
+            status = result.get('status')
+            kind = result.get('kind')
+            if status == 'success':
+                if kind == 'refund':
+                    refund_payment[gateway] = refund_payment.get('gateway', 0) + amount
+                else:
+                    order_payment[gateway] = order_payment.get('gateway', 0) + amount
+        return order_payment, refund_payment
+
+    def prepare_final_payment_data(self, order_payment_dict, refund_payment_dict):
+        final_payment_data = {}
+        final_payment_data.update(order_payment_dict)
+        for gateway, refund_amount in refund_payment_dict.items():
+            if gateway in final_payment_data:
+                final_payment_data[gateway] = round(float(final_payment_data[gateway]) - float(refund_amount), 2)
+        final_payment_data = {gateway: str(amount) for gateway, amount in final_payment_data.items()}
+        return final_payment_data
+
+    def find_feasible_payment_gateway(self, final_payment_data, refund_amount, transactions):
+        parent_id = False
+        payment_gateway = False
+        for transaction in transactions:
+            result = transaction.to_dict()
+            for payment_gateway, remaining_amount_str in final_payment_data.items():
+                remaining_amount = float(remaining_amount_str)
+                if (remaining_amount >= refund_amount) and (payment_gateway == result.get('gateway')):
+                    payment_gateway = payment_gateway
+                    parent_id = result.get('id')
+        return parent_id, payment_gateway
 
     def refund_amount_validation(self, order, refund_amount):
         """ This method is used to refund the amount validation for particular order.
@@ -320,7 +381,7 @@ class ShopifyCancelRefundOrderWizard(models.TransientModel):
             raise UserError(
                 _("You can't refund then actual payment, requested amount for refund %s, maximum refund allow %s") % (
                     refund_amount, maximum_refund_allow))
-        return parent_id, gateway
+        return parent_id, gateway, transactions
 
     def prepare_shopify_refund_vals(self, parent_id, gateway, refund_amount, order, shipping, refund_lines_list):
         """ This method is used to prepare a refund order vals.
@@ -339,7 +400,8 @@ class ShopifyCancelRefundOrderWizard(models.TransientModel):
                 remaining_refund_amount = order_payment.remaining_refund_amount - order_payment.refund_amount
                 is_fully_refunded = True if remaining_refund_amount == 0.0 else False
                 order_payment.write(
-                    {'remaining_refund_amount': round(remaining_refund_amount, 2), 'is_fully_refunded': is_fully_refunded})
+                    {'remaining_refund_amount': round(remaining_refund_amount, 2),
+                     'is_fully_refunded': is_fully_refunded})
         else:
             transactions = self.preapre_refund_transaction_vals(parent_id, refund_amount, gateway)
             transactions = [transactions]

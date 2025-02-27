@@ -8,6 +8,22 @@
                 <h1 class="font-weight-bold o_on_board_heading">
                     Do you have done all the configurations?
                 </h1>
+                <br/>
+                <div class="alert alert-warning" role="alert" style="margin-left: 18px;width: 96.5%;">
+                    <h3 style="font-weight:bold;color:#7d5a29;padding: 0 !important;">
+                        <u>Note :</u>
+                    </h3>
+                    <b>
+                        <ul>
+                            <li>Upon completion of all steps, the Onboarding panel will be reset.</li>
+                            <li>Once you will click on "yes",Onboarding panel will be reset when the instance is
+                                created, so you will no longer be able to modify any configuration settings from the
+                                panel. The configuration can be changed under Configuration -> Settings -> Select
+                                Instance.
+                            </li>
+                        </ul>
+                    </b>
+                </div>
                 <footer>
                     <button string="Yes" type="object"
                             name="yes" class="oe_highlight btn btn-primary o_onboard_button"
@@ -18,7 +34,7 @@
                 </footer>
                 <script>
                     $('document').ready(function(){
-                    $('div.o_form_view.o_shopify_ept').parents('div.modal-content').addClass('on_board_custom_form');
+                    $('div.o_form_nosheet.o_shopify_ept').parents('div.modal-content').addClass('on_board_custom_form');
                     $('div.on_board_custom_form').find('table.o_group').find('label').addClass('on_board_field_label');
                     $('div.on_board_custom_form').find('table.o_group').find('td').find('span').addClass('on_board_field');
                     $('div.on_board_custom_form').find('table.o_group').find('td').find('a').addClass('on_board_field');

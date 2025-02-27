@@ -1,7 +1,7 @@
 
 {
     'name': 'custom_kiwami',
-    'version': '15.0.1.0.0',
+    'version': '18.0',
     'summary': 'Technical module permet la synchronisation des information entre shopify et odoo et mettre des modification sur les documents PDF des Factures'
     ' project',
     'author': 'Abdelghani KHALIDI',
