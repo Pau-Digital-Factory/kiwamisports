@@ -48,6 +48,6 @@ class AccountInvoiceReportv(models.Model):
     tagg = fields.Char('Etiquettes', readonly=True)
     
 
-    def _select(self):
-        return super(AccountInvoiceReportv, self)._select() + ", move.tagg as tagg"
+    #def _select(self):
+        #return super(AccountInvoiceReportv, self)._select() + ", move.tagg as tagg"
 
