@@ -14,6 +14,7 @@ class AccountMove(models.Model):
         states={"draft": [("readonly", False)]},
     )
 
+    
     @api.constrains("pricelist_id", "currency_id")
     def _check_currency(self):
         for sel in self.filtered(lambda a: a.pricelist_id and a.is_invoice()):
