@@ -43,8 +43,7 @@ class AccountMove(models.Model):
             self.currency_id = self.pricelist_id.currency_id
 
     def button_update_prices_from_pricelist(self):
-        for inv in self.filtered(lambda r: r.state == "draft"):
-            inv.invoice_line_ids._onchange_product_id_account_invoice_pricelist()
+        
         self.filtered(lambda r: r.state == "draft").with_context(
             check_move_validity=False
         )._move_autocomplete_invoice_lines_values()
