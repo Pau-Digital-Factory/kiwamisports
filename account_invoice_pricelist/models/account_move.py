@@ -206,6 +206,14 @@ class AccountMoveLine(models.Model):
                 self._set_discount(self._calculate_discount(base_price, final_price))
         return price_unit
 
+    def _set_discount(self, amount):
+        if self.env["account.move.line"]._fields.get("discount1", False):
+            # OCA/account_invoice_triple_discount is installed
+            fname = "discount1"
+        else:
+            fname = "discount"
+        self.with_context(check_move_validity=False)[fname] = amount
+        
     def _compute_price_unit(self):
         price_unit = super(AccountMoveLine, self)._compute_price_unit()
         if self.move_id.pricelist_id and self.move_id.is_invoice():
