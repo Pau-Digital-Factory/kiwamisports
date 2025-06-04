@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+<record id="account_invoice_report_view_list" model="ir.ui.view">
+        <field name="name">account.invoice.report.view.list.inherit.sale</field>
+        <field name="model">account.invoice.report</field>
+        <field name="inherit_id" ref="account.account_invoice_report_view_tree"/>
+        <field name="arch" type="xml">
+            <field name="invoice_user_id" position="after">
+                <field name="tagg" optional="hide"/>
+            </field>
+        </field>
+    </record>
+    </data>
+</odoo>

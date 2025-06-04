@@ -10,6 +10,7 @@
     'website': 'https://DKGROUP.FR',
     'license': 'AGPL-3',
     'category': 'Generic Modules',
+    "data": ["views/views.xml"],
     'depends': ['base','sale'],
     'installable': True,
 }
