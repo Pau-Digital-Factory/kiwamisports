@@ -188,11 +188,10 @@ class AccountMoveLine(models.Model):
         self.with_context(check_move_validity=False)[fname] = amount
         
     def _compute_price_unit(self):
-        price_unit = super(AccountMoveLine, self)._compute_price_unit()
-        if self.move_id.pricelist_id and self.move_id.is_invoice():
-            price_unit = self._get_price_with_pricelist()
-        return price_unit
-
+        for rec in self:
+            super(AccountMoveLine, rec)._compute_price_unit()
+            if rec.move_id.pricelist_id and rec.move_id.is_invoice():
+                rec.price_unit = rec._get_price_with_pricelist()
 
     
 class Pricelist(models.Model):
